@@ -67,20 +67,22 @@ def save_training_checkpoint(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: Any,
-    scaler: torch.amp.GradScaler,
+    scaler: torch.amp.GradScaler | None,
     epoch: int,
     configuration: dict[str, Any],
     best_validation: dict[str, Any],
     sampler_generator: torch.Generator | None = None,
     loader_generator: torch.Generator | None = None,
     metric_records: list[dict[str, Any]] | None = None,
+    numerical_controller: Any | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "model_state": model.state_dict(),
         "optimizer_state": optimizer.state_dict(),
         "scheduler_state": scheduler.state_dict() if scheduler is not None else None,
-        "scaler_state": scaler.state_dict(),
+        "scaler_state": scaler.state_dict() if scaler is not None else None,
+        "numerical_state": numerical_controller.state_dict() if numerical_controller is not None else None,
         "epoch": epoch,
         "configuration": configuration,
         "random_states": capture_random_states(sampler_generator, loader_generator),
@@ -98,11 +100,12 @@ def load_training_checkpoint(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: Any,
-    scaler: torch.amp.GradScaler,
+    scaler: torch.amp.GradScaler | None,
     expected_configuration: dict[str, Any],
     sampler_generator: torch.Generator | None = None,
     loader_generator: torch.Generator | None = None,
     map_location: str | torch.device = "cpu",
+    numerical_controller: Any | None = None,
 ) -> dict[str, Any]:
     payload = torch.load(path, map_location=map_location, weights_only=True)
     if payload["configuration"] != expected_configuration:
@@ -115,7 +118,16 @@ def load_training_checkpoint(
         scheduler.load_state_dict(payload["scheduler_state"])
     elif payload["scheduler_state"] is not None:
         raise ValueError("Checkpoint has scheduler state but current configuration uses none")
-    scaler.load_state_dict(payload["scaler_state"])
+    scaler_state = payload.get("scaler_state")
+    if scaler is not None:
+        if scaler_state is None:
+            raise ValueError("Checkpoint lacks GradScaler state")
+        scaler.load_state_dict(scaler_state)
+    elif scaler_state not in (None, {}):
+        raise ValueError("Checkpoint has GradScaler state but current precision mode does not use it")
+    numerical_state = payload.get("numerical_state")
+    if numerical_controller is not None and numerical_state is not None:
+        numerical_controller.load_state_dict(numerical_state)
     restore_random_states(payload["random_states"], sampler_generator, loader_generator)
     return payload
 

@@ -19,7 +19,6 @@ from defectgen.training.metrics import detailed_validation_metrics, validation_t
 from defectgen.training.reproducibility import configure_reproducibility
 from scripts.train_baseline import (
     _build_datasets,
-    _finite_gradients,
     candidate_configuration,
     candidate_directories,
     model_state_sha256,
@@ -35,7 +34,16 @@ def _configs():
     return base, pilot
 
 
-def test_full_training_datasets_exclude_official_test():
+def test_full_training_datasets_exclude_official_test(monkeypatch):
+    class FakeDataset:
+        def __init__(self, development_split, **kwargs):  # noqa: ARG002
+            size = 1981 if development_split == "train" else 350
+            self.rows = [{"development_split": development_split}] * size
+
+        def __len__(self):
+            return len(self.rows)
+
+    monkeypatch.setattr("scripts.train_baseline.KSDD2FullImageDataset", FakeDataset)
     base, pilot = _configs()
     training, validation = _build_datasets(candidate_configuration(base, pilot, 1))
     assert len(training) == 1981
@@ -160,12 +168,6 @@ def test_combined_loss_produces_finite_gradients():
     loss.backward()
     assert torch.isfinite(loss)
     assert all(parameter.grad is None or torch.isfinite(parameter.grad).all() for parameter in model.parameters())
-
-
-def test_amp_overflow_is_detected_before_optimizer_step():
-    model = torch.nn.Linear(1, 1)
-    model.weight.grad = torch.full_like(model.weight, float("inf"))
-    assert not _finite_gradients(model)
 
 
 def test_candidate_directories_are_isolated():

@@ -1,5 +1,7 @@
 {
   "status": "PASS - VALIDATION-ONLY IMBALANCE-LOSS PILOT",
+  "audit_status": "PROVISIONAL UNTIL AMP STEP-ACCOUNTING AUDIT IS COMPLETE",
+  "historical_metrics_unchanged": true,
   "official_test_evaluated": false,
   "initialization_hash_identical": true,
   "configurations_differ_only_by_pos_weight": true,
@@ -189,5 +191,5 @@
     "pos_weight": 5,
     "reason": "best overall validation balance: highest swept global Dice, strong precision/recall, zero normal-image false-positive rate, fastest runtime, and lowest failure count; still provisional because AMP fallback activity and missed defects remain"
   },
-  "warning": "Screening evidence only; this is not a final baseline or official-test result."
+  "warning": "D1 used automatic fp32 forward retries on numerically unsafe fp16 batches. The stored metrics describe those executed hybrid-precision runs but cannot yet establish a clean pos_weight-only fp16 comparison. No candidate is final."
 }

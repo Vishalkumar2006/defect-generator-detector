@@ -1,5 +1,7 @@
 # D1 positive-weight pilot
 
+> **PROVISIONAL — AMP AUDIT REQUIRED:** D1 automatically retried non-finite fp16 forwards in fp32. The historical metrics below are unchanged and describe the runs that actually executed, but the candidates followed different hybrid-precision paths. No positive weight is final until the manual numerical audit is reviewed.
+
 Validation-only screening on all 1,981 development-training and 350 validation images. The official test dataset was not constructed or evaluated.
 
 | pw | best ep | val loss | Dice@.5 | def Dice@.5 | P@.5 | R@.5 | normal FP@.5 | global t | global Dice | global normal FP | def t | best def Dice | def normal FP | train sec | total sec | VRAM GiB | failures | stability |
@@ -27,6 +29,6 @@ The CSV and JSON contain the complete threshold-0.5 metrics, both independently 
 
 ## Recommendation
 
-Recommend `pos_weight=5`: best overall validation balance: highest swept global Dice, strong precision/recall, zero normal-image false-positive rate, fastest runtime, and lowest failure count; still provisional because AMP fallback activity and missed defects remain
+Provisional screening preference `pos_weight=5`: best overall validation balance: highest swept global Dice, strong precision/recall, zero normal-image false-positive rate, fastest runtime, and lowest failure count; still provisional because AMP fallback activity and missed defects remain
 
 This phase does not authorize official-test evaluation, final baseline training, augmentation, synthetic data, or GAN work.

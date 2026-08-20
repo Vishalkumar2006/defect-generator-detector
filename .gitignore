@@ -27,3 +27,6 @@ models/checkpoints/
 *.pt
 data/synthetic/
 synthetic_data/
+
+# Numerical probes keep compact summaries/anomalies; per-batch dumps are local diagnostics.
+reports/numerical_stability/*/batch_telemetry.csv

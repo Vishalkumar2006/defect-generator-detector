@@ -71,10 +71,14 @@ class CombinedBCEDiceLoss(nn.Module):
     def components(
         self, logits: torch.Tensor, targets: torch.Tensor, valid_region: torch.Tensor
     ) -> dict[str, torch.Tensor]:
+        # Segmentation reductions are deliberately full precision even when
+        # the model forward runs under fp16/bf16 autocast.
+        logits = logits.float()
+        targets = targets.float()
+        valid_region = valid_region.float()
         bce = masked_bce_with_logits(logits, targets, valid_region, self.pos_weight)
         dice = masked_soft_dice_loss(logits, targets, valid_region)
         return {"bce": bce, "dice": dice, "total": self.bce_weight * bce + self.dice_weight * dice}
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor, valid_region: torch.Tensor) -> torch.Tensor:
         return self.components(logits, targets, valid_region)["total"]
-

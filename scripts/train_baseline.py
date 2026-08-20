@@ -38,6 +38,7 @@ from defectgen.training.metrics import (  # noqa: E402
     detailed_validation_metrics,
     validation_threshold_sweep,
 )
+from defectgen.training.numerics import NumericalStepController, precision_autocast  # noqa: E402
 from defectgen.training.reproducibility import configure_reproducibility  # noqa: E402
 
 
@@ -62,9 +63,13 @@ EPOCH_FIELDS = [
     "image_recall",
     "image_f1",
     "sampled_training_defective_fraction",
-    "nonfinite_gradient_steps",
-    "amp_forward_fallback_batches",
-    "amp_validation_fallback_batches",
+    "nonfinite_forward_loss",
+    "nonfinite_gradient",
+    "amp_overflow_scale_drop",
+    "optimizer_step_executed",
+    "optimizer_step_skipped",
+    "fp32_retry_attempted",
+    "fp32_retry_executed",
     "epoch_seconds",
     "peak_allocated_vram_bytes",
     "peak_reserved_vram_bytes",
@@ -98,29 +103,6 @@ def model_state_sha256(model: torch.nn.Module) -> str:
         digest.update(name.encode("utf-8"))
         digest.update(tensor.detach().cpu().contiguous().numpy().tobytes())
     return digest.hexdigest()
-
-
-def _finite_gradients(model: torch.nn.Module) -> bool:
-    return all(parameter.grad is None or bool(torch.isfinite(parameter.grad).all()) for parameter in model.parameters())
-
-
-def _forward_loss_with_fallback(model, inputs, targets, valid, criterion, mixed_precision):
-    """Retry an unsafe fp16 forward in fp32; true fp32 failures remain fatal."""
-    with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=mixed_precision):
-        logits = model(inputs)
-        components = criterion.components(logits, targets, valid)
-    if logits.shape == targets.shape and all(torch.isfinite(value) for value in components.values()):
-        return logits, components, 0
-    if not mixed_precision:
-        raise RuntimeError("Non-finite full-precision loss or invalid prediction shape")
-    del logits, components
-    torch.cuda.empty_cache()
-    with torch.autocast(device_type="cuda", enabled=False):
-        logits = model(inputs.float())
-        components = criterion.components(logits, targets.float(), valid.float())
-    if logits.shape != targets.shape or not all(torch.isfinite(value) for value in components.values()):
-        raise RuntimeError("Non-finite loss persisted during full-precision fallback")
-    return logits, components, 1
 
 
 def _build_datasets(config: dict[str, Any]):
@@ -159,50 +141,40 @@ def _build_loaders(config, training, validation):
     return train_loader, validation_loader, sampler, loader_generator
 
 
-def _train_epoch(model, loader, criterion, optimizer, scaler, device, mixed_precision):
+def _train_epoch(model, loader, criterion, controller, device):
     model.train()
     sums = {"bce": 0.0, "dice": 0.0, "total": 0.0}
-    samples = defective = successful_samples = nonfinite_gradient_steps = amp_forward_fallback_batches = 0
-    for batch in loader:
+    samples = defective = successful_samples = 0
+    counter_before = controller.state_dict()["counters"]
+    anomalies = []
+    for batch_index, batch in enumerate(loader, start=1):
         inputs = batch["image"].to(device, non_blocking=True)
         targets = batch["mask"].to(device, non_blocking=True)
         valid = batch["valid_region"].to(device, non_blocking=True)
-        optimizer.zero_grad(set_to_none=True)
-        logits, components, fallback = _forward_loss_with_fallback(
-            model, inputs, targets, valid, criterion, mixed_precision
-        )
-        amp_forward_fallback_batches += fallback
-        scaler.scale(components["total"]).backward()
-        scaler.unscale_(optimizer)
-        if not _finite_gradients(model):
-            # Dynamic loss scaling is specifically designed to recover from
-            # fp16 gradient overflow. Detect it before the optimizer update,
-            # record it, skip the unsafe step, and let GradScaler back off.
-            nonfinite_gradient_steps += 1
-            optimizer.zero_grad(set_to_none=True)
-            scaler.update()
-            samples += len(inputs)
-            defective += int(batch["has_defect"].sum().item())
-            continue
-        scaler.step(optimizer)
-        scaler.update()
+        telemetry = controller.run_batch(model, inputs, targets, valid, criterion)
         batch_size = len(inputs)
-        for key in sums:
-            sums[key] += float(components[key].detach().item()) * batch_size
-        successful_samples += batch_size
+        if telemetry.optimizer_step_executed:
+            sums["bce"] += telemetry.bce_loss * batch_size
+            sums["dice"] += telemetry.dice_loss * batch_size
+            sums["total"] += telemetry.total_loss * batch_size
+            successful_samples += batch_size
+        if telemetry.is_anomaly:
+            anomalies.append({"batch_index": batch_index, **telemetry.to_dict()})
         samples += batch_size
         defective += int(batch["has_defect"].sum().item())
     if successful_samples == 0:
-        raise RuntimeError("Every optimizer step in the epoch had non-finite gradients")
+        raise RuntimeError("Every optimizer attempt in the epoch was skipped")
+    counter_after = controller.state_dict()["counters"]
+    events = {key: int(counter_after[key]) - int(counter_before[key]) for key in counter_after}
     return (
         {key: value / successful_samples for key, value in sums.items()},
         defective / samples,
-        nonfinite_gradient_steps,
-        amp_forward_fallback_batches,
+        events,
+        anomalies,
     )
 
 
-def _validate(model, loader, criterion, device, mixed_precision, keep_outputs: bool = True):
+def _validate(model, loader, criterion, device, precision_mode, keep_outputs: bool = True):
     model.eval()
     sums = {"bce": 0.0, "dice": 0.0, "total": 0.0}
     samples = 0
@@ -211,16 +183,16 @@ def _validate(model, loader, criterion, device, mixed_precision, keep_outputs: b
     valid_regions = []
     labels = []
     sample_ids = []
-    amp_validation_fallback_batches = 0
     with torch.no_grad():
         for batch in loader:
             inputs = batch["image"].to(device, non_blocking=True)
             batch_targets = batch["mask"].to(device, non_blocking=True)
             batch_valid = batch["valid_region"].to(device, non_blocking=True)
-            logits, components, fallback = _forward_loss_with_fallback(
-                model, inputs, batch_targets, batch_valid, criterion, mixed_precision
-            )
-            amp_validation_fallback_batches += fallback
+            with precision_autocast(device.type, precision_mode):
+                logits = model(inputs)
+            components = criterion.components(logits.float(), batch_targets.float(), batch_valid.float())
+            if not all(torch.isfinite(value) for value in components.values()):
+                raise RuntimeError("Non-finite validation loss; automatic fp32 retry is disabled")
             batch_size = len(inputs)
             for key in sums:
                 sums[key] += float(components[key].item()) * batch_size
@@ -233,7 +205,7 @@ def _validate(model, loader, criterion, device, mixed_precision, keep_outputs: b
                 sample_ids.extend(batch["sample_id"])
     losses = {key: value / samples for key, value in sums.items()}
     if not keep_outputs:
-        return losses, None, amp_validation_fallback_batches
+        return losses, None
     output = {
         "probabilities": torch.cat(probabilities),
         "targets": torch.cat(targets),
@@ -241,7 +213,7 @@ def _validate(model, loader, criterion, device, mixed_precision, keep_outputs: b
         "labels": torch.cat(labels),
         "sample_ids": sample_ids,
     }
-    return losses, output, amp_validation_fallback_batches
+    return losses, output
 
 
 def _save_epoch_plots(records: list[dict[str, Any]], output: Path) -> None:
@@ -321,7 +293,17 @@ def run_candidate(
         config["loss"]["bce_weight"], config["loss"]["dice_weight"], config["loss"]["pos_weight"]
     )
     mixed_precision = bool(config["training"]["mixed_precision"])
-    scaler = torch.amp.GradScaler("cuda", enabled=mixed_precision)
+    precision_mode = config["training"].get("precision_mode", "fp16" if mixed_precision else "fp32")
+    if precision_mode == "bf16" and not torch.cuda.is_bf16_supported():
+        raise RuntimeError("This CUDA device does not support bf16")
+    scaler = torch.amp.GradScaler("cuda") if precision_mode == "fp16" else None
+    controller = NumericalStepController(
+        optimizer,
+        precision_mode=precision_mode,
+        scaler=scaler,
+        gradient_clip_max_norm=config["training"].get("gradient_clip_max_norm"),
+        automatic_fp32_retry=False,
+    )
     start_epoch = 1
     records: list[dict[str, Any]] = []
     best = {"epoch": 0, "validation_total_loss": math.inf}
@@ -340,13 +322,20 @@ def run_candidate(
             sampler_generator=sampler.generator,
             loader_generator=loader_generator,
             map_location=device,
+            numerical_controller=controller,
         )
         start_epoch = int(payload["epoch"]) + 1
         records = payload["metric_records"]
         for index, record in enumerate(records):
-            record.setdefault("nonfinite_gradient_steps", 0)
-            record.setdefault("amp_forward_fallback_batches", 0)
-            record.setdefault("amp_validation_fallback_batches", 0)
+            legacy_gradient = int(record.get("nonfinite_gradient_steps", 0))
+            legacy_retry = int(record.get("amp_forward_fallback_batches", 0))
+            record.setdefault("nonfinite_forward_loss", legacy_retry)
+            record.setdefault("nonfinite_gradient", legacy_gradient)
+            record.setdefault("amp_overflow_scale_drop", 0)  # D1 did not record scale history.
+            record.setdefault("optimizer_step_executed", math.ceil(1981 / 4) - legacy_gradient)
+            record.setdefault("optimizer_step_skipped", legacy_gradient)
+            record.setdefault("fp32_retry_attempted", legacy_retry)
+            record.setdefault("fp32_retry_executed", legacy_retry)
             records[index] = {field: record[field] for field in EPOCH_FIELDS}
         best = payload["best_validation"]
 
@@ -355,14 +344,17 @@ def run_candidate(
     total_start = time.perf_counter()
     overall_peak_allocated = 0
     overall_peak_reserved = 0
+    anomaly_path = report_dir / "numerical_anomalies.json"
+    anomalies = json.loads(anomaly_path.read_text(encoding="utf-8")) if resume and anomaly_path.is_file() else []
     for epoch in range(start_epoch, int(config["training"]["epochs"]) + 1):
         epoch_start = time.perf_counter()
         torch.cuda.reset_peak_memory_stats()
-        train_losses, sampled_fraction, nonfinite_gradient_steps, amp_forward_fallback_batches = _train_epoch(
-            model, train_loader, criterion, optimizer, scaler, device, mixed_precision
+        train_losses, sampled_fraction, numerical_events, epoch_anomalies = _train_epoch(
+            model, train_loader, criterion, controller, device
         )
-        validation_losses, outputs, amp_validation_fallback_batches = _validate(
-            model, validation_loader, criterion, device, mixed_precision, keep_outputs=True
+        anomalies.extend({"epoch": epoch, **anomaly} for anomaly in epoch_anomalies)
+        validation_losses, outputs = _validate(
+            model, validation_loader, criterion, device, precision_mode, keep_outputs=True
         )
         metrics, _ = detailed_validation_metrics(
             outputs["probabilities"],
@@ -386,9 +378,7 @@ def run_candidate(
             "validation_total_loss": validation_losses["total"],
             **{key: metrics[key] for key in EPOCH_FIELDS if key in metrics},
             "sampled_training_defective_fraction": sampled_fraction,
-            "nonfinite_gradient_steps": nonfinite_gradient_steps,
-            "amp_forward_fallback_batches": amp_forward_fallback_batches,
-            "amp_validation_fallback_batches": amp_validation_fallback_batches,
+            **{key: numerical_events[key] for key in EPOCH_FIELDS if key in numerical_events},
             "epoch_seconds": elapsed,
             "peak_allocated_vram_bytes": peak_allocated,
             "peak_reserved_vram_bytes": peak_reserved,
@@ -409,6 +399,7 @@ def run_candidate(
                 sampler_generator=sampler.generator,
                 loader_generator=loader_generator,
                 metric_records=records,
+                numerical_controller=controller,
             )
         save_training_checkpoint(
             last_checkpoint,
@@ -422,8 +413,10 @@ def run_candidate(
             sampler_generator=sampler.generator,
             loader_generator=loader_generator,
             metric_records=records,
+            numerical_controller=controller,
         )
         write_metric_logs(records, report_dir / "epoch_metrics.csv", report_dir / "epoch_metrics.json")
+        anomaly_path.write_text(json.dumps(anomalies, indent=2) + "\n", encoding="utf-8")
         _save_epoch_plots(records, report_dir / "loss_curves.png")
         print(
             f'epoch {epoch}/{config["training"]["epochs"]}: train={train_losses["total"]:.6f}, '
@@ -444,9 +437,10 @@ def run_candidate(
         sampler_generator=sampler.generator,
         loader_generator=loader_generator,
         map_location=device,
+        numerical_controller=controller,
     )
-    best_losses, outputs, final_validation_fallback_batches = _validate(
-        model, validation_loader, criterion, device, mixed_precision, keep_outputs=True
+    best_losses, outputs = _validate(
+        model, validation_loader, criterion, device, precision_mode, keep_outputs=True
     )
     sweep, best_global, best_defective = validation_threshold_sweep(
         outputs["probabilities"], outputs["targets"], outputs["valid_regions"], outputs["labels"]
@@ -500,14 +494,22 @@ def run_candidate(
         "peak_reserved_vram_bytes": max(
             overall_peak_reserved, max(record["peak_reserved_vram_bytes"] for record in records)
         ),
-        "nonfinite_gradient_steps": sum(int(record["nonfinite_gradient_steps"]) for record in records),
-        "amp_forward_fallback_batches": sum(
-            int(record["amp_forward_fallback_batches"]) for record in records
-        ),
-        "amp_validation_fallback_batches": sum(
-            int(record["amp_validation_fallback_batches"]) for record in records
-        )
-        + final_validation_fallback_batches,
+        "numerical_counters": {
+            key: sum(int(record[key]) for record in records)
+            for key in (
+                "nonfinite_forward_loss",
+                "nonfinite_gradient",
+                "amp_overflow_scale_drop",
+                "optimizer_step_executed",
+                "optimizer_step_skipped",
+                "fp32_retry_attempted",
+                "fp32_retry_executed",
+            )
+        },
+        # Compatibility aliases for report readers; automatic retry is now disabled.
+        "nonfinite_gradient_steps": sum(int(record["nonfinite_gradient"]) for record in records),
+        "amp_forward_fallback_batches": 0,
+        "amp_validation_fallback_batches": 0,
         "model_parameter_count": count_parameters(model),
         "checkpoint_last": last_checkpoint.relative_to(REPO_ROOT).as_posix(),
         "checkpoint_best": best_checkpoint.relative_to(REPO_ROOT).as_posix(),
@@ -519,6 +521,7 @@ def run_candidate(
         ],
     }
     (report_dir / "candidate_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    controller.close()
     return summary
 
 

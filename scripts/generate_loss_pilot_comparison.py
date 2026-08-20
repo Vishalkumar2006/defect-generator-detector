@@ -241,13 +241,19 @@ def _write_reports(
         writer.writerows(rows)
     payload = {
         "status": "PASS - VALIDATION-ONLY IMBALANCE-LOSS PILOT",
+        "audit_status": "PROVISIONAL UNTIL AMP STEP-ACCOUNTING AUDIT IS COMPLETE",
+        "historical_metrics_unchanged": True,
         "official_test_evaluated": False,
         "initialization_hash_identical": True,
         "configurations_differ_only_by_pos_weight": True,
         "fixed_validation_ids": fixed_ids,
         "candidates": rows,
         "recommendation": {"pos_weight": recommended, "reason": reason},
-        "warning": "Screening evidence only; this is not a final baseline or official-test result.",
+        "warning": (
+            "D1 used automatic fp32 forward retries on numerically unsafe fp16 batches. "
+            "The stored metrics describe those executed hybrid-precision runs but cannot yet establish "
+            "a clean pos_weight-only fp16 comparison. No candidate is final."
+        ),
     }
     (root / "comparison.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     headers = [
@@ -269,7 +275,11 @@ def _write_reports(
             row["failure_count"], row["stability_assessment"],
         ])
     markdown = [
-        "# D1 positive-weight pilot", "", "Validation-only screening on all 1,981 development-training and 350 validation images. The official test dataset was not constructed or evaluated.", "",
+        "# D1 positive-weight pilot", "",
+        "> **PROVISIONAL — AMP AUDIT REQUIRED:** D1 automatically retried non-finite fp16 forwards in fp32. "
+        "The historical metrics below are unchanged and describe the runs that actually executed, but the candidates "
+        "followed different hybrid-precision paths. No positive weight is final until the manual numerical audit is reviewed.",
+        "", "Validation-only screening on all 1,981 development-training and 350 validation images. The official test dataset was not constructed or evaluated.", "",
         "| " + " | ".join(headers) + " |", "| " + " | ".join(["---"] * len(headers)) + " |",
         *["| " + " | ".join(map(str, values)) + " |" for values in table_rows], "",
         "The CSV and JSON contain the complete threshold-0.5 metrics, both independently selected threshold operating points, runtime, memory, failures, and normal-image behavior.", "",
@@ -281,7 +291,7 @@ def _write_reports(
     markdown.extend(["", "## Stability", ""])
     for row in rows:
         markdown.append(f"- `pos_weight={row['pos_weight']}`: {row['stability_assessment']} (last/best validation-loss ratio {row['last_to_best_validation_loss_ratio']:.3f}).")
-    recommendation = f"Recommend `pos_weight={recommended}`: {reason}" if recommended is not None else f"No candidate recommendation: {reason}"
+    recommendation = f"Provisional screening preference `pos_weight={recommended}`: {reason}" if recommended is not None else f"No candidate recommendation: {reason}"
     markdown.extend(["", "## Recommendation", "", recommendation, "", "This phase does not authorize official-test evaluation, final baseline training, augmentation, synthetic data, or GAN work."])
     (root / "comparison.md").write_text("\n".join(markdown) + "\n", encoding="utf-8")
 

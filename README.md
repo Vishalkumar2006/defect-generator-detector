@@ -48,3 +48,5 @@ The verification command exits with an error if CUDA is unavailable; it does not
 ## Current scope
 
 Day 1, Phases A–C provide repository scaffolding, safe extraction, an official-split-preserving audit manifest, a deterministic manifest-only development split, geometry analysis, mask-aware patches, and a CUDA-verified full-image real-only U-Net smoke pipeline. The binding design constraints are recorded in [`docs\design-decisions.md`](docs/design-decisions.md). Full baseline training, inpainting, template extraction, GAN training, and synthetic data generation remain outside this phase.
+
+The provisional D1 class-weight pilot and its corrected numerical-step accounting are documented in [`docs\numerical-stability.md`](docs/numerical-stability.md). Numerical probes and future training commands are executed manually; implementation tasks do not automatically run them.

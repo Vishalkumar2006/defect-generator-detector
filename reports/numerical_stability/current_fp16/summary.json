@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "profile": "current_fp16",
+  "profile_configuration": {
+    "precision_mode": "fp16",
+    "learning_rate": 0.001,
+    "batch_size": 4,
+    "gradient_clip_max_norm": null,
+    "default_initial_scale": null
+  },
+  "requested_steps": 128,
+  "attempted_batches": 128,
+  "actual_optimizer_updates": 128,
+  "skipped_optimizer_steps": 0,
+  "true_amp_overflows_by_scale_drop": 0,
+  "nonfinite_forward_losses": 0,
+  "nonfinite_gradients": 0,
+  "fp32_retry_attempted": 0,
+  "fp32_retry_executed": 0,
+  "automatic_fp32_retry_enabled": false,
+  "initial_scale": 65536.0,
+  "final_scale": 65536.0,
+  "peak_allocated_vram_bytes": 3320120320,
+  "peak_reserved_vram_bytes": 3688890368,
+  "runtime_seconds": 107.17588580000302,
+  "training_samples_available": 1981,
+  "validation_samples_loaded": 0,
+  "official_test_samples_loaded": 0,
+  "model_parameter_count": 28285569,
+  "invariant_violations": [],
+  "notes": [
+    "Development-training data only; validation and official-test datasets were not constructed.",
+    "No model checkpoint or evaluation-ready final model was saved.",
+    "pos_weight=5 is used only to audit the provisional D1 candidate's numerical behavior."
+  ]
+}
