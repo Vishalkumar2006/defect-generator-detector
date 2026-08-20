@@ -1,0 +1,163 @@
+{
+  "status": "PASS - VALIDATION-ONLY SCREENING CANDIDATE",
+  "pos_weight": 1.0,
+  "seed": 42,
+  "initialization_sha256": "885218a1ca87cd383bf5eb890ba1702512e0f1253bc96bdfcfdc2eca847d1fb8",
+  "training_samples": 1981,
+  "validation_samples": 350,
+  "official_test_samples_loaded": 0,
+  "augmentation_enabled": false,
+  "epochs_completed": 8,
+  "best_epoch": 7,
+  "best_validation_loss": 0.08278651668024914,
+  "best_validation_loss_components": {
+    "bce": 0.02339906116885697,
+    "dice": 0.05938745498657227,
+    "total": 0.08278651668024914
+  },
+  "threshold_0_5_metrics_at_best_epoch": {
+    "global_dice": 0.5568567353772289,
+    "global_iou": 0.3858637940030077,
+    "pixel_precision": 0.8567009185314399,
+    "pixel_recall": 0.41248687664041994,
+    "mean_defective_image_dice": 0.5410214515709025,
+    "median_defective_image_dice": 0.7406587323553834,
+    "defective_images_zero_detected_pixels": 11,
+    "mean_predicted_defect_fraction_normal_images": 1.6840781876146665e-06,
+    "normal_image_false_positive_rate": 0.003194888178913738,
+    "normal_false_positive_images": 1,
+    "normal_image_count": 313,
+    "image_precision": 0.9629629629629629,
+    "image_recall": 0.7027027027027027,
+    "image_f1": 0.8125,
+    "threshold": 0.5
+  },
+  "best_global_dice_threshold": {
+    "global_dice": 0.561923912718641,
+    "global_iou": 0.3907469971084366,
+    "pixel_precision": 0.8042184502205766,
+    "pixel_recall": 0.4318241469816273,
+    "mean_defective_image_dice": 0.5310951816757349,
+    "median_defective_image_dice": 0.7335209946047384,
+    "defective_images_zero_detected_pixels": 11,
+    "mean_predicted_defect_fraction_normal_images": 1.748030523853198e-06,
+    "normal_image_false_positive_rate": 0.003194888178913738,
+    "normal_false_positive_images": 1,
+    "normal_image_count": 313,
+    "image_precision": 0.9629629629629629,
+    "image_recall": 0.7027027027027027,
+    "image_f1": 0.8125,
+    "threshold": 0.15
+  },
+  "best_mean_defective_dice_threshold": {
+    "global_dice": 0.5546470525225836,
+    "global_iou": 0.3837450592885375,
+    "pixel_precision": 0.867143016635034,
+    "pixel_recall": 0.40771653543307085,
+    "mean_defective_image_dice": 0.5417455836684509,
+    "median_defective_image_dice": 0.7374581939799331,
+    "defective_images_zero_detected_pixels": 11,
+    "mean_predicted_defect_fraction_normal_images": 1.620125851376135e-06,
+    "normal_image_false_positive_rate": 0.003194888178913738,
+    "normal_false_positive_images": 1,
+    "normal_image_count": 313,
+    "image_precision": 0.9629629629629629,
+    "image_recall": 0.7027027027027027,
+    "image_f1": 0.8125,
+    "threshold": 0.6
+  },
+  "threshold_objectives_differ": true,
+  "per_image_metrics_threshold": 0.15,
+  "runtime_seconds": 4361.753726499999,
+  "peak_allocated_vram_bytes": 5761391616,
+  "peak_reserved_vram_bytes": 6549405696,
+  "nonfinite_gradient_steps": 4,
+  "amp_forward_fallback_batches": 1212,
+  "amp_validation_fallback_batches": 133,
+  "model_parameter_count": 28285569,
+  "checkpoint_last": "checkpoints/loss_pilot/pw_1/last.pt",
+  "checkpoint_best": "checkpoints/loss_pilot/pw_1/best.pt",
+  "resume_supported": true,
+  "configuration": {
+    "seed": 42,
+    "model": {
+      "input_width": 256,
+      "input_height": 672,
+      "base_channels": 32,
+      "normalization": "group_norm",
+      "image_padding_mode": "reflect"
+    },
+    "detector_normalization": {
+      "input_range": [
+        0.0,
+        1.0
+      ],
+      "mean": [
+        0.17536929644393365,
+        0.1709092379799471,
+        0.17704063222181007
+      ],
+      "standard_deviation": [
+        0.04440419892392204,
+        0.03818317039850739,
+        0.03754433462546375
+      ],
+      "source": "development_train original pixels only"
+    },
+    "training": {
+      "batch_size": 4,
+      "learning_rate": 0.001,
+      "optimizer": "AdamW",
+      "weight_decay": 0.0001,
+      "epochs": 8,
+      "mixed_precision": true,
+      "num_workers": 0,
+      "pin_memory": true,
+      "augmentation_enabled": false,
+      "scheduler": "none"
+    },
+    "loss": {
+      "bce_weight": 1.0,
+      "dice_weight": 1.0,
+      "pos_weight": 1.0,
+      "raw_negative_to_positive_ratio": 354.0197173049244
+    },
+    "sampler": {
+      "type": "deterministic_weighted",
+      "target_defective_fraction": 0.5,
+      "replacement": true
+    },
+    "reproducibility": {
+      "deterministic_algorithms": true,
+      "warn_only": true,
+      "cudnn_benchmark": false,
+      "cross_hardware_bitwise_reproducibility_guaranteed": false
+    },
+    "smoke": {
+      "training_samples_per_class": 8,
+      "validation_defective_samples": 1,
+      "validation_normal_samples": 7
+    },
+    "paths": {
+      "manifest": "data/metadata/ksdd2_split_seed42.csv",
+      "checkpoint_directory": "checkpoints/baseline_smoke",
+      "report_directory": "reports/baseline_smoke"
+    },
+    "pilot": {
+      "phase": "Day 2 Phase D1 validation-only screening pilot",
+      "checkpoint_selection": "minimum validation combined BCE+Dice loss",
+      "metric_threshold_during_training": 0.5,
+      "threshold_sweep": {
+        "minimum": 0.05,
+        "maximum": 0.95,
+        "increment": 0.05,
+        "data_source": "validation only"
+      },
+      "official_test_evaluation": false
+    }
+  },
+  "notes": [
+    "Validation only; official test was not constructed or evaluated.",
+    "This is an imbalance-loss screening candidate, not a final baseline result."
+  ]
+}

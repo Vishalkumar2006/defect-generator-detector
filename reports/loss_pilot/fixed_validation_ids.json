@@ -1,0 +1,8 @@
+{
+  "tiny_defect": "train-11643",
+  "median_defect": "train-11351",
+  "large_defect": "train-10309",
+  "border_touching_defect": "train-10499",
+  "normal_largest_false_positive_area": "train-10892",
+  "defective_lowest_dice": "train-10707"
+}

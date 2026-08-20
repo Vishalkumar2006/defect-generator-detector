@@ -1,0 +1,20 @@
+{
+  "phase": "Day 2 Phase D1 validation-only screening pilot",
+  "seed": 42,
+  "positive_weights": [1.0, 5.0, 10.0, 20.0],
+  "maximum_epochs": 8,
+  "scheduler": "none",
+  "checkpoint_selection": "minimum validation combined BCE+Dice loss",
+  "metric_threshold_during_training": 0.5,
+  "threshold_sweep": {
+    "minimum": 0.05,
+    "maximum": 0.95,
+    "increment": 0.05,
+    "data_source": "validation only"
+  },
+  "augmentation_enabled": false,
+  "official_test_evaluation": false,
+  "base_configuration": "configs/baseline.json",
+  "report_root": "reports/loss_pilot",
+  "checkpoint_root": "checkpoints/loss_pilot"
+}

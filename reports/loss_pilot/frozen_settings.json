@@ -1,0 +1,40 @@
+{
+  "status": "FROZEN FOR CONTROLLED POS_WEIGHT PILOT",
+  "source": "Phase C smoke-tested configs/baseline.json and implementation",
+  "only_experimental_variable": "loss.pos_weight",
+  "constants": {
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "scheduler": "none",
+    "bce_weight": 1.0,
+    "dice_weight": 1.0,
+    "physical_batch_size": 4,
+    "mixed_precision": true,
+    "sampler": "deterministic weighted replacement sampling targeting 50% defective images",
+    "group_norm_max_groups": 8,
+    "base_channels": 32,
+    "model_canvas_width": 256,
+    "model_canvas_height": 672,
+    "image_padding": "symmetric reflection",
+    "mask_padding": "constant zero",
+    "normalization_mean": [0.17536929644393365, 0.1709092379799471, 0.17704063222181007],
+    "normalization_standard_deviation": [0.04440419892392204, 0.03818317039850739, 0.03754433462546375],
+    "normalization_source": "development-training original pixels only",
+    "seed": 42,
+    "num_workers": 0,
+    "pin_memory": true,
+    "augmentation": "disabled",
+    "training_samples": 1981,
+    "validation_samples": 350,
+    "official_test_samples_loaded": 0
+  },
+  "phase_required_constant": {
+    "maximum_epochs": 8,
+    "reason": "D1 requires the same maximum eight-epoch screening duration for all candidates; Phase C smoke was intentionally capped at two epochs."
+  },
+  "explicitly_defined_setting": {
+    "scheduler": "none",
+    "reason": "The smoke trainer used no scheduler. D1 records that absence explicitly rather than adding a new hyperparameter."
+  }
+}
