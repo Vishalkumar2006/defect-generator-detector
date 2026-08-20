@@ -104,6 +104,7 @@ class KSDD2FullImageDataset(Dataset):
         standard_deviation: Sequence[float] | None = None,
         sample_ids: set[str] | None = None,
         augmentation: Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]] | None = None,
+        spatial_transform: Callable[..., tuple[torch.Tensor, torch.Tensor, torch.Tensor]] | None = None,
     ) -> None:
         if development_split not in {"train", "validation", "test"}:
             raise ValueError(f"Invalid development split: {development_split}")
@@ -123,6 +124,8 @@ class KSDD2FullImageDataset(Dataset):
         self.target_width, self.target_height = target_size
         self.image_padding_mode = image_padding_mode
         self.augmentation = augmentation
+        self.spatial_transform = spatial_transform
+        self.epoch = 0
         if (mean is None) != (standard_deviation is None):
             raise ValueError("mean and standard_deviation must be supplied together")
         self.mean = torch.tensor(mean, dtype=torch.float32).view(3, 1, 1) if mean is not None else None
@@ -140,6 +143,12 @@ class KSDD2FullImageDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self.rows)
+
+    def set_epoch(self, epoch: int) -> None:
+        """Set the deterministic augmentation epoch before creating its loader iterator."""
+        if epoch < 0:
+            raise ValueError("epoch must be non-negative")
+        self.epoch = int(epoch)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         row = self.rows[index]
@@ -170,6 +179,29 @@ class KSDD2FullImageDataset(Dataset):
             image_tensor = (image_tensor - self.mean) / self.standard_deviation
         mask_tensor = torch.from_numpy(padded_mask).unsqueeze(0)
         valid_tensor = torch.from_numpy(valid_region).unsqueeze(0)
+        if self.spatial_transform is not None:
+            image_tensor, mask_tensor, valid_tensor = self.spatial_transform(
+                image_tensor,
+                mask_tensor,
+                valid_tensor,
+                sample_id=row["sample_id"],
+                epoch=self.epoch,
+            )
+            if image_tensor.shape[-2:] != mask_tensor.shape[-2:] or mask_tensor.shape != valid_tensor.shape:
+                raise ValueError("Synchronized spatial transform returned mismatched tensors")
+            valid_coordinates = torch.nonzero(valid_tensor[0], as_tuple=False)
+            if len(valid_coordinates) == 0:
+                raise ValueError("Synchronized spatial transform removed the valid region")
+            top = int(valid_coordinates[:, 0].min().item())
+            bottom = int(valid_coordinates[:, 0].max().item())
+            left = int(valid_coordinates[:, 1].min().item())
+            right = int(valid_coordinates[:, 1].max().item())
+            padding = Padding(
+                left=left,
+                top=top,
+                right=self.target_width - right - 1,
+                bottom=self.target_height - bottom - 1,
+            )
         if not torch.all((mask_tensor == 0) | (mask_tensor == 1)):
             raise ValueError(f"Non-binary mask after padding for {row['sample_id']}")
         return {

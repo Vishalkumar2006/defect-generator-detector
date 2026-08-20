@@ -75,6 +75,8 @@ def save_training_checkpoint(
     loader_generator: torch.Generator | None = None,
     metric_records: list[dict[str, Any]] | None = None,
     numerical_controller: Any | None = None,
+    early_stopping_state: dict[str, Any] | None = None,
+    checkpoint_metadata: dict[str, Any] | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -88,6 +90,8 @@ def save_training_checkpoint(
         "random_states": capture_random_states(sampler_generator, loader_generator),
         "best_validation": best_validation,
         "metric_records": metric_records or [],
+        "early_stopping_state": early_stopping_state,
+        "checkpoint_metadata": checkpoint_metadata or {},
     }
     temporary = path.with_suffix(path.suffix + ".tmp")
     torch.save(payload, temporary)
@@ -106,6 +110,7 @@ def load_training_checkpoint(
     loader_generator: torch.Generator | None = None,
     map_location: str | torch.device = "cpu",
     numerical_controller: Any | None = None,
+    early_stopping: Any | None = None,
 ) -> dict[str, Any]:
     payload = torch.load(path, map_location=map_location, weights_only=True)
     if payload["configuration"] != expected_configuration:
@@ -128,8 +133,24 @@ def load_training_checkpoint(
     numerical_state = payload.get("numerical_state")
     if numerical_controller is not None and numerical_state is not None:
         numerical_controller.load_state_dict(numerical_state)
+    early_stopping_state = payload.get("early_stopping_state")
+    if early_stopping is not None:
+        if early_stopping_state is None:
+            raise ValueError("Checkpoint lacks early-stopping state")
+        early_stopping.load_state_dict(early_stopping_state)
     restore_random_states(payload["random_states"], sampler_generator, loader_generator)
     return payload
+
+
+def update_checkpoint_metadata(path: Path, updates: dict[str, Any]) -> None:
+    """Atomically add post-training metadata without changing learned state."""
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    metadata = dict(payload.get("checkpoint_metadata", {}))
+    metadata.update(updates)
+    payload["checkpoint_metadata"] = metadata
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(payload, temporary)
+    os.replace(temporary, path)
 
 
 def write_metric_logs(records: list[dict[str, Any]], csv_path: Path, json_path: Path) -> None:
