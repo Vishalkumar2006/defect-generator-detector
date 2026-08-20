@@ -31,6 +31,20 @@ python -m venv .venv
 
 Calling the virtual-environment Python directly avoids PowerShell activation-policy issues. Extraction is idempotent only for a verified complete extraction and never overwrites an existing unverified destination. Audit artifacts are written to `reports\data_audit\`.
 
+### CUDA PyTorch baseline environment
+
+The verified Windows environment uses the stable CUDA 12.8 wheels selected for the installed NVIDIA driver. Install them explicitly so pip cannot silently choose a CPU-only build:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+.\.venv\Scripts\python.exe .\scripts\verify_pytorch_environment.py
+.\.venv\Scripts\python.exe .\scripts\analyze_full_image_data.py
+.\.venv\Scripts\python.exe .\scripts\probe_gpu_memory.py
+.\.venv\Scripts\python.exe .\scripts\train_baseline_smoke.py
+```
+
+The verification command exits with an error if CUDA is unavailable; it does not accept a silent CPU fallback. The smoke command is bounded to at most two epochs on a deterministic real-only subset and does not evaluate the official test set.
+
 ## Current scope
 
-Day 1, Phases A and B provide repository scaffolding, safe extraction, an official-split-preserving audit manifest, a deterministic manifest-only development split, defect-geometry analysis, mask-aware rectangular patch extraction, reproducible visual checks, and focused tests. The binding design constraints are recorded in [`docs\design-decisions.md`](docs/design-decisions.md). PyTorch, inpainting, template extraction, model code, training, and synthetic data generation remain outside this phase.
+Day 1, Phases A–C provide repository scaffolding, safe extraction, an official-split-preserving audit manifest, a deterministic manifest-only development split, geometry analysis, mask-aware patches, and a CUDA-verified full-image real-only U-Net smoke pipeline. The binding design constraints are recorded in [`docs\design-decisions.md`](docs/design-decisions.md). Full baseline training, inpainting, template extraction, GAN training, and synthetic data generation remain outside this phase.

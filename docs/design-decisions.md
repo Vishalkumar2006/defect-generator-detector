@@ -18,6 +18,18 @@ These decisions are project constraints unless they are changed through a docume
 - Select patch size from measured mask bounding-box statistics. Candidate dimensions are expressed as width × height: 256 × 256, 256 × 384, and 256 × 512.
 - Future detector testing must preserve native image geometry and use sliding-window inference if a whole image cannot be processed directly.
 
+### Full-image detector padding policy
+
+The earlier 95% local-patch fit rule was intentionally conservative. It partly fails because 169 defects touch an image border, so 32 pixels of real captured context cannot exist on every side. That rule remains useful for local GAN design, but it does not determine the real-only detector input.
+
+- The real-only detector baseline consumes complete images without aspect-ratio distortion or interpolation.
+- Calculate the maximum native width and height from the validated manifest, then round each upward to the smallest multiple of 32. The measured maximum is 241 × 665, which produces and asserts an exact model canvas of **256 × 672**.
+- Pad images symmetrically. Image padding is configurable and may use reflection.
+- Pad authoritative ground-truth masks with constant zeros only—never reflection—so border defects cannot create reflected positive labels.
+- Create a `valid_region` tensor containing one over original pixels and zero over padding. Losses and metrics exclude every invalid padded pixel.
+- Retain original dimensions and left/top/right/bottom offsets with each sample so predictions can be restored exactly to native size.
+- For the later GAN, retain 256 × 512 as the main local candidate for experiments, but do not lock the final GAN patch policy yet.
+
 ## Mask handling
 
 - Ground-truth masks remain binary and use nearest-neighbour interpolation if a future operation requires resampling.
@@ -39,4 +51,3 @@ These decisions are project constraints unless they are changed through a docume
 - Judge GAN usefulness primarily by improvement of a detector evaluated on real held-out images.
 - Include nearest-neighbour and diversity checks to detect memorization.
 - Record complete provenance metadata for every future synthetic image.
-

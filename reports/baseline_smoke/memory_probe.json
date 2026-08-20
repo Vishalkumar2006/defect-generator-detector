@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "device": "NVIDIA GeForce RTX 4050 Laptop GPU",
+  "successful_physical_batch_size": 4,
+  "peak_allocated_bytes": 3096050688,
+  "peak_reserved_bytes": 3682598912,
+  "input_shape": [
+    4,
+    3,
+    672,
+    256
+  ],
+  "mixed_precision": true,
+  "model_parameter_count": 28285569,
+  "attempts": [
+    {
+      "batch_size": 4,
+      "result": "PASS"
+    }
+  ]
+}

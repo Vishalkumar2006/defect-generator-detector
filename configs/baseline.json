@@ -1,0 +1,54 @@
+{
+  "seed": 42,
+  "model": {
+    "input_width": 256,
+    "input_height": 672,
+    "base_channels": 32,
+    "normalization": "group_norm",
+    "image_padding_mode": "reflect"
+  },
+  "detector_normalization": {
+    "input_range": [0.0, 1.0],
+    "mean": [0.17536929644393365, 0.1709092379799471, 0.17704063222181007],
+    "standard_deviation": [0.04440419892392204, 0.03818317039850739, 0.03754433462546375],
+    "source": "development_train original pixels only"
+  },
+  "training": {
+    "batch_size": 4,
+    "learning_rate": 0.001,
+    "optimizer": "AdamW",
+    "weight_decay": 0.0001,
+    "epochs": 2,
+    "mixed_precision": true,
+    "num_workers": 0,
+    "pin_memory": true,
+    "augmentation_enabled": false
+  },
+  "loss": {
+    "bce_weight": 1.0,
+    "dice_weight": 1.0,
+    "pos_weight": 10.0,
+    "raw_negative_to_positive_ratio": 354.0197173049244
+  },
+  "sampler": {
+    "type": "deterministic_weighted",
+    "target_defective_fraction": 0.5,
+    "replacement": true
+  },
+  "reproducibility": {
+    "deterministic_algorithms": true,
+    "warn_only": true,
+    "cudnn_benchmark": false,
+    "cross_hardware_bitwise_reproducibility_guaranteed": false
+  },
+  "smoke": {
+    "training_samples_per_class": 8,
+    "validation_defective_samples": 1,
+    "validation_normal_samples": 7
+  },
+  "paths": {
+    "manifest": "data/metadata/ksdd2_split_seed42.csv",
+    "checkpoint_directory": "checkpoints/baseline_smoke",
+    "report_directory": "reports/baseline_smoke"
+  }
+}

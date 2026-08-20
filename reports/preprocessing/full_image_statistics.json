@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "source_split": "development_train only for channel and pixel statistics",
+  "sample_counts": {
+    "all": 3335,
+    "development_train": 1981
+  },
+  "native_dimensions": {
+    "maximum_width": 241,
+    "maximum_height": 665,
+    "minimum_width": 184,
+    "minimum_height": 597
+  },
+  "model_canvas": {
+    "width": 256,
+    "height": 672,
+    "multiple": 32
+  },
+  "detector_rgb_statistics_0_to_1": {
+    "mean": [
+      0.17536929644393365,
+      0.1709092379799471,
+      0.17704063222181007
+    ],
+    "standard_deviation": [
+      0.04440419892392204,
+      0.03818317039850739,
+      0.03754433462546375
+    ],
+    "pixel_count": 288591978
+  },
+  "training_pixel_balance": {
+    "positive_pixels": 812890,
+    "negative_pixels": 287779088,
+    "total_valid_pixels": 288591978,
+    "negative_to_positive_ratio": 354.0197173049244,
+    "positive_to_negative_ratio": 0.002824701425143164
+  }
+}

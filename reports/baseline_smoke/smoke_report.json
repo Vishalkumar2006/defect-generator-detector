@@ -1,0 +1,98 @@
+{
+  "status": "PASS - NON-FINAL SMOKE ONLY",
+  "device": "NVIDIA GeForce RTX 4050 Laptop GPU",
+  "epochs_completed": 2,
+  "physical_batch_size": 4,
+  "mixed_precision": true,
+  "model_parameter_count": 28285569,
+  "training_sample_ids": [
+    "train-10049",
+    "train-10401",
+    "train-10465",
+    "train-10570",
+    "train-10714",
+    "train-10809",
+    "train-11074",
+    "train-11269",
+    "train-11481",
+    "train-11539",
+    "train-11592",
+    "train-11658",
+    "train-11662",
+    "train-11770",
+    "train-12034",
+    "train-12182"
+  ],
+  "validation_sample_ids": [
+    "train-10399",
+    "train-10600",
+    "train-10638",
+    "train-10880",
+    "train-11839",
+    "train-12136",
+    "train-12232",
+    "train-12319"
+  ],
+  "official_test_samples_loaded": 0,
+  "sampled_training_defective_fraction": 0.53125,
+  "training_losses": [
+    1.6734803020954132,
+    1.2885996997356415
+  ],
+  "validation_losses": [
+    1.3364052772521973,
+    1.2570661306381226
+  ],
+  "loss_comparison": {
+    "unweighted_total": 1.5845246315002441,
+    "capped_weight_total": 1.7301628589630127,
+    "capped_pos_weight": 10.0
+  },
+  "parameters_updated": true,
+  "finite_gradients": true,
+  "checkpoint_path": "checkpoints/baseline_smoke/smoke_model.pt",
+  "checkpoint_round_trip": true,
+  "prediction_shape": [
+    4,
+    1,
+    672,
+    256
+  ],
+  "validation_threshold_selected_without_test": 0.9,
+  "validation_metrics": {
+    "pixel_dice": 0.12269291615398137,
+    "pixel_iou": 0.0653558052434457,
+    "pixel_precision": 0.09994272623138603,
+    "pixel_recall": 0.15885298133818843,
+    "pixel_true_positive_pixels": 1396.0,
+    "pixel_false_positive_pixels": 12572.0,
+    "pixel_false_negative_pixels": 7392.0,
+    "defective_pixel_dice": 0.238143978164449,
+    "defective_pixel_iou": 0.1351665375677769,
+    "defective_pixel_precision": 0.47547683923705725,
+    "defective_pixel_recall": 0.15885298133818843,
+    "defective_pixel_true_positive_pixels": 1396.0,
+    "defective_pixel_false_positive_pixels": 1540.0,
+    "defective_pixel_false_negative_pixels": 7392.0,
+    "image_precision": 0.2,
+    "image_recall": 1.0,
+    "image_f1": 0.33333333333333337,
+    "image_threshold": 0.9
+  },
+  "overlay_restoration": {
+    "sample_id": "train-10638",
+    "restored_shape": [
+      646,
+      192
+    ],
+    "expected_native_shape": [
+      646,
+      192
+    ]
+  },
+  "augmentation_enabled": false,
+  "notes": [
+    "Results are non-final and must not be used to select the final loss or model.",
+    "Bit-for-bit reproducibility is not guaranteed across PyTorch, CUDA, driver, or GPU versions."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "recorded_at_utc": "2026-08-20T11:36:30.005660+00:00",
+  "install_command": ".\\.venv\\Scripts\\python.exe -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128",
+  "python": {
+    "version": "3.14.2 (tags/v3.14.2:df79316, Dec  5 2025, 17:18:21) [MSC v.1944 64 bit (AMD64)]",
+    "architecture": "64bit",
+    "executable": "C:\\Users\\vishk\\Projects\\defect-generator-detector\\.venv\\Scripts\\python.exe",
+    "pip_version": "pip 26.2.1 from C:\\Users\\vishk\\Projects\\defect-generator-detector\\.venv\\Lib\\site-packages\\pip (python 3.14)"
+  },
+  "system": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "total_ram_bytes": 16802582528
+  },
+  "nvidia": {
+    "gpu_name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "driver_version": "610.74",
+    "driver_reported_cuda_version": "13.3",
+    "memory_mib": 6141,
+    "nvidia_smi_compute_capability": "8.9"
+  },
+  "pytorch": {
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "torch_cuda_version": "12.8",
+    "cuda_available": true,
+    "device_name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "device_capability": [
+      8,
+      9
+    ],
+    "gpu_tensor_operation_result": 1134.0
+  }
+}
