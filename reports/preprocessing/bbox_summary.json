@@ -1,0 +1,109 @@
+{
+  "status": "PASS",
+  "defective_images": {
+    "all": 356,
+    "development_train": 209,
+    "validation": 37,
+    "test": 110
+  },
+  "statistics_all_defective_images": {
+    "bbox_width": {
+      "minimum": 7.0,
+      "median": 65.0,
+      "p75": 109.25,
+      "p90": 158.5,
+      "p95": 186.25,
+      "p99": 230.45,
+      "maximum": 232.0
+    },
+    "bbox_height": {
+      "minimum": 5.0,
+      "median": 68.5,
+      "p75": 113.0,
+      "p90": 203.0,
+      "p95": 262.25,
+      "p99": 438.2999999999996,
+      "maximum": 637.0
+    },
+    "mask_pixels": {
+      "minimum": 23.0,
+      "median": 2273.0,
+      "p75": 5105.0,
+      "p90": 8852.5,
+      "p95": 13251.0,
+      "p99": 30685.249999999978,
+      "maximum": 43869.0
+    },
+    "mask_fraction": {
+      "minimum": 0.00017085382341143086,
+      "median": 0.015561371303006652,
+      "p75": 0.0346189356224528,
+      "p90": 0.06171677503762062,
+      "p95": 0.09098099631946276,
+      "p99": 0.20989165857020511,
+      "maximum": 0.30157977231479954
+    }
+  },
+  "border_touching": {
+    "all_count": 169,
+    "development_train_count": 90
+  },
+  "candidate_fit_development_train": {
+    "256x256": {
+      "0": {
+        "count": 196,
+        "total": 209,
+        "percentage": 93.77990430622009
+      },
+      "16": {
+        "count": 186,
+        "total": 209,
+        "percentage": 88.99521531100478
+      },
+      "32": {
+        "count": 179,
+        "total": 209,
+        "percentage": 85.64593301435407
+      }
+    },
+    "256x384": {
+      "0": {
+        "count": 204,
+        "total": 209,
+        "percentage": 97.60765550239235
+      },
+      "16": {
+        "count": 196,
+        "total": 209,
+        "percentage": 93.77990430622009
+      },
+      "32": {
+        "count": 191,
+        "total": 209,
+        "percentage": 91.38755980861244
+      }
+    },
+    "256x512": {
+      "0": {
+        "count": 207,
+        "total": 209,
+        "percentage": 99.04306220095694
+      },
+      "16": {
+        "count": 200,
+        "total": 209,
+        "percentage": 95.69377990430623
+      },
+      "32": {
+        "count": 194,
+        "total": 209,
+        "percentage": 92.82296650717703
+      }
+    }
+  },
+  "recommendation": {
+    "patch_size": null,
+    "criterion": "smallest candidate containing at least 95% of development-training defects with 32 pixels of context",
+    "unfittable_sample_ids": []
+  }
+}
