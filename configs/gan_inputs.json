@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "f1_3_gan_inputs_v1",
+  "pipeline_version": "f1_4_gan_inputs_v1",
   "seed": 42,
   "patch": {
     "width": 256,
@@ -29,7 +29,7 @@
   "sampling": {
     "border_fraction_mode": "empirical",
     "border_fraction": null,
-    "maximum_transform_attempts": 4
+    "feasible_transform_selection": "indexed_continuous_intervals"
   },
   "data": {
     "development_manifest": "data/metadata/ksdd2_split_seed42.csv",
@@ -41,7 +41,7 @@
     "summary": "reports/gan_inputs/summary.json",
     "summary_markdown": "reports/gan_inputs/summary.md",
     "visualization_directory": "reports/gan_inputs/visualizations",
-    "sampling_audit_json": "reports/gan_inputs/sampling_audit.json",
-    "sampling_audit_markdown": "reports/gan_inputs/sampling_audit.md"
+    "sampling_audit_json": "reports/gan_inputs/sampling_audit_f1_4.json",
+    "sampling_audit_markdown": "reports/gan_inputs/sampling_audit_f1_4.md"
   }
 }

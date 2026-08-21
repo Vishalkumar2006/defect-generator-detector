@@ -100,3 +100,12 @@ native-geometry compatibility index. Border sampling defaults explicitly to the
 empirical template fraction, index exclusions are distinguished from actual
 placement retries, and `scripts/audit_gan_sampling.py` provides a bounded
 training-only performance and distribution audit without materializing images.
+
+F1.4 centers reflection padding around narrow native windows and evaluates
+placement against the inclusive native-valid bounds instead of tensor edges. It
+indexes feasible flip and rounded-scale intervals before sampling, preserving
+left/right and multi-side contacts without impossible-state retries. The audit now
+reports expected versus observed target-side counts and horizontal-counterpart
+pool symmetry. The failed F1.3 1,000-sample audit remains in
+`reports/gan_inputs/sampling_audit.{json,md}` as diagnostic evidence; new defaults
+write `sampling_audit_f1_4.{json,md}`.

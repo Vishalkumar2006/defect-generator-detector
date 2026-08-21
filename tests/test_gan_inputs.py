@@ -114,9 +114,10 @@ def test_exact_native_window_geometry_and_padding_validity() -> None:
     patch, patch_mask, valid = extract_native_window(image, mask, (7, 5, 5, 6))
     assert patch.shape == (6, 5, 3)
     assert patch_mask.shape == valid.shape == (6, 5)
-    assert np.array_equal(patch[:3, :3], image[7:10, 5:8])
+    assert np.array_equal(patch[1:4, 1:4], image[7:10, 5:8])
     assert valid.sum() == 9
-    assert not valid[3:, :].any() and not valid[:, 3:].any()
+    assert not valid[:1, :].any() and not valid[4:, :].any()
+    assert not valid[:, :1].any() and not valid[:, 4:].any()
     assert not patch_mask[~valid].any()
 
 
@@ -439,6 +440,140 @@ def test_compatibility_index_uses_post_flip_sides_and_narrow_geometry() -> None:
     assert index.query(geometry).background_indices == (0,)
 
 
+def _centered_narrow_contact_patch(
+    contacts: ContactSides,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    image = np.full((64, 40, 3), 80, dtype=np.uint8)
+    mask = np.zeros((64, 40), dtype=bool)
+    if contacts.left and contacts.right:
+        top = 0 if contacts.top else (58 if contacts.bottom else 29)
+        mask[top : top + 6, :] = True
+    else:
+        top = 0 if contacts.top else (58 if contacts.bottom else 29)
+        left = 0 if contacts.left else (34 if contacts.right else 17)
+        mask[top : top + 6, left : left + 6] = True
+    image[mask] = [220, 30, 20]
+    return extract_native_window(image, mask, (0, 0, 64, 64))
+
+
+@pytest.mark.parametrize(
+    ("source_contacts", "horizontal_flip", "expected_contacts"),
+    [
+        (ContactSides(left=True), False, ContactSides(left=True)),
+        (ContactSides(right=True), False, ContactSides(right=True)),
+        (ContactSides(right=True), True, ContactSides(left=True)),
+        (ContactSides(top=True, left=True), False, ContactSides(top=True, left=True)),
+        (ContactSides(top=True, right=True), False, ContactSides(top=True, right=True)),
+        (ContactSides(bottom=True, left=True), False, ContactSides(bottom=True, left=True)),
+        (ContactSides(bottom=True, right=True), False, ContactSides(bottom=True, right=True)),
+        (ContactSides(left=True, right=True), True, ContactSides(left=True, right=True)),
+    ],
+)
+def test_centered_narrow_valid_edges_are_symmetric_compatibility_targets(
+    source_contacts, horizontal_flip, expected_contacts
+) -> None:
+    _, mask, valid = _centered_narrow_contact_patch(source_contacts)
+    assert not valid[:, :12].any() and valid[:, 12:52].all() and not valid[:, 52:].any()
+    geometry = _measured_geometry(
+        mask,
+        source_contacts,
+        horizontal_flip_probability=float(horizontal_flip),
+    )
+    assert geometry.transformed_contact_sides == expected_contacts
+    index = GANPlacementCompatibilityIndex(
+        [_indexed_background("narrow", 64, 40)],
+        patch_size=(64, 64),
+        non_border_margin=4,
+        feather_radius=2,
+    )
+    assert index.query(geometry).background_indices == (0,)
+    symmetry = index.horizontal_symmetry_audit(geometry)
+    assert symmetry["availability_symmetric"]
+    assert symmetry["pool_size_difference"] == 0
+
+
+def test_feasible_scale_index_keeps_left_right_contacts_without_impossible_retries() -> None:
+    _, mask, _ = _centered_narrow_contact_patch(ContactSides(left=True, right=True))
+    index = GANPlacementCompatibilityIndex(
+        [_indexed_background("narrow", 64, 40)],
+        patch_size=(64, 64),
+        non_border_margin=4,
+        feather_radius=2,
+    )
+    feasible = index.feasible_transformations(
+        mask,
+        ContactSides(left=True, right=True),
+        seed=91,
+        transform_settings=_transform_settings(
+            minimum_scale=0.8,
+            maximum_scale=1.2,
+            feather_radius=2,
+        ),
+        colour_settings=_colour_settings(),
+        minimum_positive_pixels=4,
+    )
+    assert feasible.candidates
+    assert feasible.transform_states_excluded > 0
+    assert all(candidate.geometry.mask_bounding_box.width == 40 for candidate in feasible.candidates)
+    assert all(candidate.pool.background_indices == (0,) for candidate in feasible.candidates)
+
+
+@pytest.mark.parametrize(
+    ("contacts", "horizontal_flip"),
+    [
+        (ContactSides(left=True), False),
+        (ContactSides(right=True), False),
+        (ContactSides(right=True), True),
+        (ContactSides(top=True, left=True), False),
+        (ContactSides(bottom=True, right=True), True),
+        (ContactSides(left=True, right=True), False),
+    ],
+)
+def test_pipeline_contacts_centered_native_edges_not_tensor_edges(
+    contacts, horizontal_flip
+) -> None:
+    source, mask, _ = _centered_narrow_contact_patch(contacts)
+    background_native = np.full((64, 40, 3), 120, dtype=np.uint8)
+    background, _, valid = extract_native_window(
+        background_native, np.zeros((64, 40), dtype=bool), (0, 0, 64, 64)
+    )
+    provenance = _provenance_base(64, 64)
+    provenance["source_contact_sides"] = contacts.to_dict()
+    provenance["touches_native_border"] = True
+    sample = construct_coarse_gan_input(
+        source,
+        mask,
+        background,
+        valid,
+        seed=17,
+        transform_settings=_transform_settings(
+            horizontal_flip_probability=float(horizontal_flip),
+            vertical_flip_probability=0.0,
+            minimum_scale=1.0,
+            maximum_scale=1.0,
+        ),
+        colour_settings=_colour_settings(),
+        provenance_base=provenance,
+        transform_parameters={
+            "horizontal_flip": horizontal_flip,
+            "vertical_flip": False,
+            "scale": 1.0,
+        },
+    )
+    expected = contacts.transformed(
+        horizontal_flip=horizontal_flip, vertical_flip=False
+    )
+    assert sample["provenance"]["target_contact_sides"] == expected.to_dict()
+    condition = sample["conditioning_mask"][0].bool().numpy()
+    box = np.argwhere(condition)
+    if expected.left:
+        assert int(box[:, 1].min()) == 12
+    if expected.right:
+        assert int(box[:, 1].max()) == 51
+    assert not condition[:, :12].any() and not condition[:, 52:].any()
+    assert sample["placement_diagnostics"]["support_pixels_outside_valid_region"] == 0
+
+
 def test_compatibility_index_reports_empty_pool_without_runtime_pairing() -> None:
     mask = np.zeros((64, 64), dtype=bool)
     mask[30:34, :] = True
@@ -609,8 +744,11 @@ def test_narrow_background_propagates_valid_region_and_blocks_padded_columns() -
     condition = sample["conditioning_mask"].bool()
     support = sample["support_mask"].bool()
     feather = sample["feathered_support"] > 0
-    assert bool(valid[:, :, :native_width].all())
-    assert not bool(valid[:, :, native_width:].any())
+    valid_left = (PATCH_WIDTH - native_width) // 2
+    valid_right = valid_left + native_width
+    assert bool(valid[:, :, valid_left:valid_right].all())
+    assert not bool(valid[:, :, :valid_left].any())
+    assert not bool(valid[:, :, valid_right:].any())
     assert not bool(condition[~valid].any())
     assert not bool(support[~valid].any())
     assert not bool(feather[~valid].any())
@@ -826,9 +964,10 @@ def test_online_dataset_reports_empty_compatibility_pool_without_background_atte
     dataset = OnlineGANInputDataset(metadata, Path("."), length=1, sample_loader=loader)
     with pytest.raises(GANSamplingFailure) as captured:
         dataset[0]
-    assert captured.value.accounting["empty_compatibility_pools"] == 2
-    assert captured.value.accounting["compatibility_candidates_excluded"] == 2
-    assert sum(captured.value.accounting["failure_side_combinations"].values()) == 2
+    assert captured.value.accounting["empty_compatibility_pools"] == 0
+    assert captured.value.accounting["transform_states_excluded"] > 0
+    assert captured.value.accounting["compatibility_candidates_excluded"] > 0
+    assert "left+right" in captured.value.accounting["failure_side_combinations"]
     assert loaded == ["defect"]
 
 
@@ -852,6 +991,28 @@ def test_sampling_audit_summary_reports_efficiency_utilization_and_drift() -> No
     assert summary["background_utilization"]["unique_used"] == 1
     assert summary["support_pixels_outside_valid_region"] == 0
     assert summary["accidental_contact_violations"] == 0
+    assert set(summary["target_side_symmetry"]["expected_counts"]) == {
+        "top",
+        "bottom",
+        "left",
+        "right",
+    }
+    assert summary["target_side_symmetry"]["horizontal_counterpart_comparisons"] == 1
+    assert summary["target_side_symmetry"]["availability_asymmetries"] == 0
+    assert summary["sampled_templates_with_no_feasible_transform_or_pool"] == []
+
+
+def test_metadata_compatibility_audit_is_training_only_and_symmetric() -> None:
+    metadata, arrays = _dataset_fixture()
+    loader = lambda row: arrays[row["sample_id"]]
+    dataset = OnlineGANInputDataset(metadata, Path("."), length=1, sample_loader=loader)
+    audit = dataset.audit_metadata_compatibility()
+    assert audit["templates_audited"] == 1
+    assert audit["horizontal_counterpart_comparisons"] > 0
+    assert audit["horizontal_availability_asymmetries"] == []
+    assert audit["templates_with_no_feasible_transform_or_pool"] == []
+    assert audit["validation_rows_loaded"] == audit["official_test_rows_loaded"] == 0
+    assert audit["materialized_generated_images"] == 0
 
 
 def test_metadata_builder_ignores_forbidden_row_files_and_materializes_nothing(tmp_path: Path) -> None:

@@ -30,9 +30,19 @@ def _markdown(summary: dict[str, Any]) -> str:
     failure_lines = [
         f"- `{reason}`: {count}" for reason, count in summary["failures_by_reason"].items()
     ] or ["- None"]
+    failure_side_lines = [
+        f"- `{side}`: {count}"
+        for side, count in summary["failures_by_side_combination"].items()
+    ] or ["- None"]
     side_lines = [
         f"- `{combination}`: {count}"
         for combination, count in summary["successful_placements_by_side_combination"].items()
+    ] or ["- None"]
+    symmetry = summary["target_side_symmetry"]
+    metadata_audit = summary["metadata_compatibility_audit"] or {}
+    no_feasible_lines = [
+        f"- `{row['template_identity']}`: {row['source_contact_sides']}"
+        for row in metadata_audit.get("templates_with_no_feasible_transform_or_pool", [])
     ] or ["- None"]
     return "\n".join(
         [
@@ -52,6 +62,13 @@ def _markdown(summary: dict[str, Any]) -> str:
             f"{summary['actual_transform_placement_retries']}",
             f"- Actual placement retries after indexing: {summary['actual_placement_retries']}",
             f"- Empty compatibility pools: {summary['empty_compatibility_pools']}",
+            f"- Horizontal counterpart availability asymmetries: "
+            f"{symmetry['availability_asymmetries']} / "
+            f"{symmetry['horizontal_counterpart_comparisons']}",
+            f"- Expected target-side counts: {symmetry['expected_counts']}",
+            f"- Observed target-side counts: {symmetry['observed_counts']}",
+            f"- Metadata templates with no feasible transform/pool: "
+            f"{len((summary['metadata_compatibility_audit'] or {}).get('templates_with_no_feasible_transform_or_pool', []))}",
             f"- Template utilization: {summary['template_utilization']['unique_used']} / "
             f"{summary['template_utilization']['available']}",
             f"- Background utilization: {summary['background_utilization']['unique_used']} / "
@@ -68,6 +85,14 @@ def _markdown(summary: dict[str, Any]) -> str:
             "## Failures by reason",
             "",
             *failure_lines,
+            "",
+            "## Terminal failures by transformed side",
+            "",
+            *failure_side_lines,
+            "",
+            "## Metadata templates with no feasible transform/pool",
+            "",
+            *no_feasible_lines,
             "",
             "## Successful placements by side combination",
             "",
@@ -92,14 +117,15 @@ def main() -> None:
     metadata = json.loads(args.manifest.read_text(encoding="utf-8"))
     outputs = metadata.get("configuration", {}).get("outputs", {})
     json_output = args.json_output or REPO_ROOT / outputs.get(
-        "sampling_audit_json", "reports/gan_inputs/sampling_audit.json"
+        "sampling_audit_json", "reports/gan_inputs/sampling_audit_f1_4.json"
     )
     markdown_output = args.markdown_output or REPO_ROOT / outputs.get(
-        "sampling_audit_markdown", "reports/gan_inputs/sampling_audit.md"
+        "sampling_audit_markdown", "reports/gan_inputs/sampling_audit_f1_4.md"
     )
     dataset = OnlineGANInputDataset(
         metadata, REPO_ROOT, base_seed=args.seed, length=args.samples
     )
+    metadata_compatibility_audit = dataset.audit_metadata_compatibility()
     samples: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     started = perf_counter()
@@ -119,6 +145,7 @@ def main() -> None:
         samples=samples,
         failures=failures,
         elapsed_seconds=elapsed,
+        metadata_compatibility_audit=metadata_compatibility_audit,
     )
     _atomic_write(json_output, json.dumps(summary, indent=2) + "\n")
     _atomic_write(markdown_output, _markdown(summary))

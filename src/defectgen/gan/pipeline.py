@@ -171,6 +171,7 @@ def construct_coarse_gan_input(
     transform_settings: dict[str, Any],
     colour_settings: dict[str, Any],
     provenance_base: dict[str, Any],
+    transform_parameters: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if source_rgb.shape != normal_background_rgb.shape or source_rgb.shape[:2] != source_mask.shape:
         raise ValueError("Source, mask, and normal background must share patch geometry")
@@ -180,7 +181,11 @@ def construct_coarse_gan_input(
     valid_region = valid_region.astype(bool)
     if not source_mask.any():
         raise ValueError("A source defect template cannot have an empty mask")
-    parameters = sample_transform_parameters(seed, transform_settings)
+    parameters = (
+        sample_transform_parameters(seed, transform_settings)
+        if transform_parameters is None
+        else transform_parameters
+    )
     horizontal_flip = parameters["horizontal_flip"]
     vertical_flip = parameters["vertical_flip"]
     scale = parameters["scale"]

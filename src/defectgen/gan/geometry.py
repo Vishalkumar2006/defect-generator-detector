@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass
 import numpy as np
 
 from defectgen.data.geometry import BoundingBox, bounding_box
+from defectgen.data.patches import Padding, reflection_pad
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,13 @@ class ContactSides:
     @property
     def any(self) -> bool:
         return self.top or self.bottom or self.left or self.right
+
+    @property
+    def combination(self) -> str:
+        active = [
+            side for side in ("top", "bottom", "left", "right") if getattr(self, side)
+        ]
+        return "+".join(active) if active else "none"
 
     def to_dict(self) -> dict[str, bool]:
         return asdict(self)
@@ -231,13 +239,25 @@ def extract_native_window(
     output_mask = np.zeros((height, width), dtype=bool)
     valid = np.zeros((height, width), dtype=bool)
     source_height, source_width = source.shape[:2]
-    output_image[:source_height, :source_width] = source
-    output_mask[:source_height, :source_width] = source_mask.astype(bool)
-    valid[:source_height, :source_width] = True
+    pad_top = (height - source_height) // 2
+    pad_left = (width - source_width) // 2
+    output_image[
+        pad_top : pad_top + source_height, pad_left : pad_left + source_width
+    ] = source
+    output_mask[
+        pad_top : pad_top + source_height, pad_left : pad_left + source_width
+    ] = source_mask.astype(bool)
+    valid[pad_top : pad_top + source_height, pad_left : pad_left + source_width] = True
     if source_height and source_width and (source_height < height or source_width < width):
-        output_image = np.pad(
+        pad_bottom = height - source_height - pad_top
+        pad_right = width - source_width - pad_left
+        output_image = reflection_pad(
             source,
-            ((0, height - source_height), (0, width - source_width), (0, 0)),
-            mode="edge",
+            Padding(
+                left=pad_left,
+                top=pad_top,
+                right=pad_right,
+                bottom=pad_bottom,
+            ),
         )
     return output_image, output_mask, valid

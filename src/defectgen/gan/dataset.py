@@ -138,7 +138,7 @@ class OnlineGANInputDataset(Dataset):
             {
                 "border_fraction_mode": "empirical",
                 "border_fraction": None,
-                "maximum_transform_attempts": 4,
+                "feasible_transform_selection": "indexed_continuous_intervals",
             },
         )
         mode = self.sampling["border_fraction_mode"]
@@ -210,14 +210,10 @@ class OnlineGANInputDataset(Dataset):
         )
         return candidates[int(rng.integers(len(candidates)))], selected_class, target_fraction
 
-    def __getitem__(self, index: int) -> dict[str, Any]:
-        if not 0 <= index < self.length:
-            raise IndexError(index)
-        sample_seed = self._sample_seed(index)
-        rng = np.random.default_rng(sample_seed)
-        template, selected_class, target_border_fraction = self._select_template(rng)
+    def _load_template_component(
+        self, template: dict[str, Any]
+    ) -> tuple[np.ndarray, np.ndarray, int, dict[str, Any], ContactSides]:
         source_image, source_mask = self._sample_loader(template)
-
         components = connected_components(source_mask)
         component_id = int(template["component_id"])
         if not 0 <= component_id < len(components):
@@ -239,167 +235,248 @@ class OnlineGANInputDataset(Dataset):
         )
         if int(component_patch.sum()) != source_window.positive_pixels:
             raise ValueError("Template metadata no longer aligns with its source component")
-
-        patch_width = int(self.metadata["patch"]["width"])
-        patch_height = int(self.metadata["patch"]["height"])
         source_contacts = ContactSides.from_dict(template["source_contact_sides"])
         if source_contacts != component.contact_sides:
             raise ValueError("Template source-contact metadata no longer matches its component")
-        maximum_attempts = int(self.sampling["maximum_transform_attempts"])
-        if maximum_attempts <= 0:
-            raise ValueError("maximum_transform_attempts must be positive")
-        indexing_exclusions = 0
-        indexing_candidates_examined = 0
-        exclusion_reasons: dict[str, int] = {}
-        empty_pools = 0
-        actual_placement_retries = 0
-        failure_reasons: list[str] = []
-        empty_pool_side_combinations: dict[str, int] = {}
-        failure_side_combinations: dict[str, int] = {}
-        for attempt in range(maximum_attempts):
-            attempt_seed = self._attempt_seed(sample_seed, attempt)
-            try:
-                geometry = measure_transformed_template_geometry(
-                    component_patch,
-                    source_contacts,
-                    seed=attempt_seed,
-                    transform_settings=self.metadata["transform"],
-                    colour_settings=self.metadata["colour_matching"],
-                    minimum_positive_pixels=int(
-                        self.metadata["patch"]["minimum_positive_pixels"]
-                    ),
+        return source_patch, component_patch, component_id, coordinates, source_contacts
+
+    def audit_metadata_compatibility(self) -> dict[str, Any]:
+        """Read-only, training-only preflight of every template's feasible states."""
+        no_feasible_templates: list[dict[str, Any]] = []
+        empty_transform_sides: list[dict[str, Any]] = []
+        asymmetries: list[dict[str, Any]] = []
+        comparisons = 0
+        states_examined = 0
+        states_excluded = 0
+        for template in self.templates:
+            _, component_patch, component_id, _, source_contacts = (
+                self._load_template_component(template)
+            )
+            identity = f"{template['sample_id']}:{component_id}:{template['window_index']}"
+            feasible = self.compatibility_index.feasible_transformations(
+                component_patch,
+                source_contacts,
+                seed=self.base_seed,
+                transform_settings=self.metadata["transform"],
+                colour_settings=self.metadata["colour_matching"],
+                minimum_positive_pixels=int(
+                    self.metadata["patch"]["minimum_positive_pixels"]
+                ),
+            )
+            states_examined += feasible.transform_states_examined
+            states_excluded += feasible.transform_states_excluded
+            if feasible.empty_pool_side_combinations:
+                empty_transform_sides.append(
+                    {
+                        "template_identity": identity,
+                        "side_combinations": feasible.empty_pool_side_combinations,
+                    }
                 )
-            except ValueError as error:
-                failure_reasons.append(str(error))
-                failure_side_combinations["transform_rejected_before_geometry"] = (
-                    failure_side_combinations.get("transform_rejected_before_geometry", 0) + 1
+            if not feasible.candidates:
+                no_feasible_templates.append(
+                    {
+                        "template_identity": identity,
+                        "source_contact_sides": source_contacts.to_dict(),
+                        "exclusion_reasons": feasible.exclusion_reasons,
+                    }
                 )
                 continue
-            pool = self.compatibility_index.query(geometry)
-            indexing_candidates_examined += pool.candidates_examined
-            indexing_exclusions += pool.candidates_excluded
-            for reason, count in pool.exclusion_reasons.items():
-                exclusion_reasons[reason] = exclusion_reasons.get(reason, 0) + count
-            if not pool.background_indices:
-                empty_pools += 1
-                empty_pool_side_combinations[geometry.side_combination] = (
-                    empty_pool_side_combinations.get(geometry.side_combination, 0) + 1
+            seen: set[tuple[Any, ...]] = set()
+            for candidate in feasible.candidates:
+                geometry = candidate.geometry
+                key = (
+                    geometry.horizontal_flip,
+                    geometry.vertical_flip,
+                    geometry.scaled_width,
+                    geometry.scaled_height,
+                    geometry.mask_bounding_box,
                 )
-                failure_side_combinations[geometry.side_combination] = (
-                    failure_side_combinations.get(geometry.side_combination, 0) + 1
-                )
-                failure_reasons.append(f"empty_compatibility_pool:{geometry.side_combination}")
-                continue
-            attempt_rng = np.random.default_rng(attempt_seed ^ 0xC04A71B1E)
-            normal_index = pool.background_indices[
-                int(attempt_rng.integers(len(pool.background_indices)))
-            ]
-            normal = self.normal_backgrounds[normal_index]
-            normal_image, normal_mask = self._sample_loader(normal)
-            if normal_mask.any():
-                raise ValueError("A GAN background loader returned defect pixels")
-            if (
-                normal_image.shape[0] != int(normal["native_height"])
-                or normal_image.shape[1] != int(normal["native_width"])
-            ):
-                raise ValueError("Normal-background native geometry differs from indexed metadata")
-            try:
-                window, window_contacts = select_target_window(
-                    normal_image.shape[:2],
-                    (patch_width, patch_height),
-                    geometry.transformed_contact_sides,
-                    attempt_rng,
-                )
-                target_top, target_left, _, _ = window
-                background, _, valid = extract_native_window(
-                    normal_image,
-                    np.zeros(normal_image.shape[:2], dtype=bool),
-                    window,
-                )
-                valid_fraction = float(valid.mean())
-                if valid_fraction < float(
-                    self.metadata["patch"]["minimum_normal_valid_fraction"]
-                ):
-                    raise ValueError("selected_normal_below_minimum_valid_fraction")
-                provenance_base = {
-                    "normal_background_sample_id": normal["sample_id"],
-                    "source_defect_sample_id": template["sample_id"],
-                    "connected_component_id": component_id,
-                    "source_mask_bounding_box": template["source_mask_bounding_box"],
-                    "source_window_coordinates": coordinates,
-                    "target_window_coordinates": {
-                        "top": target_top,
-                        "left": target_left,
-                        "width": patch_width,
-                        "height": patch_height,
-                    },
-                    "target_window_native_contact_sides": window_contacts.to_dict(),
-                    "source_contact_sides": source_contacts.to_dict(),
-                    "partial_component": bool(template["partial_component"]),
-                    "coverage_fraction": float(template["coverage_fraction"]),
-                    "touches_native_border": source_contacts.any,
-                    "minimum_positive_pixels": int(
-                        self.metadata["patch"]["minimum_positive_pixels"]
-                    ),
-                    "source_manifest_sha256": self.metadata["source_manifest_sha256"],
-                    "gan_manifest_content_sha256": self.metadata[
-                        "gan_manifest_content_sha256"
-                    ],
-                    "split_sha256": self.metadata["split_sha256"],
-                    "pipeline_version": self.metadata["pipeline_version"],
-                }
-                sample = construct_coarse_gan_input(
-                    source_patch,
-                    component_patch,
-                    background,
-                    valid,
-                    seed=attempt_seed,
-                    transform_settings=self.metadata["transform"],
-                    colour_settings=self.metadata["colour_matching"],
-                    provenance_base=provenance_base,
-                )
-                accounting = {
-                    "compatibility_candidates_examined": indexing_candidates_examined,
-                    "compatibility_candidates_excluded": indexing_exclusions,
-                    "compatibility_pool_size": len(pool.background_indices),
-                    "compatibility_exclusion_reasons": dict(sorted(exclusion_reasons.items())),
-                    "empty_compatibility_pools": empty_pools,
-                    "actual_transform_placement_retries": attempt,
-                    "actual_placement_retries": actual_placement_retries,
-                    "attempts_per_successful_sample": attempt + 1,
+                if key in seen:
+                    continue
+                seen.add(key)
+                comparison = self.compatibility_index.horizontal_symmetry_audit(geometry)
+                comparisons += 1
+                if not comparison["availability_symmetric"]:
+                    asymmetries.append({"template_identity": identity, **comparison})
+        return {
+            "templates_audited": len(self.templates),
+            "transform_states_examined": states_examined,
+            "transform_states_excluded": states_excluded,
+            "horizontal_counterpart_comparisons": comparisons,
+            "horizontal_availability_asymmetries": asymmetries,
+            "templates_with_no_feasible_transform_or_pool": no_feasible_templates,
+            "templates_with_empty_transform_side_pools": empty_transform_sides,
+            "validation_rows_loaded": 0,
+            "official_test_rows_loaded": 0,
+            "materialized_generated_images": 0,
+        }
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        if not 0 <= index < self.length:
+            raise IndexError(index)
+        sample_seed = self._sample_seed(index)
+        rng = np.random.default_rng(sample_seed)
+        template, selected_class, target_border_fraction = self._select_template(rng)
+        source_patch, component_patch, component_id, coordinates, source_contacts = (
+            self._load_template_component(template)
+        )
+
+        patch_width = int(self.metadata["patch"]["width"])
+        patch_height = int(self.metadata["patch"]["height"])
+        feasible = self.compatibility_index.feasible_transformations(
+            component_patch,
+            source_contacts,
+            seed=sample_seed,
+            transform_settings=self.metadata["transform"],
+            colour_settings=self.metadata["colour_matching"],
+            minimum_positive_pixels=int(self.metadata["patch"]["minimum_positive_pixels"]),
+        )
+        template_identity = (
+            f"{template['sample_id']}:{component_id}:{template['window_index']}"
+        )
+        if not feasible.candidates:
+            transformed_sides = {
+                source_contacts.transformed(horizontal_flip=horizontal, vertical_flip=vertical)
+                .combination: 1
+                for horizontal in (False, True)
+                for vertical in (False, True)
+            }
+            raise GANSamplingFailure(
+                "no_feasible_transformation_or_compatibility_pool",
+                {
+                    "compatibility_candidates_examined": feasible.candidates_examined,
+                    "compatibility_candidates_excluded": feasible.candidates_excluded,
+                    "compatibility_exclusion_reasons": feasible.exclusion_reasons,
+                    "transform_states_examined": feasible.transform_states_examined,
+                    "transform_states_excluded": feasible.transform_states_excluded,
+                    "empty_compatibility_pools": 0,
+                    "empty_pool_side_combinations": feasible.empty_pool_side_combinations,
+                    "failure_side_combinations": transformed_sides,
+                    "actual_transform_placement_retries": 0,
+                    "actual_placement_retries": 0,
+                    "attempts": 1,
                     "selected_template_class": selected_class,
                     "target_border_fraction": target_border_fraction,
-                    "border_fraction_mode": self.sampling["border_fraction_mode"],
-                    "successful_side_combination": geometry.side_combination,
-                    "template_identity": f"{template['sample_id']}:{component_id}:{template['window_index']}",
-                    "background_identity": normal["sample_id"],
-                }
-                sample["provenance"].update(
-                    {"base_sample_seed": sample_seed, "sampling_accounting": accounting}
-                )
-                sample["placement_diagnostics"].update(accounting)
-                return sample
-            except ValueError as error:
-                actual_placement_retries += 1
-                failure_reasons.append(str(error))
-                failure_side_combinations[geometry.side_combination] = (
-                    failure_side_combinations.get(geometry.side_combination, 0) + 1
-                )
-        reasons = sorted(set(failure_reasons))
-        raise GANSamplingFailure(
-            "gan_sampling_attempts_exhausted:" + ",".join(reasons),
-            {
-                "compatibility_candidates_examined": indexing_candidates_examined,
-                "compatibility_candidates_excluded": indexing_exclusions,
-                "compatibility_exclusion_reasons": dict(sorted(exclusion_reasons.items())),
-                "empty_compatibility_pools": empty_pools,
-                "empty_pool_side_combinations": dict(sorted(empty_pool_side_combinations.items())),
-                "failure_side_combinations": dict(sorted(failure_side_combinations.items())),
-                "actual_transform_placement_retries": max(0, maximum_attempts - 1),
-                "actual_placement_retries": actual_placement_retries,
-                "attempts": maximum_attempts,
-                "selected_template_class": selected_class,
-                "target_border_fraction": target_border_fraction,
-                "template_identity": f"{template['sample_id']}:{component_id}:{template['window_index']}",
-            },
+                    "template_identity": template_identity,
+                },
+            )
+
+        selection_rng = np.random.default_rng(sample_seed ^ 0xF1A40001)
+        weights = np.asarray(
+            [candidate.selection_weight for candidate in feasible.candidates], dtype=float
         )
+        weights /= weights.sum()
+        candidate = feasible.candidates[
+            int(selection_rng.choice(len(feasible.candidates), p=weights))
+        ]
+        if candidate.minimum_scale == candidate.maximum_scale:
+            scale = candidate.minimum_scale
+        else:
+            lower = np.nextafter(candidate.minimum_scale, candidate.maximum_scale)
+            upper = np.nextafter(candidate.maximum_scale, candidate.minimum_scale)
+            scale = float(selection_rng.uniform(lower, upper))
+        transform_parameters = {
+            "horizontal_flip": candidate.horizontal_flip,
+            "vertical_flip": candidate.vertical_flip,
+            "scale": scale,
+        }
+        geometry = measure_transformed_template_geometry(
+            component_patch,
+            source_contacts,
+            seed=sample_seed,
+            transform_settings=self.metadata["transform"],
+            colour_settings=self.metadata["colour_matching"],
+            minimum_positive_pixels=int(self.metadata["patch"]["minimum_positive_pixels"]),
+            transform_parameters=transform_parameters,
+        )
+        pool = self.compatibility_index.query(geometry)
+        if not pool.background_indices:
+            raise RuntimeError("feasible_transform_index_became_empty")
+        symmetry = self.compatibility_index.horizontal_symmetry_audit(geometry)
+        normal_index = pool.background_indices[
+            int(selection_rng.integers(len(pool.background_indices)))
+        ]
+        normal = self.normal_backgrounds[normal_index]
+        normal_image, normal_mask = self._sample_loader(normal)
+        if normal_mask.any():
+            raise ValueError("A GAN background loader returned defect pixels")
+        if (
+            normal_image.shape[0] != int(normal["native_height"])
+            or normal_image.shape[1] != int(normal["native_width"])
+        ):
+            raise ValueError("Normal-background native geometry differs from indexed metadata")
+        window, window_contacts = select_target_window(
+            normal_image.shape[:2],
+            (patch_width, patch_height),
+            geometry.transformed_contact_sides,
+            selection_rng,
+        )
+        target_top, target_left, _, _ = window
+        background, _, valid = extract_native_window(
+            normal_image,
+            np.zeros(normal_image.shape[:2], dtype=bool),
+            window,
+        )
+        valid_fraction = float(valid.mean())
+        if valid_fraction < float(self.metadata["patch"]["minimum_normal_valid_fraction"]):
+            raise ValueError("selected_normal_below_minimum_valid_fraction")
+        provenance_base = {
+            "normal_background_sample_id": normal["sample_id"],
+            "source_defect_sample_id": template["sample_id"],
+            "connected_component_id": component_id,
+            "source_mask_bounding_box": template["source_mask_bounding_box"],
+            "source_window_coordinates": coordinates,
+            "target_window_coordinates": {
+                "top": target_top,
+                "left": target_left,
+                "width": patch_width,
+                "height": patch_height,
+            },
+            "target_window_native_contact_sides": window_contacts.to_dict(),
+            "source_contact_sides": source_contacts.to_dict(),
+            "partial_component": bool(template["partial_component"]),
+            "coverage_fraction": float(template["coverage_fraction"]),
+            "touches_native_border": source_contacts.any,
+            "minimum_positive_pixels": int(
+                self.metadata["patch"]["minimum_positive_pixels"]
+            ),
+            "source_manifest_sha256": self.metadata["source_manifest_sha256"],
+            "gan_manifest_content_sha256": self.metadata["gan_manifest_content_sha256"],
+            "split_sha256": self.metadata["split_sha256"],
+            "pipeline_version": self.metadata["pipeline_version"],
+        }
+        sample = construct_coarse_gan_input(
+            source_patch,
+            component_patch,
+            background,
+            valid,
+            seed=sample_seed,
+            transform_settings=self.metadata["transform"],
+            colour_settings=self.metadata["colour_matching"],
+            provenance_base=provenance_base,
+            transform_parameters=transform_parameters,
+        )
+        accounting = {
+            "compatibility_candidates_examined": feasible.candidates_examined,
+            "compatibility_candidates_excluded": feasible.candidates_excluded,
+            "compatibility_pool_size": len(pool.background_indices),
+            "compatibility_exclusion_reasons": feasible.exclusion_reasons,
+            "transform_states_examined": feasible.transform_states_examined,
+            "transform_states_excluded": feasible.transform_states_excluded,
+            "empty_compatibility_pools": 0,
+            "actual_transform_placement_retries": 0,
+            "actual_placement_retries": 0,
+            "attempts_per_successful_sample": 1,
+            "selected_template_class": selected_class,
+            "target_border_fraction": target_border_fraction,
+            "border_fraction_mode": self.sampling["border_fraction_mode"],
+            "successful_side_combination": geometry.side_combination,
+            "horizontal_symmetry_audit": symmetry,
+            "template_identity": template_identity,
+            "background_identity": normal["sample_id"],
+        }
+        sample["provenance"].update(
+            {"base_sample_seed": sample_seed, "sampling_accounting": accounting}
+        )
+        sample["placement_diagnostics"].update(accounting)
+        return sample

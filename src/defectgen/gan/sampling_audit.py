@@ -10,6 +10,49 @@ import numpy as np
 from .visualization import summarize_placements
 
 
+def _expected_target_side_counts(
+    metadata: dict[str, Any], requested_samples: int
+) -> dict[str, float]:
+    templates = metadata["templates"]
+    border = [row for row in templates if any(row["source_contact_sides"].values())]
+    non_border = [row for row in templates if not any(row["source_contact_sides"].values())]
+    sampling = metadata.get("sampling", {"border_fraction_mode": "empirical"})
+    if not border:
+        border_fraction = 0.0
+    elif not non_border:
+        border_fraction = 1.0
+    else:
+        border_fraction = (
+            len(border) / len(templates)
+            if sampling["border_fraction_mode"] == "empirical"
+            else float(sampling["border_fraction"])
+        )
+    horizontal_probability = float(metadata["transform"]["horizontal_flip_probability"])
+    vertical_probability = float(metadata["transform"]["vertical_flip_probability"])
+
+    def conditional(rows: list[dict[str, Any]], side: str) -> float:
+        if not rows:
+            return 0.0
+        opposite = {"left": "right", "right": "left", "top": "bottom", "bottom": "top"}[side]
+        flip_probability = (
+            horizontal_probability if side in {"left", "right"} else vertical_probability
+        )
+        return sum(
+            (1 - flip_probability) * bool(row["source_contact_sides"][side])
+            + flip_probability * bool(row["source_contact_sides"][opposite])
+            for row in rows
+        ) / len(rows)
+
+    return {
+        side: requested_samples
+        * (
+            border_fraction * conditional(border, side)
+            + (1 - border_fraction) * conditional(non_border, side)
+        )
+        for side in ("top", "bottom", "left", "right")
+    }
+
+
 def build_sampling_audit_summary(
     *,
     metadata: dict[str, Any],
@@ -17,6 +60,7 @@ def build_sampling_audit_summary(
     samples: list[dict[str, Any]],
     failures: list[dict[str, Any]],
     elapsed_seconds: float,
+    metadata_compatibility_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     placement = summarize_placements(samples, [failure["reason"] for failure in failures])
     failure_reasons = Counter(failure["reason"] for failure in failures)
@@ -60,6 +104,20 @@ def build_sampling_audit_summary(
         sample["placement_diagnostics"]["background_identity"] for sample in samples
     }
     success_count = len(samples)
+    observed_side_counts = placement["successful_placements_by_target_contact_side"]
+    symmetry_rows = [
+        sample["placement_diagnostics"]["horizontal_symmetry_audit"]
+        for sample in samples
+        if "horizontal_symmetry_audit" in sample["placement_diagnostics"]
+    ]
+    sampled_infeasible_templates = sorted(
+        {
+            failure.get("accounting", {}).get("template_identity")
+            for failure in failures
+            if failure.get("accounting", {}).get("template_identity")
+            and failure["reason"] == "no_feasible_transformation_or_compatibility_pool"
+        }
+    )
     return {
         "pipeline_version": metadata["pipeline_version"],
         "requested_samples": requested_samples,
@@ -98,6 +156,20 @@ def build_sampling_audit_summary(
         "successful_placements_by_target_contact_side": placement[
             "successful_placements_by_target_contact_side"
         ],
+        "target_side_symmetry": {
+            "expected_counts": _expected_target_side_counts(metadata, requested_samples),
+            "observed_counts": observed_side_counts,
+            "horizontal_counterpart_comparisons": len(symmetry_rows),
+            "availability_asymmetries": sum(
+                not row["availability_symmetric"] for row in symmetry_rows
+            ),
+            "maximum_absolute_pool_size_difference": max(
+                (abs(int(row["pool_size_difference"])) for row in symmetry_rows),
+                default=0,
+            ),
+        },
+        "sampled_templates_with_no_feasible_transform_or_pool": sampled_infeasible_templates,
+        "metadata_compatibility_audit": metadata_compatibility_audit,
         "successful_placements_by_side_combination": placement[
             "successful_placements_by_side_combination"
         ],

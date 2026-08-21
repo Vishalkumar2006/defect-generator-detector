@@ -171,3 +171,43 @@ runtime, attempt quantiles, failures by reason and side combination, index
 exclusions, actual retries, empty pools, template/background utilization, contact
 invariants, and border-distribution drift. It writes no generated images and never
 constructs validation or official-test datasets.
+
+## F1.4 native-edge symmetry and feasible transforms
+
+The retained F1.3 audit (`reports/gan_inputs/sampling_audit.json` and `.md`) is the
+diagnostic baseline: 983/1,000 samples succeeded, all 17 terminal failures involved
+`left`, `left+right`, `top+left`, or `bottom+left`, while right-side placement was
+common. This was a coordinate-origin bug, not evidence that left-censored defects
+were intrinsically incompatible.
+
+Short native windows had been copied at tensor x=0 with padding only on the right.
+A right-contact source crop therefore retained reflected context to its right; an
+horizontal flip moved that context before the now-left-contact mask. Aligning that
+mask to x=0 required a negative content origin, so the index declared the state
+empty. The equivalent right state had a non-negative origin and passed.
+
+F1.4 uses symmetric reflection padding. For native width `Wn` in patch width `Wp`,
+the inclusive valid interval is
+`[(Wp-Wn)//2, (Wp-Wn)//2 + Wn - 1]`; height follows the same rule. Placement and
+compatibility share those inclusive bounds. Crop origins and window offsets remain
+zero-based, while maximum coordinates are inclusive. A left contact equals the
+valid interval's minimum and a right contact equals its maximum. Neither is
+defined by tensor x=0 or x=`Wp-1` when padding exists. Horizontal flips still swap
+left/right exactly; top/bottom are unchanged. `left+right` states require the
+transformed mask extent to equal a compatible target native-valid width and retain
+both equalities.
+
+Before online selection, scale space is partitioned at every point where rounded
+tensor width or height changes. Each flip/scale interval is checked for retained
+area, patch fit, contact constraints, the eight-pixel non-border margin, and a
+non-empty compatible background pool. Sampling preserves the configured flip and
+continuous-scale weights but chooses only among feasible intervals, then selects a
+background directly from that interval's pool. Known-impossible states are index
+exclusions, not online retries. Given the manifest, seed, and sample index, template,
+transform, background, window, and provenance remain deterministic.
+
+The F1.4 audit adds expected and observed target-side counts, terminal failures by
+transformed side, templates with no feasible transform/pool, and exact comparisons
+between each sampled transform and its horizontally mirrored counterpart. New
+audit outputs use `sampling_audit_f1_4.json` and `.md`, preserving the failed F1.3
+files unchanged.
