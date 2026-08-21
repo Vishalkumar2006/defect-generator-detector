@@ -1,0 +1,343 @@
+{
+  "status": "PASS - STABILIZED BF16 FINAL REAL-ONLY BASELINE",
+  "experiment_identity": "final_real_baseline_bf16_seed42",
+  "best_epoch": 11,
+  "epochs_completed": 12,
+  "stopped_early": false,
+  "best_validation_loss": 0.11076194672446166,
+  "validation_metrics_at_0_5": {
+    "global_dice": 0.777700283628586,
+    "global_iou": 0.6362598904443092,
+    "pixel_precision": 0.8547695984778797,
+    "pixel_recall": 0.7133792650918636,
+    "mean_defective_image_dice": 0.7519211721407062,
+    "median_defective_image_dice": 0.8360065466448445,
+    "defective_images_zero_detected_pixels": 2,
+    "mean_predicted_defect_fraction_normal_images": 0.0001189039292779332,
+    "normal_image_false_positive_rate": 0.04153354632587859,
+    "normal_false_positive_images": 13,
+    "normal_image_count": 313,
+    "image_precision": 0.7291666666666666,
+    "image_recall": 0.9459459459459459,
+    "image_f1": 0.8235294117647058,
+    "threshold": 0.5
+  },
+  "selected_validation_threshold": 0.05,
+  "selected_validation_metrics": {
+    "global_dice": 0.7982508941396036,
+    "global_iou": 0.66424088875697,
+    "pixel_precision": 0.775554029049007,
+    "pixel_recall": 0.8223162729658793,
+    "mean_defective_image_dice": 0.7492825776964314,
+    "median_defective_image_dice": 0.8204088724155905,
+    "defective_images_zero_detected_pixels": 2,
+    "mean_predicted_defect_fraction_normal_images": 0.00017939900509212944,
+    "normal_image_false_positive_rate": 0.06389776357827476,
+    "normal_false_positive_images": 20,
+    "normal_image_count": 313,
+    "image_precision": 0.6363636363636364,
+    "image_recall": 0.9459459459459459,
+    "image_f1": 0.7608695652173914,
+    "threshold": 0.05
+  },
+  "defective_image_dice_at_selected_threshold": 0.7492825776964314,
+  "normal_image_false_positive_rate_at_selected_threshold": 0.06389776357827476,
+  "official_test_samples_loaded": 0,
+  "threshold_sweep_executions": 1,
+  "model_parameter_count": 28285569,
+  "reproducibility": {
+    "experiment_identity": "final_real_baseline_bf16_seed42",
+    "git": {
+      "commit": "ed89a0f626c5154c901d9726604347663820a1fa",
+      "dirty": false,
+      "status": []
+    },
+    "configuration": {
+      "phase": "E1.2 stabilized final real-only baseline",
+      "experiment_identity": "final_real_baseline_bf16_seed42",
+      "seed": 42,
+      "model": {
+        "architecture": "groupnorm_unet",
+        "input_channels": 3,
+        "output_channels": 1,
+        "base_channels": 32,
+        "downsampling": "learned_stride_2_convolution",
+        "decoder": "bilinear_resize_then_convolution",
+        "output": "logits_without_sigmoid"
+      },
+      "data": {
+        "manifest": "data/metadata/ksdd2_split_seed42.csv",
+        "training_split": "train",
+        "validation_split": "validation",
+        "official_test_evaluation": false,
+        "canvas_width": 256,
+        "canvas_height": 672,
+        "resize_or_distort": false,
+        "image_padding_mode": "reflect_with_edge_fallback_for_degenerate_axes",
+        "mask_padding_mode": "zero",
+        "loss_and_metrics_region": "valid_original_pixels_only",
+        "detector_normalization": {
+          "input_range": [
+            0.0,
+            1.0
+          ],
+          "mean": [
+            0.17536929644393365,
+            0.1709092379799471,
+            0.17704063222181007
+          ],
+          "standard_deviation": [
+            0.04440419892392204,
+            0.03818317039850739,
+            0.03754433462546375
+          ],
+          "source": "development_train original pixels only"
+        }
+      },
+      "augmentation": {
+        "training_only": true,
+        "horizontal_flip_probability": 0.5,
+        "vertical_flip_probability": 0.5,
+        "synchronized_fields": [
+          "image",
+          "mask",
+          "valid_region"
+        ],
+        "mask_interpolation": "none",
+        "additional_transforms": []
+      },
+      "loss": {
+        "type": "valid_region_bce_with_logits_plus_soft_dice",
+        "bce_weight": 1.0,
+        "dice_weight": 1.0,
+        "pos_weight": 5.0,
+        "compute_dtype": "float32"
+      },
+      "optimizer": {
+        "type": "AdamW",
+        "learning_rate": 0.0003,
+        "weight_decay": 0.0001
+      },
+      "sampler": {
+        "type": "deterministic_weighted",
+        "target_defective_fraction": 0.5,
+        "replacement": true
+      },
+      "precision": {
+        "mode": "bf16",
+        "grad_scaler": false,
+        "automatic_fp32_retry": false,
+        "gradient_clip_max_norm": 1.0
+      },
+      "training": {
+        "batch_size": 4,
+        "maximum_epochs": 12,
+        "num_workers": 0,
+        "pin_memory": true,
+        "maximum_optimizer_updates_per_attempt": 1
+      },
+      "scheduler": {
+        "type": "ReduceLROnPlateau",
+        "monitor": "validation_total_loss",
+        "mode": "min",
+        "factor": 0.5,
+        "patience": 2,
+        "minimum_learning_rate": 1e-05
+      },
+      "early_stopping": {
+        "monitor": "validation_total_loss",
+        "mode": "min",
+        "patience": 4,
+        "minimum_delta": 0.0
+      },
+      "checkpoint_selection": {
+        "monitor": "validation_total_loss",
+        "mode": "min"
+      },
+      "threshold_sweep": {
+        "run": "once_after_training_after_best_checkpoint_reload",
+        "data_source": "validation_only",
+        "minimum": 0.05,
+        "maximum": 0.95,
+        "increment": 0.05,
+        "training_metric_threshold": 0.5
+      },
+      "reproducibility": {
+        "deterministic_algorithms": true,
+        "warn_only": true,
+        "cudnn_benchmark": false,
+        "worker_seeded": true
+      },
+      "paths": {
+        "checkpoint_directory": "checkpoints/final_real_baseline_bf16_seed42",
+        "report_directory": "reports/final_real_baseline_bf16_seed42",
+        "fixed_validation_ids": "reports/loss_pilot/fixed_validation_ids.json"
+      }
+    },
+    "configuration_sha256": "53cfed97ef97abba4f9e083b3023571ff520ef71582638c253f9710d7516c76e",
+    "dataset": {
+      "manifest_relative_path": "data/metadata/ksdd2_split_seed42.csv",
+      "manifest_sha256": "024495c9673a7096c79f342cce58ad6dd5e7434951b9b61053e926ab7c8c9f07",
+      "selected_splits_sha256": "9648c91f077b60ca6b185b0db601d0294b28a7e6781507ee43a476ee1ce53da0",
+      "training_split": "train",
+      "validation_split": "validation",
+      "training_samples": 1981,
+      "validation_samples": 350,
+      "official_test_samples_loaded": 0
+    },
+    "seed": 42,
+    "model_initialization_sha256": "885218a1ca87cd383bf5eb890ba1702512e0f1253bc96bdfcfdc2eca847d1fb8",
+    "precision_mode": "bf16",
+    "grad_scaler_applicable": false,
+    "augmentation": {
+      "training_only": true,
+      "horizontal_flip_probability": 0.5,
+      "vertical_flip_probability": 0.5,
+      "synchronized_fields": [
+        "image",
+        "mask",
+        "valid_region"
+      ],
+      "mask_interpolation": "none",
+      "additional_transforms": []
+    },
+    "optimizer_attempts_per_epoch": 496,
+    "maximum_optimizer_attempts": 5952,
+    "gradient_clip_max_norm": 1.0,
+    "detector_protocol": "frozen_real_only_v1"
+  },
+  "numerical_counters": {
+    "attempted_batches": 5952,
+    "optimizer_step_executed": 5952,
+    "optimizer_step_skipped": 0,
+    "nonfinite_forward_loss": 0,
+    "nonfinite_gradient": 0,
+    "amp_overflow_scale_drop": 0,
+    "fp32_retry_attempted": 0,
+    "fp32_retry_executed": 0
+  },
+  "checkpoint_best": "checkpoints/final_real_baseline_bf16_seed42/best.pt",
+  "checkpoint_last": "checkpoints/final_real_baseline_bf16_seed42/last.pt",
+  "configuration": {
+    "phase": "E1.2 stabilized final real-only baseline",
+    "experiment_identity": "final_real_baseline_bf16_seed42",
+    "seed": 42,
+    "model": {
+      "architecture": "groupnorm_unet",
+      "input_channels": 3,
+      "output_channels": 1,
+      "base_channels": 32,
+      "downsampling": "learned_stride_2_convolution",
+      "decoder": "bilinear_resize_then_convolution",
+      "output": "logits_without_sigmoid"
+    },
+    "data": {
+      "manifest": "data/metadata/ksdd2_split_seed42.csv",
+      "training_split": "train",
+      "validation_split": "validation",
+      "official_test_evaluation": false,
+      "canvas_width": 256,
+      "canvas_height": 672,
+      "resize_or_distort": false,
+      "image_padding_mode": "reflect_with_edge_fallback_for_degenerate_axes",
+      "mask_padding_mode": "zero",
+      "loss_and_metrics_region": "valid_original_pixels_only",
+      "detector_normalization": {
+        "input_range": [
+          0.0,
+          1.0
+        ],
+        "mean": [
+          0.17536929644393365,
+          0.1709092379799471,
+          0.17704063222181007
+        ],
+        "standard_deviation": [
+          0.04440419892392204,
+          0.03818317039850739,
+          0.03754433462546375
+        ],
+        "source": "development_train original pixels only"
+      }
+    },
+    "augmentation": {
+      "training_only": true,
+      "horizontal_flip_probability": 0.5,
+      "vertical_flip_probability": 0.5,
+      "synchronized_fields": [
+        "image",
+        "mask",
+        "valid_region"
+      ],
+      "mask_interpolation": "none",
+      "additional_transforms": []
+    },
+    "loss": {
+      "type": "valid_region_bce_with_logits_plus_soft_dice",
+      "bce_weight": 1.0,
+      "dice_weight": 1.0,
+      "pos_weight": 5.0,
+      "compute_dtype": "float32"
+    },
+    "optimizer": {
+      "type": "AdamW",
+      "learning_rate": 0.0003,
+      "weight_decay": 0.0001
+    },
+    "sampler": {
+      "type": "deterministic_weighted",
+      "target_defective_fraction": 0.5,
+      "replacement": true
+    },
+    "precision": {
+      "mode": "bf16",
+      "grad_scaler": false,
+      "automatic_fp32_retry": false,
+      "gradient_clip_max_norm": 1.0
+    },
+    "training": {
+      "batch_size": 4,
+      "maximum_epochs": 12,
+      "num_workers": 0,
+      "pin_memory": true,
+      "maximum_optimizer_updates_per_attempt": 1
+    },
+    "scheduler": {
+      "type": "ReduceLROnPlateau",
+      "monitor": "validation_total_loss",
+      "mode": "min",
+      "factor": 0.5,
+      "patience": 2,
+      "minimum_learning_rate": 1e-05
+    },
+    "early_stopping": {
+      "monitor": "validation_total_loss",
+      "mode": "min",
+      "patience": 4,
+      "minimum_delta": 0.0
+    },
+    "checkpoint_selection": {
+      "monitor": "validation_total_loss",
+      "mode": "min"
+    },
+    "threshold_sweep": {
+      "run": "once_after_training_after_best_checkpoint_reload",
+      "data_source": "validation_only",
+      "minimum": 0.05,
+      "maximum": 0.95,
+      "increment": 0.05,
+      "training_metric_threshold": 0.5
+    },
+    "reproducibility": {
+      "deterministic_algorithms": true,
+      "warn_only": true,
+      "cudnn_benchmark": false,
+      "worker_seeded": true
+    },
+    "paths": {
+      "checkpoint_directory": "checkpoints/final_real_baseline_bf16_seed42",
+      "report_directory": "reports/final_real_baseline_bf16_seed42",
+      "fixed_validation_ids": "reports/loss_pilot/fixed_validation_ids.json"
+    }
+  }
+}

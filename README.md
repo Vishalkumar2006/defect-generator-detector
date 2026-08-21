@@ -69,3 +69,8 @@ The replacement final real-only reference is frozen in
 maximum gradient norm 1.0, and no GradScaler under the isolated identity
 `final_real_baseline_bf16_seed42`. Its implementation and evidence are described
 in `docs/stabilized-bf16-baseline.md`.
+
+The successful reference selected epoch 11 by validation loss and completed
+5,952/5,952 optimizer updates with no numerical anomalies. Its fixed comparison
+threshold is 0.5; its one-time validation Dice-optimal threshold is 0.05. Both
+thresholds are frozen for future reporting and official-test data remains untouched.

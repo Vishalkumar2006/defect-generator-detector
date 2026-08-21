@@ -1,0 +1,45 @@
+{
+  "status": "FROZEN_SUCCESSFUL_REAL_ONLY_REFERENCE",
+  "experiment_identity": "final_real_baseline_bf16_seed42",
+  "training_commit": "ed89a0f626c5154c901d9726604347663820a1fa",
+  "best_checkpoint": {
+    "relative_path": "checkpoints/final_real_baseline_bf16_seed42/best.pt",
+    "epoch": 11,
+    "size_bytes": 339558727,
+    "sha256": "6a2127fad5fca66108de38226b050b9ef7d09025c4528a5bf48285ffaabfd277"
+  },
+  "fixed_threshold_0_5": {
+    "global_dice": 0.777700283628586,
+    "global_iou": 0.6362598904443092,
+    "pixel_precision": 0.8547695984778797,
+    "pixel_recall": 0.7133792650918636,
+    "mean_defective_image_dice": 0.7519211721407062,
+    "normal_image_false_positive_rate": 0.04153354632587859
+  },
+  "validation_selected_threshold": {
+    "threshold": 0.05,
+    "selection_objective": "maximum validation global Dice",
+    "global_dice": 0.7982508941396036,
+    "global_iou": 0.66424088875697,
+    "pixel_precision": 0.775554029049007,
+    "pixel_recall": 0.8223162729658793,
+    "mean_defective_image_dice": 0.7492825776964314,
+    "normal_image_false_positive_rate": 0.06389776357827476
+  },
+  "best_validation_loss": 0.11076194672446166,
+  "optimizer_updates": {
+    "attempted": 5952,
+    "executed": 5952,
+    "skipped": 0
+  },
+  "numerical_anomalies": 0,
+  "official_test_samples_loaded": 0,
+  "threshold_policy": {
+    "fixed_comparison_threshold": 0.5,
+    "validation_selected_threshold": 0.05,
+    "refine_real_only_below_0_05": false,
+    "future_synthetic_uses_same_one_time_validation_selection": true,
+    "official_test_retuning_allowed": false,
+    "future_comparisons_report_both_thresholds": true
+  }
+}

@@ -40,6 +40,11 @@ BCE plus Dice loss. Each reloads its best checkpoint and performs exactly one
 validation threshold sweep from 0.05 through 0.95. Development validation is not
 used to tune the synthetic replacement fraction or regenerate synthetic data.
 
+The frozen real-only validation-selected threshold is 0.05; it must not be refined
+below the prespecified sweep. Every comparison reports metrics at both fixed
+threshold 0.5 and its condition's one-time validation-selected threshold. No
+threshold may be selected or retuned on official-test data.
+
 The official test split remains untouched until both configurations, checkpoints,
 and selected validation thresholds are frozen. The only final test comparison is:
 
