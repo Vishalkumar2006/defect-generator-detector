@@ -1,0 +1,40 @@
+{
+  "pipeline_version": "f1_gan_inputs_v1",
+  "seed": 42,
+  "patch": {
+    "width": 256,
+    "height": 512,
+    "context_margin": 24,
+    "overlap_fraction": 0.5,
+    "minimum_positive_pixels": 8,
+    "minimum_component_coverage": 0.05,
+    "minimum_normal_valid_fraction": 0.9
+  },
+  "template_transform": {
+    "horizontal_flip_probability": 0.5,
+    "vertical_flip_probability": 0.5,
+    "minimum_scale": 0.9,
+    "maximum_scale": 1.1,
+    "minimum_retained_area_fraction": 0.75,
+    "placement_attempts": 128,
+    "feather_radius": 5
+  },
+  "colour_matching": {
+    "enabled": true,
+    "boundary_radius": 7,
+    "minimum_gain": 0.8,
+    "maximum_gain": 1.2,
+    "maximum_absolute_offset": 0.15
+  },
+  "data": {
+    "development_manifest": "data/metadata/ksdd2_split_seed42.csv",
+    "required_development_split": "train",
+    "required_official_split": "train"
+  },
+  "outputs": {
+    "manifest": "reports/gan_inputs/manifest.json",
+    "summary": "reports/gan_inputs/summary.json",
+    "summary_markdown": "reports/gan_inputs/summary.md",
+    "visualization_directory": "reports/gan_inputs/visualizations"
+  }
+}

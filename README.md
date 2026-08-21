@@ -74,3 +74,12 @@ The successful reference selected epoch 11 by validation loss and completed
 5,952/5,952 optimizer updates with no numerical anomalies. Its fixed comparison
 threshold is 0.5; its one-time validation Dice-optimal threshold is 0.05. Both
 thresholds are frozen for future reporting and official-test data remains untouched.
+
+## Training-only GAN inputs (F1)
+
+`configs/gan_inputs.json` and `src/defectgen/gan/` define a deterministic online
+256 x 512 template/compositing pipeline. It accepts development-training defects
+and normal backgrounds only, hard-rejects validation or official-test records,
+keeps masks binary, and does not materialize a generated dataset. This phase has no
+GAN model or training implementation. The rules and provenance contract are in
+`docs/gan-input-pipeline.md`.
