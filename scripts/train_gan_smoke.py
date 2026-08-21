@@ -201,7 +201,9 @@ def _training_gate(
         return "outside_support_change"
     if generator["maximum_invalid_fake_pixel_gradient"] != 0:
         return "invalid_fake_pixel_adversarial_gradient"
-    if generator["canonical_defect_gradient_coverage"] != 1:
+    canonical_active = generator["canonical_defect_gradient_active_count"]
+    canonical_total = generator["canonical_defect_gradient_total_count"]
+    if canonical_total <= 0 or canonical_active != canonical_total:
         return "incomplete_canonical_adversarial_gradient"
     if (
         generator["output_range_violation_count"]
@@ -350,7 +352,12 @@ def _write_contact_sheet(
     plt.close(figure)
 
 
-def _plot_series(records: list[dict[str, Any]], report_dir: Path) -> None:
+def _plot_series(
+    records: list[dict[str, Any]],
+    report_dir: Path,
+    *,
+    discriminator_clip_max_norm: float,
+) -> None:
     joint = [record for record in records if record["kind"] == "joint"]
     if not joint:
         return
@@ -379,7 +386,7 @@ def _plot_series(records: list[dict[str, Any]], report_dir: Path) -> None:
             {
                 "D pre-clip": [record["discriminator"]["gradient_clipping"]["pre_clipping_norm"] for record in joint],
                 "G pre-clip": [record["generator"]["gradient_clipping"]["pre_clipping_norm"] for record in joint],
-                "clip limit": [5.0 for _ in joint],
+                "clip limit": [discriminator_clip_max_norm for _ in joint],
             },
             "Gradient norm",
         ),
@@ -931,7 +938,11 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             configuration=raw_config,
         )
     records = metric_log.records
-    _plot_series(records, report_dir)
+    _plot_series(
+        records,
+        report_dir,
+        discriminator_clip_max_norm=config.discriminator_gradient_clip_max_norm,
+    )
     warmup_records = [record for record in records if record["kind"] == "warmup"]
     joint_records = [record for record in records if record["kind"] == "joint"]
     monitor_records = [record for record in records if record["kind"] == "monitor"]

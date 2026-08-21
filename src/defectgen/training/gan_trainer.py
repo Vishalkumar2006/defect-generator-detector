@@ -735,11 +735,18 @@ class GANOneStepTrainer:
                     adversarial_image_gradient
                 )
                 canonical_gradients = adversarial_image_gradient[canonical]
-                canonical_gradient_coverage = float(
-                    (
-                        torch.isfinite(canonical_gradients)
-                        & (canonical_gradients != 0)
-                    ).float().mean()
+                canonical_gradient_active = (
+                    torch.isfinite(canonical_gradients)
+                    & (canonical_gradients != 0)
+                )
+                canonical_gradient_active_count = int(
+                    canonical_gradient_active.sum().item()
+                )
+                canonical_gradient_total_count = int(canonical_gradients.numel())
+                canonical_gradient_coverage = (
+                    canonical_gradient_active_count / canonical_gradient_total_count
+                    if canonical_gradient_total_count
+                    else 0.0
                 )
                 maximum_invalid_gradient = float(
                     adversarial_image_gradient[invalid].detach().float().abs().max()
@@ -851,6 +858,12 @@ class GANOneStepTrainer:
             "tanh_raw_residual_saturation_fraction": tanh_saturation,
             "tanh_residual_saturation_fraction": tanh_saturation,
             "exact_outside_support_change": exact_outside_support_change,
+            "canonical_defect_gradient_active_count": (
+                canonical_gradient_active_count
+            ),
+            "canonical_defect_gradient_total_count": (
+                canonical_gradient_total_count
+            ),
             "canonical_defect_gradient_coverage": canonical_gradient_coverage,
             "maximum_invalid_fake_pixel_gradient": maximum_invalid_gradient,
             "generator_locality_before_step": locality_before,

@@ -1,0 +1,19 @@
+{
+  "reviewed_sheet_count": 4,
+  "reviewed_sample_count": 28,
+  "review_order": "before opening blinding_reveal.json",
+  "preferred_blind_label": "A",
+  "preference": "baseline",
+  "observations": [
+    "Both candidates preserved locality and lacked rectangular crop seams in the displayed samples.",
+    "Candidate A produced more filled, texture-integrated localized changes.",
+    "Candidate B repeatedly emphasized the condition boundary as a ring-like residual, most clearly in the amplified difference panels."
+  ],
+  "safety_concerns": [
+    "candidate_edge_dominant_residual_pattern"
+  ],
+  "reveal": {
+    "A": "baseline",
+    "B": "candidate"
+  }
+}

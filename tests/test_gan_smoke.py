@@ -23,6 +23,7 @@ from defectgen.training.gan_smoke import (
     load_smoke_checkpoint,
     save_smoke_checkpoint,
     select_fixed_monitor_samples,
+    select_stratified_monitor_samples,
     stage_one_allows_continuation,
     warmup_gate_decision,
 )
@@ -119,6 +120,34 @@ def test_provisional_configuration_is_exact_and_does_not_use_suggestions() -> No
     assert config.full_smoke_joint_steps == 200
 
 
+def test_g1_6_config_changes_only_the_controlled_ablation_fields() -> None:
+    baseline_values = json.loads(
+        (REPO_ROOT / "configs" / "gan_smoke.json").read_text(encoding="utf-8")
+    )
+    ablation_values = json.loads(
+        (REPO_ROOT / "configs" / "gan_smoke_dclip10.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    changed = {
+        key for key in baseline_values if baseline_values[key] != ablation_values[key]
+    }
+    assert changed == {
+        "discriminator_learning_rate",
+        "discriminator_gradient_clip_max_norm",
+        "report_directory",
+        "checkpoint_directory",
+    }
+    ablation = load_gan_smoke_config(
+        REPO_ROOT / "configs" / "gan_smoke_dclip10.json"
+    )
+    assert ablation.discriminator_learning_rate == 0.000025
+    assert ablation.discriminator_gradient_clip_max_norm == 10
+    invalid = dict(ablation_values, discriminator_learning_rate=0.00005)
+    with pytest.raises(ValueError, match="ablation settings"):
+        type(ablation).from_dict(invalid)
+
+
 def test_warmup_gate_and_stage_one_gate_behaviour() -> None:
     assert warmup_gate_decision(completed_steps=5, monitor_margin=1) == "continue"
     assert warmup_gate_decision(completed_steps=10, monitor_margin=0.01) == "accepted"
@@ -207,6 +236,8 @@ def test_finite_and_locality_stop_gates() -> None:
         "exact_outside_support_change": 0.0,
         "maximum_invalid_fake_pixel_gradient": 0.0,
         "canonical_defect_gradient_coverage": 1.0,
+        "canonical_defect_gradient_active_count": 12,
+        "canonical_defect_gradient_total_count": 12,
         "clamp_saturation_fraction": 0.0,
         "output_range_violation_count": 0,
         "mean_absolute_residual_inside_support": 0.1,
@@ -219,6 +250,35 @@ def test_finite_and_locality_stop_gates() -> None:
     assert _training_gate(trainer, config, discriminator, nonfinite) == "nonfinite_training_metric"
     out_of_range = dict(generator, output_range_violation_count=1)
     assert _training_gate(trainer, config, discriminator, out_of_range) == "output_range_violation"
+
+
+def test_gradient_gate_uses_exact_counts_not_rounded_fraction() -> None:
+    trainer = _trainer()
+    config = load_gan_smoke_config(REPO_ROOT / "configs" / "gan_smoke.json")
+    discriminator = {
+        "real_logits": {"minimum": -1.0, "maximum": 1.0},
+        "fake_logits": {"minimum": -1.0, "maximum": 1.0},
+    }
+    generator = {
+        "exact_outside_support_change": 0.0,
+        "maximum_invalid_fake_pixel_gradient": 0.0,
+        "canonical_defect_gradient_active_count": 16_777_217,
+        "canonical_defect_gradient_total_count": 16_777_217,
+        "canonical_defect_gradient_coverage": 0.9999999403953552,
+        "output_range_violation_count": 0,
+        "mean_absolute_residual_inside_support": 0.1,
+        "fake_logits": {"minimum": -1.0, "maximum": 1.0},
+    }
+    assert _training_gate(trainer, config, discriminator, generator) is None
+
+    one_inactive = dict(
+        generator,
+        canonical_defect_gradient_active_count=16_777_216,
+        canonical_defect_gradient_coverage=1.0,
+    )
+    assert _training_gate(
+        trainer, config, discriminator, one_inactive
+    ) == "incomplete_canonical_adversarial_gradient"
 
 
 def test_fixed_monitor_categories_and_identities_are_deterministic() -> None:
@@ -239,6 +299,40 @@ def test_fixed_monitor_categories_and_identities_are_deterministic() -> None:
     assert [sample.metadata["template_id"] for sample in first.values()] == [
         sample.metadata["template_id"] for sample in second.values()
     ]
+
+
+def test_stratified_monitor_selection_is_deterministic_unique_and_larger() -> None:
+    contact_patterns = [
+        {"top": False, "bottom": False, "left": False, "right": False},
+        {"top": True, "bottom": False, "left": False, "right": False},
+        {"top": False, "bottom": False, "left": True, "right": False},
+        {"top": True, "bottom": False, "left": True, "right": False},
+        {"top": False, "bottom": False, "left": True, "right": True},
+    ]
+    samples = [
+        _sample(
+            index,
+            split="monitor",
+            contacts=contact_patterns[index % len(contact_patterns)],
+            size=2 + index % 12,
+        )
+        for index in range(60)
+    ]
+    first = select_stratified_monitor_samples(samples, per_category=4)
+    second = select_stratified_monitor_samples(samples, per_category=4)
+    first_ids = [
+        sample.metadata["sample_index"]
+        for category in MONITOR_CATEGORIES
+        for sample in first[category]
+    ]
+    second_ids = [
+        sample.metadata["sample_index"]
+        for category in MONITOR_CATEGORIES
+        for sample in second[category]
+    ]
+    assert first_ids == second_ids
+    assert len(first_ids) == 28 > len(MONITOR_CATEGORIES)
+    assert len(set(first_ids)) == len(first_ids)
 
 
 def test_atomic_jsonl_metric_logging(tmp_path: Path) -> None:

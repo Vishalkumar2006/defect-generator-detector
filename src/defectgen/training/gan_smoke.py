@@ -8,7 +8,7 @@ import math
 import os
 from dataclasses import asdict, dataclass, fields, replace
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 import numpy as np
 import torch
@@ -122,14 +122,21 @@ class GANSmokeConfig:
             )
         if self.batches_per_data_epoch <= 0:
             raise ValueError("batches_per_data_epoch must be positive")
-        if self.generator_learning_rate != 0.0001 or self.discriminator_learning_rate != 0.00005:
-            raise ValueError("Unexpected G1.5 provisional learning rates")
+        allowed_discriminator_ablation = {
+            (0.00005, 5.0),
+            (0.000025, 10.0),
+        }
+        if self.generator_learning_rate != 0.0001 or (
+            self.discriminator_learning_rate,
+            self.discriminator_gradient_clip_max_norm,
+        ) not in allowed_discriminator_ablation:
+            raise ValueError("Unexpected G1.5/G1.6 discriminator ablation settings")
         if self.adam_betas != (0.0, 0.9) or self.weight_decay != 0:
             raise ValueError("Unexpected G1.5 Adam settings")
         if self.discriminator_steps_per_generator_step != 1:
             raise ValueError("G1.5 requires one discriminator step per generator step")
-        if self.generator_gradient_clip_max_norm != 5 or self.discriminator_gradient_clip_max_norm != 5:
-            raise ValueError("G1.5 requires provisional maximum gradient norm 5")
+        if self.generator_gradient_clip_max_norm != 5:
+            raise ValueError("G1.5/G1.6 requires generator maximum gradient norm 5")
         expected_weights = GeneratorLossWeights(1.0, 1.0, 1.0, 0.1)
         if self.generator_loss_weights != expected_weights:
             raise ValueError("Unexpected G1.5 provisional generator coefficients")
@@ -478,6 +485,96 @@ def select_fixed_monitor_samples(
         raise RuntimeError(
             f"Unable to select fixed monitor categories: {', '.join(missing)}"
         )
+    return {category: selected[category] for category in MONITOR_CATEGORIES}
+
+
+def select_stratified_monitor_samples(
+    samples: Iterable[GANTrainingSample], *, per_category: int = 4
+) -> dict[str, tuple[GANTrainingSample, ...]]:
+    """Select a deterministic, unique monitor panel across geometry strata."""
+    if per_category <= 0:
+        raise ValueError("per_category must be positive")
+    contact_candidates: dict[str, list[tuple[int, GANTrainingSample]]] = {
+        category: [] for category in MONITOR_CATEGORIES[:5]
+    }
+    small_candidates: list[tuple[float, int, int, GANTrainingSample]] = []
+    large_candidates: list[tuple[float, int, int, GANTrainingSample]] = []
+    morphology_reserve = per_category * (len(MONITOR_CATEGORIES) + 1)
+    for index, sample in enumerate(samples):
+        contacts = sample.metadata["target_contact_sides"]
+        horizontal = contacts["top"] or contacts["bottom"]
+        vertical = contacts["left"] or contacts["right"]
+        if not any(contacts.values()):
+            category = "non-border"
+        elif contacts["left"] and contacts["right"]:
+            category = "left+right"
+        elif horizontal and vertical:
+            category = "corner"
+        elif horizontal:
+            category = "single-horizontal-border"
+        else:
+            category = "single-vertical-border"
+        if len(contact_candidates[category]) < per_category:
+            contact_candidates[category].append((index, sample))
+        coordinates = torch.nonzero(sample.fake_discriminator_mask[0].bool())
+        if not len(coordinates):
+            continue
+        height = int(coordinates[:, 0].max() - coordinates[:, 0].min() + 1)
+        width = int(coordinates[:, 1].max() - coordinates[:, 1].min() + 1)
+        positive = int(len(coordinates))
+        morphology_item = (
+            min(height, width) + positive / 1_000_000,
+            positive,
+            index,
+            sample,
+        )
+        small_candidates.append(morphology_item)
+        small_candidates.sort(key=lambda item: (item[0], item[2]))
+        del small_candidates[morphology_reserve:]
+        large_candidates.append(morphology_item)
+        large_candidates.sort(key=lambda item: (-item[1], item[2]))
+        del large_candidates[morphology_reserve:]
+
+    selected: dict[str, tuple[GANTrainingSample, ...]] = {}
+    used: set[str] = set()
+
+    def identity(sample: GANTrainingSample) -> str:
+        return (
+            f"{sample.metadata['sample_index']}:"
+            f"{sample.metadata['template_id']}:"
+            f"{sample.metadata['normal_background_sample_id']}"
+        )
+
+    for category in MONITOR_CATEGORIES[:5]:
+        chosen: list[GANTrainingSample] = []
+        for _, sample in contact_candidates[category]:
+            sample_id = identity(sample)
+            if sample_id in used:
+                continue
+            chosen.append(sample)
+            used.add(sample_id)
+            if len(chosen) == per_category:
+                break
+        if len(chosen) != per_category:
+            raise RuntimeError(f"Insufficient monitor samples for {category}")
+        selected[category] = tuple(chosen)
+
+    for category, candidates in (
+        ("small-thin", small_candidates),
+        ("large", large_candidates),
+    ):
+        chosen = []
+        for _, _, _, sample in candidates:
+            sample_id = identity(sample)
+            if sample_id in used:
+                continue
+            chosen.append(sample)
+            used.add(sample_id)
+            if len(chosen) == per_category:
+                break
+        if len(chosen) != per_category:
+            raise RuntimeError(f"Insufficient monitor samples for {category}")
+        selected[category] = tuple(chosen)
     return {category: selected[category] for category in MONITOR_CATEGORIES}
 
 

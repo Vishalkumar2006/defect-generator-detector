@@ -1,0 +1,21 @@
+{
+  "warmup_mean_step_seconds": 0.6479970800079172,
+  "joint_mean_step_seconds": 0.4977077304569976,
+  "joint_mean_pairs_per_second": 4.422153589355365,
+  "templates_used": 170,
+  "backgrounds_used": 366,
+  "contact_side_counts": {
+    "bottom": 12,
+    "bottom+left": 6,
+    "bottom+right": 15,
+    "left": 43,
+    "left+right": 8,
+    "none": 248,
+    "right": 45,
+    "top": 19,
+    "top+left": 4,
+    "top+right": 14
+  },
+  "data_epoch": 2,
+  "batch_position": 7
+}

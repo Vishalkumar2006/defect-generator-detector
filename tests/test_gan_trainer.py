@@ -144,6 +144,10 @@ def test_generator_step_changes_only_generator_and_preserves_locality_and_gradie
     assert result["generator_locality_before_step"]
     assert result["generator_locality_after_step"]
     assert result["canonical_defect_gradient_coverage"] == 1.0
+    assert result["canonical_defect_gradient_total_count"] > 0
+    assert result["canonical_defect_gradient_active_count"] == result[
+        "canonical_defect_gradient_total_count"
+    ]
     assert result["maximum_invalid_fake_pixel_gradient"] == 0.0
     assert result["output_range_violation_count"] == 0
     assert result["clamp_saturation_fraction"] == 0.0

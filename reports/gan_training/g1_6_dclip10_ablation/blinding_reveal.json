@@ -1,0 +1,13 @@
+{
+  "mapping": {
+    "A": "baseline",
+    "B": "candidate"
+  },
+  "derivation": "sha256('g1.6:42') first-byte parity",
+  "sheet_paths": [
+    "reports/gan_training/g1_6_dclip10_ablation/blinded_sheets/sheet_01.png",
+    "reports/gan_training/g1_6_dclip10_ablation/blinded_sheets/sheet_02.png",
+    "reports/gan_training/g1_6_dclip10_ablation/blinded_sheets/sheet_03.png",
+    "reports/gan_training/g1_6_dclip10_ablation/blinded_sheets/sheet_04.png"
+  ]
+}
