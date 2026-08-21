@@ -12,12 +12,22 @@ from torch.utils.data import Dataset
 
 from defectgen.data.ksdd2 import interpret_binary_mask
 
+from .compatibility import (
+    GANPlacementCompatibilityIndex,
+    measure_transformed_template_geometry,
+)
 from .geometry import ContactSides, ComponentWindow, connected_components, extract_native_window
 from .manifest import assert_gan_training_rows, gan_manifest_content_hash
-from .pipeline import construct_coarse_gan_input, sample_transform_parameters
+from .pipeline import construct_coarse_gan_input
 
 
 SampleLoader = Callable[[dict[str, Any]], tuple[np.ndarray, np.ndarray]]
+
+
+class GANSamplingFailure(ValueError):
+    def __init__(self, reason: str, accounting: dict[str, Any]) -> None:
+        super().__init__(reason)
+        self.accounting = accounting
 
 
 def _validate_metadata(metadata: dict[str, Any]) -> None:
@@ -117,6 +127,32 @@ class OnlineGANInputDataset(Dataset):
         )
         if not self.templates or not self.normal_backgrounds:
             raise ValueError("Category selection produced no GAN templates or backgrounds")
+        self.border_templates = [
+            template for template in self.templates if any(template["source_contact_sides"].values())
+        ]
+        self.non_border_templates = [
+            template for template in self.templates if not any(template["source_contact_sides"].values())
+        ]
+        self.sampling = metadata.get(
+            "sampling",
+            {
+                "border_fraction_mode": "empirical",
+                "border_fraction": None,
+                "maximum_transform_attempts": 4,
+            },
+        )
+        mode = self.sampling["border_fraction_mode"]
+        if mode not in {"empirical", "fixed"}:
+            raise ValueError("border_fraction_mode must be empirical or fixed")
+        if mode == "fixed" and not 0 <= float(self.sampling["border_fraction"]) <= 1:
+            raise ValueError("A fixed border fraction must be in [0,1]")
+        patch_size = (int(metadata["patch"]["width"]), int(metadata["patch"]["height"]))
+        self.compatibility_index = GANPlacementCompatibilityIndex(
+            self.normal_backgrounds,
+            patch_size=patch_size,
+            non_border_margin=int(metadata["transform"]["non_border_native_margin"]),
+            feather_radius=int(metadata["transform"]["feather_radius"]),
+        )
         natural_length = max(len(self.templates), len(self.normal_backgrounds))
         self.length = natural_length if length is None else int(length)
         if self.length <= 0:
@@ -147,12 +183,39 @@ class OnlineGANInputDataset(Dataset):
         ).encode("utf-8")
         return int.from_bytes(hashlib.sha256(material).digest()[:8], "big")
 
+    @staticmethod
+    def _attempt_seed(sample_seed: int, attempt: int) -> int:
+        if attempt == 0:
+            return sample_seed
+        material = f"{sample_seed}:transform-attempt:{attempt}".encode("utf-8")
+        return int.from_bytes(hashlib.sha256(material).digest()[:8], "big")
+
+    def _select_template(
+        self, rng: np.random.Generator
+    ) -> tuple[dict[str, Any], str, float]:
+        empirical = len(self.border_templates) / len(self.templates)
+        target_fraction = (
+            empirical
+            if self.sampling["border_fraction_mode"] == "empirical"
+            else float(self.sampling["border_fraction"])
+        )
+        if not self.border_templates:
+            selected_class = "non-border"
+        elif not self.non_border_templates:
+            selected_class = "border"
+        else:
+            selected_class = "border" if rng.random() < target_fraction else "non-border"
+        candidates = (
+            self.border_templates if selected_class == "border" else self.non_border_templates
+        )
+        return candidates[int(rng.integers(len(candidates)))], selected_class, target_fraction
+
     def __getitem__(self, index: int) -> dict[str, Any]:
         if not 0 <= index < self.length:
             raise IndexError(index)
         sample_seed = self._sample_seed(index)
         rng = np.random.default_rng(sample_seed)
-        template = self.templates[int(rng.integers(len(self.templates)))]
+        template, selected_class, target_border_fraction = self._select_template(rng)
         source_image, source_mask = self._sample_loader(template)
 
         components = connected_components(source_mask)
@@ -179,27 +242,73 @@ class OnlineGANInputDataset(Dataset):
 
         patch_width = int(self.metadata["patch"]["width"])
         patch_height = int(self.metadata["patch"]["height"])
-        transform = sample_transform_parameters(sample_seed, self.metadata["transform"])
         source_contacts = ContactSides.from_dict(template["source_contact_sides"])
         if source_contacts != component.contact_sides:
             raise ValueError("Template source-contact metadata no longer matches its component")
-        transformed_contacts = source_contacts.transformed(
-            horizontal_flip=transform["horizontal_flip"],
-            vertical_flip=transform["vertical_flip"],
-        )
-        rejection_reasons: list[str] = []
-        normal_order = rng.permutation(len(self.normal_backgrounds))
-        for normal_index in normal_order:
-            normal = self.normal_backgrounds[int(normal_index)]
+        maximum_attempts = int(self.sampling["maximum_transform_attempts"])
+        if maximum_attempts <= 0:
+            raise ValueError("maximum_transform_attempts must be positive")
+        indexing_exclusions = 0
+        indexing_candidates_examined = 0
+        exclusion_reasons: dict[str, int] = {}
+        empty_pools = 0
+        actual_placement_retries = 0
+        failure_reasons: list[str] = []
+        empty_pool_side_combinations: dict[str, int] = {}
+        failure_side_combinations: dict[str, int] = {}
+        for attempt in range(maximum_attempts):
+            attempt_seed = self._attempt_seed(sample_seed, attempt)
+            try:
+                geometry = measure_transformed_template_geometry(
+                    component_patch,
+                    source_contacts,
+                    seed=attempt_seed,
+                    transform_settings=self.metadata["transform"],
+                    colour_settings=self.metadata["colour_matching"],
+                    minimum_positive_pixels=int(
+                        self.metadata["patch"]["minimum_positive_pixels"]
+                    ),
+                )
+            except ValueError as error:
+                failure_reasons.append(str(error))
+                failure_side_combinations["transform_rejected_before_geometry"] = (
+                    failure_side_combinations.get("transform_rejected_before_geometry", 0) + 1
+                )
+                continue
+            pool = self.compatibility_index.query(geometry)
+            indexing_candidates_examined += pool.candidates_examined
+            indexing_exclusions += pool.candidates_excluded
+            for reason, count in pool.exclusion_reasons.items():
+                exclusion_reasons[reason] = exclusion_reasons.get(reason, 0) + count
+            if not pool.background_indices:
+                empty_pools += 1
+                empty_pool_side_combinations[geometry.side_combination] = (
+                    empty_pool_side_combinations.get(geometry.side_combination, 0) + 1
+                )
+                failure_side_combinations[geometry.side_combination] = (
+                    failure_side_combinations.get(geometry.side_combination, 0) + 1
+                )
+                failure_reasons.append(f"empty_compatibility_pool:{geometry.side_combination}")
+                continue
+            attempt_rng = np.random.default_rng(attempt_seed ^ 0xC04A71B1E)
+            normal_index = pool.background_indices[
+                int(attempt_rng.integers(len(pool.background_indices)))
+            ]
+            normal = self.normal_backgrounds[normal_index]
             normal_image, normal_mask = self._sample_loader(normal)
             if normal_mask.any():
                 raise ValueError("A GAN background loader returned defect pixels")
+            if (
+                normal_image.shape[0] != int(normal["native_height"])
+                or normal_image.shape[1] != int(normal["native_width"])
+            ):
+                raise ValueError("Normal-background native geometry differs from indexed metadata")
             try:
                 window, window_contacts = select_target_window(
                     normal_image.shape[:2],
                     (patch_width, patch_height),
-                    transformed_contacts,
-                    rng,
+                    geometry.transformed_contact_sides,
+                    attempt_rng,
                 )
                 target_top, target_left, _, _ = window
                 background, _, valid = extract_native_window(
@@ -244,27 +353,53 @@ class OnlineGANInputDataset(Dataset):
                     component_patch,
                     background,
                     valid,
-                    seed=sample_seed,
+                    seed=attempt_seed,
                     transform_settings=self.metadata["transform"],
                     colour_settings=self.metadata["colour_matching"],
                     provenance_base=provenance_base,
                 )
-                sample["provenance"]["candidate_background_rejections_before_success"] = len(
-                    rejection_reasons
+                accounting = {
+                    "compatibility_candidates_examined": indexing_candidates_examined,
+                    "compatibility_candidates_excluded": indexing_exclusions,
+                    "compatibility_pool_size": len(pool.background_indices),
+                    "compatibility_exclusion_reasons": dict(sorted(exclusion_reasons.items())),
+                    "empty_compatibility_pools": empty_pools,
+                    "actual_transform_placement_retries": attempt,
+                    "actual_placement_retries": actual_placement_retries,
+                    "attempts_per_successful_sample": attempt + 1,
+                    "selected_template_class": selected_class,
+                    "target_border_fraction": target_border_fraction,
+                    "border_fraction_mode": self.sampling["border_fraction_mode"],
+                    "successful_side_combination": geometry.side_combination,
+                    "template_identity": f"{template['sample_id']}:{component_id}:{template['window_index']}",
+                    "background_identity": normal["sample_id"],
+                }
+                sample["provenance"].update(
+                    {"base_sample_seed": sample_seed, "sampling_accounting": accounting}
                 )
-                sample["provenance"][
-                    "candidate_background_rejection_reasons_before_success"
-                ] = list(rejection_reasons)
-                sample["placement_diagnostics"][
-                    "candidate_background_rejections_before_success"
-                ] = len(rejection_reasons)
-                sample["placement_diagnostics"][
-                    "candidate_background_rejection_reasons_before_success"
-                ] = list(rejection_reasons)
+                sample["placement_diagnostics"].update(accounting)
                 return sample
             except ValueError as error:
-                rejection_reasons.append(str(error))
-        reasons = sorted(set(rejection_reasons))
-        raise ValueError(
-            "no_compatible_target_background_or_window:" + ",".join(reasons)
+                actual_placement_retries += 1
+                failure_reasons.append(str(error))
+                failure_side_combinations[geometry.side_combination] = (
+                    failure_side_combinations.get(geometry.side_combination, 0) + 1
+                )
+        reasons = sorted(set(failure_reasons))
+        raise GANSamplingFailure(
+            "gan_sampling_attempts_exhausted:" + ",".join(reasons),
+            {
+                "compatibility_candidates_examined": indexing_candidates_examined,
+                "compatibility_candidates_excluded": indexing_exclusions,
+                "compatibility_exclusion_reasons": dict(sorted(exclusion_reasons.items())),
+                "empty_compatibility_pools": empty_pools,
+                "empty_pool_side_combinations": dict(sorted(empty_pool_side_combinations.items())),
+                "failure_side_combinations": dict(sorted(failure_side_combinations.items())),
+                "actual_transform_placement_retries": max(0, maximum_attempts - 1),
+                "actual_placement_retries": actual_placement_retries,
+                "attempts": maximum_attempts,
+                "selected_template_class": selected_class,
+                "target_border_fraction": target_border_fraction,
+                "template_identity": f"{template['sample_id']}:{component_id}:{template['window_index']}",
+            },
         )

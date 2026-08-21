@@ -278,6 +278,7 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
         "patch": patch,
         "transform": configuration["template_transform"],
         "colour_matching": configuration["colour_matching"],
+        "sampling": configuration["sampling"],
         "source_manifest_sha256": source_manifest_sha256,
         "split_sha256": split_sha256,
         "templates": templates,
@@ -319,6 +320,9 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
                 source_contact_counts["multiple"] += 1
             combination = "+".join(active)
         source_contact_combinations[combination] = source_contact_combinations.get(combination, 0) + 1
+    empirical_border_fraction = sum(item["touches_native_border"] for item in templates) / len(
+        templates
+    )
     summary = {
         "pipeline_version": configuration["pipeline_version"],
         "total_defective_training_images": total_defective_training_images,
@@ -335,6 +339,9 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
         ),
         "templates_by_source_contact_side": source_contact_counts,
         "templates_by_source_contact_combination": source_contact_combinations,
+        "empirical_border_template_fraction": empirical_border_fraction,
+        "sampling_border_fraction_mode": configuration["sampling"]["border_fraction_mode"],
+        "configured_border_fraction": configuration["sampling"]["border_fraction"],
         "maximum_component_width": max(width for width, _ in component_dimensions),
         "maximum_component_height": max(height for _, height in component_dimensions),
         "total_normal_training_images": total_normal_training_images,

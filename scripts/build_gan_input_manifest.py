@@ -62,6 +62,10 @@ def _summary_markdown(summary: dict[str, Any]) -> str:
             "### Templates by source contact side",
             "",
             *contact_lines,
+            f"- Empirical border-template fraction: "
+            f"{summary['empirical_border_template_fraction']:.8f}",
+            f"- Border sampling mode: `{summary['sampling_border_fraction_mode']}`",
+            f"- Configured fixed border fraction: {summary['configured_border_fraction']}",
             f"- Maximum component width/height: {summary['maximum_component_width']} / "
             f"{summary['maximum_component_height']}",
             "",
@@ -98,8 +102,9 @@ def _summary_markdown(summary: dict[str, Any]) -> str:
             f"- GAN-manifest content SHA-256: `{summary['gan_manifest_content_sha256']}`",
             "",
             "Generated inputs remain online and deterministic from seed plus manifest hashes.",
-            "Successful target-side placements, incompatibility rejections, non-border placements,",
-            "accidental contacts, and support-validity counts are emitted by each visualization sheet.",
+            "Compatibility-index exclusions, actual retries, successful side combinations,",
+            "utilization, accidental contacts, and support validity are emitted by visualization",
+            "accounting and the bounded sampling-audit command.",
             "",
         ]
     )

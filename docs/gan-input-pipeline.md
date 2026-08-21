@@ -126,5 +126,48 @@ The visualization command accepts `all`, `border`, `non-border`, `small-thin`,
 `large`, and `narrow-background`. Each sheet includes the native-valid boundary,
 source/transformed/target contact sides, all input/composite masks and images,
 absolute difference, a defect zoom, and numerical invariant checks. A sibling
-`.accounting.json` reports successful target contacts, incompatible rejections,
-non-border placements, accidental contacts, and support outside validity.
+`.accounting.json` reports successful target contacts, compatibility-index
+exclusions, actual retries, non-border placements, accidental contacts, and support
+outside validity.
+
+## F1.3 compatibility-indexed sampling
+
+The F1.2 `border.accounting.json` value 1,113 did not describe a metadata prefilter.
+It combined 1,111 actual normal-background candidates that the online dataset
+loaded and passed to placement before six successful samples, plus two terminal
+visualization-category index searches that exhausted all 1,772 backgrounds. Thus
+the counter mixed candidate attempts with category-search failures: each terminal
+entry counted as one even though it hid 1,772 attempted backgrounds. The audit
+therefore implies 4,655 incompatible runtime background attempts in total
+(`1,111 + 2×1,772`), not 1,113. The old online path was genuinely inefficient. It
+shuffled every background and discovered incompatibility only after loading the
+image and attempting placement.
+
+F1.3 builds an in-memory metadata index grouped by native `(height,width)`. For the
+selected template and deterministic transform attempt, it calculates the exact
+nearest-neighbour mask bounding box, scaled source-content footprint, transformed
+contact sides, feather radius, and eight-pixel non-border margin. Each native-size
+group is checked once for required edge-window availability and exact horizontal
+and vertical placement bounds. The sampler then chooses directly from the resulting
+compatible background indices and loads only that selected image.
+
+Candidates removed by this metadata query are reported as
+`candidates_excluded_by_compatibility_index`; they are not runtime placement
+failures or retries. Separate counters cover empty pools, deterministic transform
+retries, and any unexpected placement retry after indexing. Provenance records pool
+size, exclusions, attempts, template/background identity, sampling class, and the
+successful side combination. Empty pools never change a border template into a
+non-border template or remove required contact sides.
+
+Border/non-border selection is explicit under `sampling`. The default
+`border_fraction_mode=empirical` samples the two classes at their proportions in
+the currently selected template set, then samples uniformly within the selected
+class. An optional fixed fraction can be declared before sampling. Compatibility
+difficulty therefore cannot silently suppress the intended border share.
+
+`scripts/audit_gan_sampling.py` performs a requested deterministic training-only
+online audit and atomically writes JSON and Markdown. It reports success rate,
+runtime, attempt quantiles, failures by reason and side combination, index
+exclusions, actual retries, empty pools, template/background utilization, contact
+invariants, and border-distribution drift. It writes no generated images and never
+constructs validation or official-test datasets.

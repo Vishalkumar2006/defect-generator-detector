@@ -10,6 +10,10 @@ from PIL import Image
 import pytest
 import torch
 
+from defectgen.gan.compatibility import (
+    GANPlacementCompatibilityIndex,
+    measure_transformed_template_geometry,
+)
 from defectgen.gan.dataset import OnlineGANInputDataset
 from defectgen.gan.geometry import (
     ContactSides,
@@ -27,7 +31,8 @@ from defectgen.gan.manifest import (
 )
 from defectgen.gan.normalization import binary_mask_tensor, gan_rgb_to_uint8, rgb_to_gan
 from defectgen.gan.pipeline import REQUIRED_PROVENANCE_FIELDS, construct_coarse_gan_input
-from defectgen.gan.dataset import select_target_window
+from defectgen.gan.dataset import GANSamplingFailure, select_target_window
+from defectgen.gan.sampling_audit import build_sampling_audit_summary
 from defectgen.gan.visualization import select_visualization_members, summarize_placements
 
 
@@ -325,6 +330,130 @@ def test_incompatible_border_template_is_rejected_instead_of_moved() -> None:
         )
 
 
+def _indexed_background(sample_id: str, height: int, width: int) -> dict:
+    return {
+        **_training_row(sample_id, False),
+        "native_height": height,
+        "native_width": width,
+        "achievable_valid_fraction": min(1.0, height / 64) * min(1.0, width / 64),
+        "available_window_count": 1,
+    }
+
+
+def _measured_geometry(mask: np.ndarray, contacts: ContactSides, **transform_overrides):
+    settings = _transform_settings(
+        horizontal_flip_probability=0.0,
+        vertical_flip_probability=0.0,
+        minimum_scale=1.0,
+        maximum_scale=1.0,
+        feather_radius=2,
+    )
+    settings.update(transform_overrides)
+    return measure_transformed_template_geometry(
+        mask,
+        contacts,
+        seed=42,
+        transform_settings=settings,
+        colour_settings=_colour_settings(),
+        minimum_positive_pixels=4,
+    )
+
+
+@pytest.mark.parametrize(
+    "contacts",
+    [
+        ContactSides(top=True),
+        ContactSides(bottom=True),
+        ContactSides(left=True),
+        ContactSides(right=True),
+        ContactSides(top=True, left=True),
+        ContactSides(bottom=True, right=True),
+    ],
+)
+def test_compatibility_index_handles_sides_and_corners(contacts) -> None:
+    mask = np.zeros((64, 64), dtype=bool)
+    top = 0 if contacts.top else (58 if contacts.bottom else 24)
+    left = 0 if contacts.left else (58 if contacts.right else 24)
+    mask[top : top + 6, left : left + 6] = True
+    index = GANPlacementCompatibilityIndex(
+        [
+            _indexed_background("exact", 64, 64),
+            _indexed_background("larger", 80, 80),
+            _indexed_background("narrow", 64, 40),
+        ],
+        patch_size=(64, 64),
+        non_border_margin=4,
+        feather_radius=2,
+    )
+    pool = index.query(_measured_geometry(mask, contacts))
+    assert pool.background_indices
+    assert pool.candidates_examined == 3
+
+
+def test_compatibility_index_handles_opposite_and_multiple_side_contacts() -> None:
+    horizontal_mask = np.zeros((64, 64), dtype=bool)
+    horizontal_mask[30:34, :] = True
+    vertical_mask = np.zeros((64, 64), dtype=bool)
+    vertical_mask[:, 30:34] = True
+    index = GANPlacementCompatibilityIndex(
+        [
+            _indexed_background("exact", 64, 64),
+            _indexed_background("wide", 64, 80),
+            _indexed_background("tall", 80, 64),
+            _indexed_background("narrow", 64, 40),
+        ],
+        patch_size=(64, 64),
+        non_border_margin=4,
+        feather_radius=2,
+    )
+    horizontal = index.query(
+        _measured_geometry(horizontal_mask, ContactSides(left=True, right=True))
+    )
+    vertical = index.query(
+        _measured_geometry(vertical_mask, ContactSides(top=True, bottom=True))
+    )
+    assert horizontal.background_indices == (0, 2)
+    assert vertical.background_indices == (0, 1, 3)
+    all_sides = np.ones((64, 64), dtype=bool)
+    pool = index.query(
+        _measured_geometry(
+            all_sides, ContactSides(top=True, bottom=True, left=True, right=True)
+        )
+    )
+    assert pool.background_indices == (0,)
+
+
+def test_compatibility_index_uses_post_flip_sides_and_narrow_geometry() -> None:
+    mask = np.zeros((64, 64), dtype=bool)
+    mask[20:30, 0:8] = True
+    geometry = _measured_geometry(
+        mask, ContactSides(left=True), horizontal_flip_probability=1.0
+    )
+    assert geometry.transformed_contact_sides == ContactSides(right=True)
+    index = GANPlacementCompatibilityIndex(
+        [_indexed_background("narrow", 64, 40)],
+        patch_size=(64, 64),
+        non_border_margin=4,
+        feather_radius=2,
+    )
+    assert index.query(geometry).background_indices == (0,)
+
+
+def test_compatibility_index_reports_empty_pool_without_runtime_pairing() -> None:
+    mask = np.zeros((64, 64), dtype=bool)
+    mask[30:34, :] = True
+    index = GANPlacementCompatibilityIndex(
+        [_indexed_background("narrow", 64, 40), _indexed_background("wide", 64, 80)],
+        patch_size=(64, 64),
+        non_border_margin=4,
+        feather_radius=2,
+    )
+    pool = index.query(_measured_geometry(mask, ContactSides(left=True, right=True)))
+    assert pool.background_indices == ()
+    assert pool.candidates_excluded == pool.candidates_examined == 2
+    assert sum(pool.exclusion_reasons.values()) == 2
+
+
 def test_gan_rgb_range_round_trip_and_binary_mask_contract() -> None:
     image = np.array([[[0, 127, 255], [10, 20, 30]]], dtype=np.uint8)
     normalized = rgb_to_gan(image)
@@ -410,7 +539,15 @@ def _dataset_fixture() -> tuple[dict, dict[str, tuple[np.ndarray, np.ndarray]]]:
         "source_manifest_sha256": "c" * 64,
         "split_sha256": "d" * 64,
         "templates": [template],
-        "normal_backgrounds": [{**normal, "available_window_count": 1}],
+        "normal_backgrounds": [
+            {
+                **normal,
+                "native_width": PATCH_WIDTH,
+                "native_height": PATCH_HEIGHT,
+                "achievable_valid_fraction": 1.0,
+                "available_window_count": 1,
+            }
+        ],
         "data_boundary": {
             "validation_rows_loaded": 0,
             "official_test_rows_loaded": 0,
@@ -461,6 +598,8 @@ def test_narrow_background_propagates_valid_region_and_blocks_padded_columns() -
         arrays["normal"][1][:, :native_width].copy(),
     )
     metadata["patch"]["minimum_normal_valid_fraction"] = 0.71875
+    metadata["normal_backgrounds"][0]["native_width"] = native_width
+    metadata["normal_backgrounds"][0]["achievable_valid_fraction"] = 0.71875
     metadata["gan_manifest_content_sha256"] = gan_manifest_content_hash(metadata)
     loader = lambda row: arrays[row["sample_id"]]
     sample = OnlineGANInputDataset(
@@ -512,6 +651,13 @@ def test_canonical_gan_manifest_hash_is_stable_and_content_sensitive() -> None:
     self_hash_only = copy.deepcopy(metadata)
     self_hash_only["gan_manifest_content_sha256"] = "0" * 64
     assert gan_manifest_content_hash(self_hash_only) == expected
+
+
+def test_online_dataset_rejects_manifest_content_hash_mismatch() -> None:
+    metadata, _ = _dataset_fixture()
+    metadata["transform"]["maximum_scale"] = 1.09
+    with pytest.raises(ValueError, match="content hash mismatch"):
+        OnlineGANInputDataset(metadata, Path("."), length=1, sample_loader=lambda row: None)
 
 
 def test_source_manifest_hash_has_explicit_name_and_split_definition() -> None:
@@ -573,16 +719,28 @@ def test_placement_accounting_includes_successes_and_compatibility_rejections() 
             "non_border_placement": False,
             "accidental_contact_violations": 0,
             "support_pixels_outside_valid_region": 0,
-            "candidate_background_rejection_reasons_before_success": [
-                "incompatible_border_placement"
-            ],
+            "compatibility_candidates_examined": 10,
+            "compatibility_candidates_excluded": 7,
+            "compatibility_exclusion_reasons": {"incompatible_border_placement": 7},
+            "actual_transform_placement_retries": 0,
+            "actual_placement_retries": 0,
+            "empty_compatibility_pools": 0,
+            "attempts_per_successful_sample": 1,
+            "successful_side_combination": "left",
+            "template_identity": "defect:0:0",
+            "background_identity": "normal",
         }
     }
     accounting = summarize_placements(
         [sample], ["target_window_missing_required_native_top_edge"]
     )
     assert accounting["successful_placements_by_target_contact_side"]["left"] == 1
-    assert accounting["incompatible_border_placement_rejections"] == 2
+    assert accounting["candidates_excluded_by_compatibility_index"] == 7
+    assert accounting["compatibility_index_exclusions_by_reason"] == {
+        "incompatible_border_placement": 7
+    }
+    assert accounting["terminal_visualization_search_failures"] == 1
+    assert accounting["actual_placement_retries"] == 0
     assert accounting["non_border_placements"] == 0
     assert accounting["accidental_contact_violations"] == 0
     assert accounting["support_pixels_outside_valid_region"] == 0
@@ -595,6 +753,105 @@ def test_different_dataset_seeds_change_generated_sample() -> None:
     second = OnlineGANInputDataset(metadata, Path("."), base_seed=2, length=1, sample_loader=loader)[0]
     assert first["provenance"]["generated_sample_seed"] != second["provenance"]["generated_sample_seed"]
     assert not torch.equal(first["conditioning_mask"], second["conditioning_mask"])
+
+
+def test_online_sampling_uses_explicit_configurable_border_distribution() -> None:
+    metadata, _ = _dataset_fixture()
+    border = copy.deepcopy(metadata["templates"][0])
+    border["sample_id"] = "border-defect"
+    border["source_contact_sides"] = ContactSides(left=True).to_dict()
+    border["touches_native_border"] = True
+    border["source_window_coordinates"]["source_contact_sides"] = ContactSides(
+        left=True
+    ).to_dict()
+    border["source_window_coordinates"]["touches_native_border"] = True
+    metadata["templates"].append(border)
+    metadata["sampling"] = {
+        "border_fraction_mode": "fixed",
+        "border_fraction": 1.0,
+        "maximum_transform_attempts": 2,
+    }
+    metadata["gan_manifest_content_sha256"] = gan_manifest_content_hash(metadata)
+    dataset = OnlineGANInputDataset(metadata, Path("."), length=1, sample_loader=lambda row: None)
+    selected, selected_class, target = dataset._select_template(np.random.default_rng(42))
+    assert selected is border
+    assert selected_class == "border" and target == 1.0
+    metadata["sampling"]["border_fraction"] = 0.0
+    metadata["gan_manifest_content_sha256"] = gan_manifest_content_hash(metadata)
+    dataset = OnlineGANInputDataset(metadata, Path("."), length=1, sample_loader=lambda row: None)
+    _, selected_class, target = dataset._select_template(np.random.default_rng(42))
+    assert selected_class == "non-border" and target == 0.0
+
+
+def test_online_dataset_reports_empty_compatibility_pool_without_background_attempts() -> None:
+    metadata, arrays = _dataset_fixture()
+    mask = np.zeros((PATCH_HEIGHT, PATCH_WIDTH), dtype=bool)
+    mask[250:254, :] = True
+    image = np.full((PATCH_HEIGHT, PATCH_WIDTH, 3), 30, dtype=np.uint8)
+    image[mask] = [230, 30, 20]
+    arrays["defect"] = (image, mask)
+    arrays["normal"] = (
+        arrays["normal"][0][:, :184].copy(),
+        arrays["normal"][1][:, :184].copy(),
+    )
+    contacts = ContactSides(left=True, right=True)
+    template = metadata["templates"][0]
+    template["source_contact_sides"] = contacts.to_dict()
+    template["touches_native_border"] = True
+    template["positive_pixels"] = int(mask.sum())
+    template["source_mask_bounding_box"] = {
+        "x_min": 0,
+        "y_min": 250,
+        "x_max": PATCH_WIDTH - 1,
+        "y_max": 253,
+    }
+    template["source_window_coordinates"]["positive_pixels"] = int(mask.sum())
+    template["source_window_coordinates"]["source_contact_sides"] = contacts.to_dict()
+    template["source_window_coordinates"]["touches_native_border"] = True
+    metadata["normal_backgrounds"][0]["native_width"] = 184
+    metadata["normal_backgrounds"][0]["achievable_valid_fraction"] = 0.71875
+    metadata["patch"]["minimum_normal_valid_fraction"] = 0.71875
+    metadata["sampling"] = {
+        "border_fraction_mode": "empirical",
+        "border_fraction": None,
+        "maximum_transform_attempts": 2,
+    }
+    metadata["gan_manifest_content_sha256"] = gan_manifest_content_hash(metadata)
+    loaded: list[str] = []
+
+    def loader(row: dict):
+        loaded.append(row["sample_id"])
+        return arrays[row["sample_id"]]
+
+    dataset = OnlineGANInputDataset(metadata, Path("."), length=1, sample_loader=loader)
+    with pytest.raises(GANSamplingFailure) as captured:
+        dataset[0]
+    assert captured.value.accounting["empty_compatibility_pools"] == 2
+    assert captured.value.accounting["compatibility_candidates_excluded"] == 2
+    assert sum(captured.value.accounting["failure_side_combinations"].values()) == 2
+    assert loaded == ["defect"]
+
+
+def test_sampling_audit_summary_reports_efficiency_utilization_and_drift() -> None:
+    metadata, arrays = _dataset_fixture()
+    loader = lambda row: arrays[row["sample_id"]]
+    sample = OnlineGANInputDataset(
+        metadata, Path("."), base_seed=42, length=1, sample_loader=loader
+    )[0]
+    summary = build_sampling_audit_summary(
+        metadata=metadata,
+        requested_samples=1,
+        samples=[sample],
+        failures=[],
+        elapsed_seconds=0.5,
+    )
+    assert summary["success_rate"] == 1.0
+    assert summary["attempts_per_requested_sample"]["maximum"] >= 1
+    assert summary["actual_placement_retries"] == 0
+    assert summary["template_utilization"]["unique_used"] == 1
+    assert summary["background_utilization"]["unique_used"] == 1
+    assert summary["support_pixels_outside_valid_region"] == 0
+    assert summary["accidental_contact_violations"] == 0
 
 
 def test_metadata_builder_ignores_forbidden_row_files_and_materializes_nothing(tmp_path: Path) -> None:
@@ -656,6 +913,11 @@ def test_metadata_builder_ignores_forbidden_row_files_and_materializes_nothing(t
         },
         "template_transform": _transform_settings(),
         "colour_matching": _colour_settings(),
+        "sampling": {
+            "border_fraction_mode": "empirical",
+            "border_fraction": None,
+            "maximum_transform_attempts": 4,
+        },
         "data": {"development_manifest": "data/split.csv"},
     }
     metadata, summary = build_gan_input_metadata(tmp_path, configuration)

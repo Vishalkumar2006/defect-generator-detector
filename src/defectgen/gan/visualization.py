@@ -77,7 +77,17 @@ def summarize_placements(
     non_border = 0
     accidental = 0
     support_outside = 0
-    rejections = Counter(rejection_reasons)
+    terminal_failures = Counter(rejection_reasons)
+    indexed_exclusions: Counter[str] = Counter()
+    candidates_examined = 0
+    candidates_excluded = 0
+    transform_retries = 0
+    placement_retries = 0
+    empty_pools = 0
+    attempts: list[int] = []
+    side_combinations: Counter[str] = Counter()
+    template_utilization: Counter[str] = Counter()
+    background_utilization: Counter[str] = Counter()
     for sample in sample_list:
         diagnostic = sample["placement_diagnostics"]
         for side, active in diagnostic["successful_target_contact_sides"].items():
@@ -85,21 +95,40 @@ def summarize_placements(
         non_border += int(diagnostic["non_border_placement"])
         accidental += int(diagnostic["accidental_contact_violations"])
         support_outside += int(diagnostic["support_pixels_outside_valid_region"])
-        rejections.update(
-            diagnostic.get("candidate_background_rejection_reasons_before_success", [])
-        )
+        candidates_examined += int(diagnostic.get("compatibility_candidates_examined", 0))
+        candidates_excluded += int(diagnostic.get("compatibility_candidates_excluded", 0))
+        indexed_exclusions.update(diagnostic.get("compatibility_exclusion_reasons", {}))
+        transform_retries += int(diagnostic.get("actual_transform_placement_retries", 0))
+        placement_retries += int(diagnostic.get("actual_placement_retries", 0))
+        empty_pools += int(diagnostic.get("empty_compatibility_pools", 0))
+        attempts.append(int(diagnostic.get("attempts_per_successful_sample", 1)))
+        side_combinations[diagnostic.get("successful_side_combination", "none")] += 1
+        template_utilization[diagnostic.get("template_identity", "unknown")] += 1
+        background_utilization[diagnostic.get("background_identity", "unknown")] += 1
+    attempt_array = np.asarray(attempts or [0], dtype=float)
     return {
         "successful_placements": len(sample_list),
         "successful_placements_by_target_contact_side": dict(target_counts),
-        "incompatible_border_placement_rejections": sum(
-            count
-            for reason, count in rejections.items()
-            if "border" in reason
-            or "native_" in reason
-            or "target_window_cannot_contain" in reason
-        ),
-        "rejection_reasons": dict(sorted(rejections.items())),
+        "successful_placements_by_side_combination": dict(sorted(side_combinations.items())),
+        "candidates_examined_by_compatibility_index": candidates_examined,
+        "candidates_excluded_by_compatibility_index": candidates_excluded,
+        "compatibility_index_exclusions_by_reason": dict(sorted(indexed_exclusions.items())),
+        "actual_transform_placement_retries": transform_retries,
+        "actual_placement_retries": placement_retries,
+        "empty_compatibility_pools": empty_pools,
+        "terminal_visualization_search_failures": sum(terminal_failures.values()),
+        "terminal_visualization_failure_reasons": dict(sorted(terminal_failures.items())),
+        "attempts_per_successful_sample": {
+            "mean": float(attempt_array.mean()),
+            "p95": float(np.quantile(attempt_array, 0.95, method="linear")),
+            "p99": float(np.quantile(attempt_array, 0.99, method="linear")),
+            "maximum": int(attempt_array.max()),
+        },
         "non_border_placements": non_border,
         "accidental_contact_violations": accidental,
         "support_pixels_outside_valid_region": support_outside,
+        "unique_templates_used": len(template_utilization),
+        "unique_backgrounds_used": len(background_utilization),
+        "template_utilization": dict(sorted(template_utilization.items())),
+        "background_utilization": dict(sorted(background_utilization.items())),
     }

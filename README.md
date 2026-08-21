@@ -94,3 +94,9 @@ sides are transformed with flips and must match target native edges, while
 non-border defects retain an eight-pixel margin. It also distinguishes source and
 split identities from the canonical `gan_manifest_content_sha256` and adds
 category-aware visual audits with placement accounting.
+
+F1.3 replaces background-by-background placement retries with a deterministic
+native-geometry compatibility index. Border sampling defaults explicitly to the
+empirical template fraction, index exclusions are distinguished from actual
+placement retries, and `scripts/audit_gan_sampling.py` provides a bounded
+training-only performance and distribution audit without materializing images.
