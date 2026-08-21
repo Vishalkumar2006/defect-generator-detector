@@ -116,3 +116,10 @@ PatchGAN discriminator. The synthetic architecture audit uses a 512 x 256 input,
 loads no dataset rows, performs no training step, and writes its invariant report
 under `reports/gan_architecture/`. Architecture details are documented in
 `docs/gan-architecture.md`.
+
+G1.2 adds localized, raw-logit hinge objectives and independent change, seam, TV,
+and R1 primitives without adding a dataset or trainer. A shared canonical mask
+policy prevents real/fake conditioning-format differences, while dilated mask
+projection prevents unrelated PatchGAN background logits from dominating. The
+synthetic audit and mathematical definitions are under `reports/gan_losses/` and
+`docs/gan-losses.md`.

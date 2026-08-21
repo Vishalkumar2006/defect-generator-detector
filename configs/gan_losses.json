@@ -1,0 +1,13 @@
+{
+  "loss_version": "g1_2_localized_gan_losses_v1",
+  "canonical_mask_threshold": 0.5,
+  "localization_radius": 35,
+  "boundary_ring_width": 3,
+  "aggregation_weights_provisional": true,
+  "generator_loss_weights": {
+    "adversarial": 1.0,
+    "change": 1.0,
+    "boundary": 1.0,
+    "total_variation": 1.0
+  }
+}

@@ -21,3 +21,12 @@ or training. Run its synthetic CPU audit with:
 ```powershell
 .\.venv\Scripts\python.exe .\scripts\audit_gan_architecture.py --config .\configs\gan_architecture.json
 ```
+
+`gan_losses.json` defines the independently testable G1.2 localized objectives.
+Its unit aggregation coefficients are explicitly provisional; they are not final
+training hyperparameters and must be revisited after a future training-smoke audit
+measures component scales.
+
+```powershell
+.\.venv\Scripts\python.exe .\scripts\audit_gan_losses.py --architecture-config .\configs\gan_architecture.json --loss-config .\configs\gan_losses.json
+```

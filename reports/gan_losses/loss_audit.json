@@ -1,0 +1,124 @@
+{
+  "status": "PASS",
+  "loss_version": "g1_2_localized_gan_losses_v1",
+  "architecture_version": "g1_1_masked_residual_gan_v1",
+  "input_shape": [
+    1,
+    3,
+    512,
+    256
+  ],
+  "canonical_mask_policy": {
+    "operator": "greater_than_or_equal",
+    "threshold": 0.5
+  },
+  "localization_radius_input_pixels": 35,
+  "boundary_ring_width_input_pixels": 3,
+  "aggregation_weights_provisional": true,
+  "provisional_generator_loss_weights": {
+    "adversarial": 1.0,
+    "change": 1.0,
+    "boundary": 1.0,
+    "total_variation": 1.0
+  },
+  "mask_cases": {
+    "central": {
+      "active_patch_logits": 120,
+      "total_patch_logits": 1860,
+      "active_patch_logit_fraction": 0.06451612903225806,
+      "loss_components": {
+        "discriminator_real_hinge": 1.0428833961486816,
+        "discriminator_fake_hinge": 0.9460240602493286,
+        "discriminator_total": 1.9889074563980103,
+        "generator_adversarial": 0.053975943475961685,
+        "support_normalized_change": 0.06922301650047302,
+        "boundary_seam": 0.03421253710985184,
+        "masked_total_variation": 0.07472038269042969,
+        "provisional_aggregated_generator": 0.23213186860084534
+      }
+    },
+    "border_left": {
+      "active_patch_logits": 50,
+      "total_patch_logits": 1860,
+      "active_patch_logit_fraction": 0.026881720430107527,
+      "loss_components": {
+        "discriminator_real_hinge": 0.8071324229240417,
+        "discriminator_fake_hinge": 1.123978853225708,
+        "discriminator_total": 1.9311113357543945,
+        "generator_adversarial": -0.12397889047861099,
+        "support_normalized_change": 0.14454279839992523,
+        "boundary_seam": 0.11921259760856628,
+        "masked_total_variation": 0.0715554729104042,
+        "provisional_aggregated_generator": 0.21133196353912354
+      }
+    },
+    "corner_top_left": {
+      "active_patch_logits": 36,
+      "total_patch_logits": 1860,
+      "active_patch_logit_fraction": 0.01935483870967742,
+      "loss_components": {
+        "discriminator_real_hinge": 0.2813238203525543,
+        "discriminator_fake_hinge": 1.7772431373596191,
+        "discriminator_total": 2.0585670471191406,
+        "generator_adversarial": -0.7772433161735535,
+        "support_normalized_change": 0.18928593397140503,
+        "boundary_seam": 0.14516320824623108,
+        "masked_total_variation": 0.05965941399335861,
+        "provisional_aggregated_generator": -0.38313475251197815
+      }
+    },
+    "left_right": {
+      "active_patch_logits": 300,
+      "total_patch_logits": 1860,
+      "active_patch_logit_fraction": 0.16129032258064516,
+      "loss_components": {
+        "discriminator_real_hinge": 1.3311189413070679,
+        "discriminator_fake_hinge": 0.6750083565711975,
+        "discriminator_total": 2.00612735748291,
+        "generator_adversarial": 0.34174779057502747,
+        "support_normalized_change": 0.10937163978815079,
+        "boundary_seam": 0.07380139082670212,
+        "masked_total_variation": 0.06690394878387451,
+        "provisional_aggregated_generator": 0.5918247699737549
+      }
+    }
+  },
+  "localized_r1_unscaled": 0.07006777077913284,
+  "generator_gradient_coverage": {
+    "parameter_tensors_with_gradients": 56,
+    "total_trainable_parameter_tensors": 56,
+    "parameter_tensor_coverage_fraction": 1.0,
+    "finite_gradient_elements": 5896739,
+    "nonzero_gradient_elements": 5896739,
+    "total_trainable_parameter_elements": 5896739,
+    "finite_gradient_element_fraction": 1.0,
+    "nonzero_gradient_element_fraction": 1.0
+  },
+  "discriminator_gradient_coverage": {
+    "parameter_tensors_with_gradients": 16,
+    "total_trainable_parameter_tensors": 16,
+    "parameter_tensor_coverage_fraction": 1.0,
+    "finite_gradient_elements": 695649,
+    "nonzero_gradient_elements": 695611,
+    "total_trainable_parameter_elements": 695649,
+    "finite_gradient_element_fraction": 1.0,
+    "nonzero_gradient_element_fraction": 0.9999453747507723
+  },
+  "invariants": {
+    "canonical_real_fake_masks_identical": true,
+    "all_case_losses_finite": true,
+    "zero_weight_logits_have_zero_influence": true,
+    "discriminator_step_has_no_generator_gradients": true,
+    "generator_step_has_no_discriminator_parameter_gradients": true,
+    "generator_gradients_finite": true,
+    "generator_has_nonzero_gradients": true,
+    "discriminator_gradients_finite": true,
+    "discriminator_has_nonzero_gradients": true,
+    "r1_finite": true
+  },
+  "validation_rows_loaded": 0,
+  "official_test_rows_loaded": 0,
+  "materialized_generated_images": 0,
+  "training_steps": 0,
+  "paired_target_reconstruction_loss": false
+}
