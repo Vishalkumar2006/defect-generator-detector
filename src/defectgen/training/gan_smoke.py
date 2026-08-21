@@ -15,6 +15,7 @@ import torch
 from torch import nn
 
 from defectgen.gan.training_pairs import GANTrainingSample
+from defectgen.models import ARCHITECTURE_VERSION, RESIDUAL_SEMANTICS_VERSION
 from defectgen.training.engine import capture_random_states, restore_random_states
 from defectgen.training.gan_losses import GeneratorLossWeights
 from defectgen.training.gan_trainer import (
@@ -24,7 +25,7 @@ from defectgen.training.gan_trainer import (
 )
 
 
-SMOKE_VERSION = "g1_5_gated_gan_smoke_v1"
+SMOKE_VERSION = "g1_5a_gated_gan_smoke_v1"
 MONITOR_CATEGORIES = (
     "non-border",
     "single-horizontal-border",
@@ -81,7 +82,7 @@ class GANSmokeConfig:
     detector_inside_retention_stop_ratio: float
     detector_dice_warning_drop: float
     absolute_logit_stop: float
-    clamp_saturation_stop_fraction: float
+    output_range_violation_stop_count: int
     mean_support_change_stop: float
     provisional_configuration: bool
 
@@ -161,8 +162,8 @@ class GANSmokeConfig:
             <= 1
         ):
             raise ValueError("Invalid detector retention gates")
-        if not 0 < self.clamp_saturation_stop_fraction < 1:
-            raise ValueError("Invalid clamp-saturation stop threshold")
+        if self.output_range_violation_stop_count != 0:
+            raise ValueError("Output-range violation stop count must be zero")
         if self.absolute_logit_stop <= 0 or self.mean_support_change_stop <= 0:
             raise ValueError("Numerical stop thresholds must be positive")
 
@@ -238,6 +239,8 @@ def save_smoke_checkpoint(
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "smoke_version": SMOKE_VERSION,
+        "architecture_version": ARCHITECTURE_VERSION,
+        "residual_semantics_version": RESIDUAL_SEMANTICS_VERSION,
         "generator_state": trainer.generator.state_dict(),
         "discriminator_state": trainer.discriminator.state_dict(),
         "generator_optimizer_state": trainer.generator_optimizer.state_dict(),
@@ -275,6 +278,10 @@ def load_smoke_checkpoint(
     expected_configuration: Mapping[str, Any],
 ) -> SmokeProgress:
     payload = torch.load(path, map_location=trainer.device, weights_only=False)
+    if payload.get("residual_semantics_version") != RESIDUAL_SEMANTICS_VERSION:
+        raise ValueError("Smoke checkpoint residual-semantics version is incompatible")
+    if payload.get("architecture_version") != ARCHITECTURE_VERSION:
+        raise ValueError("Smoke checkpoint generator architecture version is incompatible")
     if payload.get("smoke_version") != SMOKE_VERSION:
         raise ValueError("Smoke checkpoint version is incompatible")
     if payload.get("configuration") != dict(expected_configuration):
@@ -284,8 +291,11 @@ def load_smoke_checkpoint(
         raise ValueError("Smoke checkpoint manifest, split, or monitor identity is incompatible")
     if payload.get("precision_mode") != trainer.precision:
         raise ValueError("Smoke checkpoint precision mode is incompatible")
-    trainer.generator.load_state_dict(payload["generator_state"])
-    trainer.discriminator.load_state_dict(payload["discriminator_state"])
+    try:
+        trainer.generator.load_state_dict(payload["generator_state"])
+        trainer.discriminator.load_state_dict(payload["discriminator_state"])
+    except RuntimeError as error:
+        raise ValueError("Smoke checkpoint model state dictionary is incompatible") from error
     trainer.generator_optimizer.load_state_dict(payload["generator_optimizer_state"])
     trainer.discriminator_optimizer.load_state_dict(
         payload["discriminator_optimizer_state"]

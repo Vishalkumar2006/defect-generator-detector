@@ -23,7 +23,10 @@ an estimated scheduled ratio of `0.05543 * 0.5 * 16 = 0.443`.
 Atomic checkpoints contain both models and optimizers, optional scaler state,
 configuration and hashes, manifest/split hashes, fixed monitor identities,
 operation counters, data epoch and position, RNG state, and the last completed
-operation. Numbered and `last.pt` checkpoints live in the ignored
+operation. G1.5a checkpoints additionally carry the architecture and residual-
+semantics versions. Loading rejects missing or mismatched semantics before model
+state restoration, and the generator state contains a persistent semantics marker,
+so the preserved G1.5 checkpoints cannot be resumed accidentally. Numbered and `last.pt` checkpoints live in the ignored
 `checkpoints/gan_smoke/` directory. There is no "best GAN" checkpoint. CPU tests
 verify uninterrupted and checkpoint/resumed updates produce identical parameter
 hashes without repeating or skipping a step.
@@ -56,7 +59,11 @@ refined Dice was `0.51817` versus composite `0.55277`. R1 was not reached becaus
 only eleven total discriminator updates were executed, fewer than the first
 scheduled event at update 16.
 
-The 20-step gate therefore did not pass and the run was not continued. Do not
-resume or tune around this preserved stop without a separately authorized phase.
+The 20-step gate therefore did not pass and the run was not continued. G1.5a
+preserves this result as diagnostic evidence while replacing clamp monitoring in
+future runs with a strict zero output-range-violation invariant. Future telemetry
+also reports the old additive rule's would-have-clamped fraction, directional-cap
+saturation, `tanh(raw)` saturation, and actual applied-residual magnitude. Do not
+resume or tune around the preserved stop without a separately authorized phase.
 Compact reports and fixed sheets are under `reports/gan_training/smoke/`; ignored
 recovery checkpoints remain under `checkpoints/gan_smoke/`.

@@ -683,7 +683,7 @@ class GANOneStepTrainer:
                     boundary_width=self.loss_config.boundary_ring_width,
                 )
                 total_variation = masked_total_variation_loss(
-                    generated.raw_residual.float(), generated.support_mask
+                    generated.applied_residual.float(), generated.support_mask
                 )
                 aggregated = aggregate_generator_losses(
                     adversarial=adversarial.float(),
@@ -756,19 +756,45 @@ class GANOneStepTrainer:
                 support_pixels = generated.support_mask.expand_as(absolute_change)
                 mean_canonical_change = float(absolute_change[canonical_pixels].mean())
                 mean_support_change = float(absolute_change[support_pixels].mean())
-                maximum_residual = float(absolute_change.max())
-                mean_residual = float(absolute_change[support_pixels].mean())
-                clamp_saturation = float(
-                    (generated.refined_image.detach().float().abs() >= 1.0)
+                applied = generated.applied_residual.detach().float()
+                raw_direction = torch.tanh(generated.raw_residual.detach().float())
+                composite_float = selected.composite_image.detach().float()
+                configured_cap = torch.full_like(
+                    composite_float, self.generator.residual_scale
+                )
+                positive_cap = torch.minimum(configured_cap, 1.0 - composite_float)
+                negative_cap = torch.minimum(configured_cap, composite_float + 1.0)
+                directional_cap = torch.where(
+                    raw_direction >= 0, positive_cap, negative_cap
+                )
+                old_additive = (
+                    composite_float
+                    + self.generator.residual_scale * raw_direction
+                )
+                maximum_residual = float(applied.abs().max())
+                mean_residual = float(applied.abs()[support_pixels].mean())
+                output_range_violation_count = int(
+                    ((generated.refined_image.detach().float() < -1.0)
+                    | (generated.refined_image.detach().float() > 1.0)).sum()
+                )
+                would_have_clamped = float(
+                    ((old_additive < -1.0) | (old_additive > 1.0))
                     [support_pixels]
                     .float()
                     .mean()
                 )
-                tanh_saturation = float(
-                    (generated.raw_residual.detach().float().abs() >= 0.99)
-                    [support_pixels]
+                positive_directional_cap = directional_cap > 0
+                cap_audit_pixels = support_pixels & positive_directional_cap
+                directional_cap_saturation = float(
+                    (applied.abs() >= 0.99 * directional_cap)
+                    [cap_audit_pixels]
                     .float()
                     .mean()
+                    if bool(cap_audit_pixels.any())
+                    else 0.0
+                )
+                tanh_saturation = float(
+                    (raw_direction.abs() >= 0.99)[support_pixels].float().mean()
                 )
                 exact_outside_support_change = float(
                     absolute_change[outside_support].max()
@@ -813,9 +839,16 @@ class GANOneStepTrainer:
             ),
             "mean_absolute_residual_inside_support": mean_residual,
             "maximum_absolute_residual": maximum_residual,
+            "mean_absolute_applied_residual": mean_residual,
+            "maximum_absolute_applied_residual": maximum_residual,
             "mean_change_inside_canonical_defect": mean_canonical_change,
             "mean_change_inside_support_halo": mean_support_change,
-            "clamp_saturation_fraction": clamp_saturation,
+            "output_range_violation_count": output_range_violation_count,
+            "would_have_clamped_fraction_old_additive": would_have_clamped,
+            "directional_cap_saturation_fraction": directional_cap_saturation,
+            "clamp_saturation_fraction": 0.0,
+            "clamp_saturation_deprecated": True,
+            "tanh_raw_residual_saturation_fraction": tanh_saturation,
             "tanh_residual_saturation_fraction": tanh_saturation,
             "exact_outside_support_change": exact_outside_support_change,
             "canonical_defect_gradient_coverage": canonical_gradient_coverage,
@@ -1042,7 +1075,7 @@ def calibrate_gan_loss_scales(
                         boundary_width=trainer.loss_config.boundary_ring_width,
                     ),
                     "total_variation": masked_total_variation_loss(
-                        generated.raw_residual.float(), generated.support_mask
+                        generated.applied_residual.float(), generated.support_mask
                     ),
                 }
                 for position, (name, value) in enumerate(components.items()):

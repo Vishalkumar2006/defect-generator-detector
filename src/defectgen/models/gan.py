@@ -13,7 +13,8 @@ from torch.nn import functional as F
 from torch.nn.utils.parametrizations import spectral_norm
 
 
-ARCHITECTURE_VERSION = "g1_1_masked_residual_gan_v1"
+ARCHITECTURE_VERSION = "g1_5a_identity_range_aware_residual_gan_v1"
+RESIDUAL_SEMANTICS_VERSION = "g1_5a_directional_range_aware_residual_v1"
 
 
 @dataclass(frozen=True)
@@ -185,7 +186,29 @@ class _UpsampleSkipBlock(nn.Module):
 class MaskedResidualGeneratorOutput:
     refined_image: torch.Tensor
     raw_residual: torch.Tensor
+    applied_residual: torch.Tensor
     support_mask: torch.Tensor
+
+
+def range_aware_residual(
+    image: torch.Tensor,
+    raw_residual: torch.Tensor,
+    maximum_absolute_delta: float,
+) -> torch.Tensor:
+    """Map an unconstrained residual to the image's available directional range."""
+    if image.shape != raw_residual.shape:
+        raise ValueError("image and raw_residual must have identical shapes")
+    if not 0 < maximum_absolute_delta <= 1:
+        raise ValueError("maximum_absolute_delta must be in (0, 1]")
+    direction = torch.tanh(raw_residual)
+    configured_cap = torch.full_like(image, maximum_absolute_delta)
+    positive_cap = torch.minimum(configured_cap, 1.0 - image)
+    negative_cap = torch.minimum(configured_cap, image + 1.0)
+    return torch.where(
+        direction >= 0,
+        direction * positive_cap,
+        direction * negative_cap,
+    )
 
 
 class MaskedResidualGenerator(nn.Module):
@@ -246,7 +269,16 @@ class MaskedResidualGenerator(nn.Module):
         self.output_head = nn.Sequential(
             nn.ReflectionPad2d(3),
             nn.Conv2d(widths[0], 3, kernel_size=7),
-            nn.Tanh(),
+        )
+        final_convolution = self.output_head[-1]
+        if not isinstance(final_convolution, nn.Conv2d):
+            raise RuntimeError("Generator output head must end with a convolution")
+        nn.init.zeros_(final_convolution.weight)
+        nn.init.zeros_(final_convolution.bias)
+        self.register_buffer(
+            "_residual_semantics_marker",
+            torch.tensor([1], dtype=torch.int32),
+            persistent=True,
         )
 
     def _support_mask(self, defect_mask: torch.Tensor) -> torch.Tensor:
@@ -273,13 +305,23 @@ class MaskedResidualGenerator(nn.Module):
             decoded = block(decoded, skip)
         raw_residual = self.output_head(decoded)
         support = self._support_mask(defect_mask).to(device=composite_image.device)
-        candidate = torch.clamp(
-            composite_image + self.residual_scale * raw_residual, min=-1.0, max=1.0
+        directional_residual = range_aware_residual(
+            composite_image,
+            raw_residual,
+            self.residual_scale,
         )
-        refined = torch.where(support.expand_as(composite_image), candidate, composite_image)
+        expanded_support = support.expand_as(composite_image)
+        applied_residual = torch.where(
+            expanded_support,
+            directional_residual,
+            torch.zeros_like(directional_residual),
+        )
+        candidate = composite_image + directional_residual
+        refined = torch.where(expanded_support, candidate, composite_image)
         return MaskedResidualGeneratorOutput(
             refined_image=refined,
             raw_residual=raw_residual,
+            applied_residual=applied_residual,
             support_mask=support,
         )
 

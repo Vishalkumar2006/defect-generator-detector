@@ -203,8 +203,11 @@ def _training_gate(
         return "invalid_fake_pixel_adversarial_gradient"
     if generator["canonical_defect_gradient_coverage"] != 1:
         return "incomplete_canonical_adversarial_gradient"
-    if generator["clamp_saturation_fraction"] > config.clamp_saturation_stop_fraction:
-        return "clamp_saturation_above_limit"
+    if (
+        generator["output_range_violation_count"]
+        > config.output_range_violation_stop_count
+    ):
+        return "output_range_violation"
     if (
         generator["mean_absolute_residual_inside_support"]
         > config.mean_support_change_stop
@@ -1099,7 +1102,13 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             f"- D/G pre-clip gradient norms: "
             f"{terminal['discriminator']['gradient_clipping']['pre_clipping_norm']} / "
             f"{terminal['generator']['gradient_clipping']['pre_clipping_norm']}",
-            f"- Clamp saturation: {terminal['generator']['clamp_saturation_fraction']}",
+            f"- Output-range violations: "
+            f"{terminal['generator']['output_range_violation_count']}",
+            f"- Would-have-clamped fraction (deprecated additive rule): "
+            f"{terminal['generator']['would_have_clamped_fraction_old_additive']}",
+            f"- Directional-cap / tanh saturation: "
+            f"{terminal['generator']['directional_cap_saturation_fraction']} / "
+            f"{terminal['generator']['tanh_raw_residual_saturation_fraction']}",
             f"- Mean/max support change: "
             f"{terminal['generator']['mean_absolute_residual_inside_support']} / "
             f"{terminal['generator']['maximum_absolute_residual']}",

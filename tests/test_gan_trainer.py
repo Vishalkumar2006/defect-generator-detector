@@ -145,6 +145,12 @@ def test_generator_step_changes_only_generator_and_preserves_locality_and_gradie
     assert result["generator_locality_after_step"]
     assert result["canonical_defect_gradient_coverage"] == 1.0
     assert result["maximum_invalid_fake_pixel_gradient"] == 0.0
+    assert result["output_range_violation_count"] == 0
+    assert result["clamp_saturation_fraction"] == 0.0
+    assert result["clamp_saturation_deprecated"]
+    assert result["mean_absolute_applied_residual"] == result[
+        "mean_absolute_residual_inside_support"
+    ]
     assert result["optimizer_state_finite"]
     assert all(torch.isfinite(torch.tensor(value)) for value in result["losses"].values())
 
@@ -227,7 +233,7 @@ def test_fp32_deterministic_repeatability() -> None:
     assert results[0] == results[1]
 
 
-def test_calibration_is_finite_nonzero_and_does_not_update() -> None:
+def test_identity_calibration_is_finite_and_reports_expected_staged_zeros() -> None:
     torch.manual_seed(6)
     trainer = _trainer(config=_config(deterministic_audit_batches=2))
     generator_before = parameter_hash(trainer.generator)
@@ -238,9 +244,12 @@ def test_calibration_is_finite_nonzero_and_does_not_update() -> None:
     assert parameter_hash(trainer.discriminator) == discriminator_before
     for statistics in report["raw_loss_distributions"].values():
         assert statistics["finite_count"] == 2 and statistics["nonfinite_count"] == 0
-    for component in report["generator_unit_gradient_scales"].values():
-        assert component["zero_gradient_count"] == 0
-        assert component["unit_gradient_norm"]["minimum"] > 0
+    gradients = report["generator_unit_gradient_scales"]
+    assert gradients["adversarial"]["zero_gradient_count"] == 0
+    assert gradients["adversarial"]["unit_gradient_norm"]["minimum"] > 0
+    for name in ("change", "seam", "total_variation"):
+        assert gradients[name]["zero_gradient_count"] == 2
+        assert gradients[name]["unit_gradient_norm"]["maximum"] == 0
     assert not report["suggestions_written_to_configuration"]
     assert not report["suggestions_used_for_one_step"]
 

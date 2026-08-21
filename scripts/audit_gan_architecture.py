@@ -54,9 +54,12 @@ def build_audit(config_path: Path) -> dict[str, Any]:
     logits = discriminator(generated.refined_image, defect_mask)
     combined_scalar = generated.refined_image.square().mean() + logits.square().mean()
     combined_scalar.backward()
-    generator_gradients = [
-        parameter.grad for parameter in generator.parameters() if parameter.grad is not None
+    named_generator_gradients = [
+        (name, parameter.grad)
+        for name, parameter in generator.named_parameters()
+        if parameter.grad is not None
     ]
+    generator_gradients = [gradient for _, gradient in named_generator_gradients]
     discriminator_gradients = [
         parameter.grad for parameter in discriminator.parameters() if parameter.grad is not None
     ]
@@ -85,6 +88,7 @@ def build_audit(config_path: Path) -> dict[str, Any]:
         for tensor in (
             generated.refined_image,
             generated.raw_residual,
+            generated.applied_residual,
             logits,
             border_result.refined_image,
         )
@@ -98,6 +102,14 @@ def build_audit(config_path: Path) -> dict[str, Any]:
     nonzero_generator_gradients = sum(
         bool((gradient != 0).any()) for gradient in generator_gradients
     )
+    nonzero_head_gradients = sum(
+        name.startswith("output_head.") and bool((gradient != 0).any())
+        for name, gradient in named_generator_gradients
+    )
+    nonzero_earlier_gradients = sum(
+        not name.startswith("output_head.") and bool((gradient != 0).any())
+        for name, gradient in named_generator_gradients
+    )
     invariants = {
         "production_output_shape_matches": list(generated.refined_image.shape) == list(shape),
         "discriminator_logits_nonempty": logits.numel() > 0,
@@ -108,9 +120,17 @@ def build_audit(config_path: Path) -> dict[str, Any]:
         "maximum_change_outside_support_is_zero": outside_change == 0.0,
         "border_change_outside_support_is_zero": border_outside_change == 0.0,
         "zero_mask_change_is_zero": zero_change == 0.0,
+        "nonzero_mask_initial_output_is_exact_identity": torch.equal(
+            generated.refined_image.detach(), composite
+        ),
+        "initial_raw_residual_is_zero": int(generated.raw_residual.count_nonzero()) == 0,
+        "initial_applied_residual_is_zero": int(
+            generated.applied_residual.count_nonzero()
+        ) == 0,
         "forward_tensors_finite": forward_finite,
         "backward_gradients_finite": backward_finite,
-        "generator_has_nonzero_gradients": nonzero_generator_gradients > 0,
+        "initial_adversarial_gradient_reaches_output_head": nonzero_head_gradients > 0,
+        "earlier_generator_gradients_are_staged_zero": nonzero_earlier_gradients == 0,
     }
     return {
         "status": "PASS" if all(invariants.values()) else "FAIL",
@@ -123,6 +143,8 @@ def build_audit(config_path: Path) -> dict[str, Any]:
         "border_maximum_absolute_change_outside_support": border_outside_change,
         "zero_mask_maximum_absolute_change": zero_change,
         "generator_parameters_with_nonzero_gradients": nonzero_generator_gradients,
+        "output_head_parameters_with_nonzero_gradients": nonzero_head_gradients,
+        "earlier_parameters_with_nonzero_gradients": nonzero_earlier_gradients,
         "invariants": invariants,
         "validation_rows_loaded": 0,
         "official_test_rows_loaded": 0,

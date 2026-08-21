@@ -208,6 +208,7 @@ def test_finite_and_locality_stop_gates() -> None:
         "maximum_invalid_fake_pixel_gradient": 0.0,
         "canonical_defect_gradient_coverage": 1.0,
         "clamp_saturation_fraction": 0.0,
+        "output_range_violation_count": 0,
         "mean_absolute_residual_inside_support": 0.1,
         "fake_logits": {"minimum": -1.0, "maximum": 1.0},
     }
@@ -216,6 +217,8 @@ def test_finite_and_locality_stop_gates() -> None:
     assert _training_gate(trainer, config, discriminator, changed) == "outside_support_change"
     nonfinite = dict(generator, mean_absolute_residual_inside_support=float("nan"))
     assert _training_gate(trainer, config, discriminator, nonfinite) == "nonfinite_training_metric"
+    out_of_range = dict(generator, output_range_violation_count=1)
+    assert _training_gate(trainer, config, discriminator, out_of_range) == "output_range_violation"
 
 
 def test_fixed_monitor_categories_and_identities_are_deterministic() -> None:
@@ -290,6 +293,36 @@ def test_atomic_checkpoint_and_incompatible_hash_rejection(tmp_path: Path) -> No
             expected_identity=identity,
             expected_configuration={"phase": "changed"},
         )
+
+
+def test_old_smoke_checkpoint_without_residual_semantics_is_rejected_unchanged(
+    tmp_path: Path,
+) -> None:
+    trainer = _trainer()
+    configuration = {"phase": "legacy", "seed": 42}
+    identity = _identity(configuration)
+    current = tmp_path / "current.pt"
+    legacy = tmp_path / "failed_g1_5.pt"
+    save_smoke_checkpoint(
+        current,
+        trainer=trainer,
+        progress=SmokeProgress(),
+        identity=identity,
+        configuration=configuration,
+    )
+    payload = torch.load(current, map_location="cpu", weights_only=False)
+    payload.pop("residual_semantics_version")
+    payload.pop("architecture_version")
+    torch.save(payload, legacy)
+    before = legacy.read_bytes()
+    with pytest.raises(ValueError, match="residual-semantics"):
+        load_smoke_checkpoint(
+            legacy,
+            trainer=_trainer(),
+            expected_identity=identity,
+            expected_configuration=configuration,
+        )
+    assert legacy.is_file() and legacy.read_bytes() == before
 
 
 def _joint_step(trainer: GANOneStepTrainer, batch) -> None:

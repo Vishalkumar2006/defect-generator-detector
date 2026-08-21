@@ -1,5 +1,5 @@
 {
-  "architecture_version": "g1_1_masked_residual_gan_v1",
+  "architecture_version": "g1_5a_identity_range_aware_residual_gan_v1",
   "image_height": 512,
   "image_width": 256,
   "generator_base_channels": 32,

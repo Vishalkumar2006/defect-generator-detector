@@ -140,7 +140,7 @@ def build_audit(architecture_config_path: Path, loss_config_path: Path) -> dict[
                 boundary_width=loss_config.boundary_ring_width,
             )
             total_variation = masked_total_variation_loss(
-                generated.raw_residual, generated.support_mask
+                generated.applied_residual, generated.support_mask
             )
             aggregated = aggregate_generator_losses(
                 adversarial=adversarial.total,
@@ -240,7 +240,7 @@ def build_audit(architecture_config_path: Path, loss_config_path: Path) -> dict[
         boundary_width=loss_config.boundary_ring_width,
     )
     total_variation = masked_total_variation_loss(
-        generated_for_generator.raw_residual,
+        generated_for_generator.applied_residual,
         generated_for_generator.support_mask,
     )
     generator_loss = aggregate_generator_losses(

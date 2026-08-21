@@ -1,0 +1,164 @@
+{
+  "status": "PASS",
+  "architecture_version": "g1_5a_identity_range_aware_residual_gan_v1",
+  "residual_semantics_version": "g1_5a_directional_range_aware_residual_v1",
+  "equation": {
+    "direction": "r = tanh(raw)",
+    "positive_cap": "min(d, 1 - x)",
+    "negative_cap": "min(d, x + 1)",
+    "delta": "where(r >= 0, r * positive_cap, r * negative_cap)",
+    "refined": "where(support, x + delta, x)",
+    "maximum_absolute_delta": 0.25,
+    "hard_clamp": false
+  },
+  "initialization": {
+    "synthetic": {
+      "exact_identity": true,
+      "mean_actual_support_change": 0.0,
+      "maximum_actual_support_change": 0.0,
+      "raw_residual_mean_absolute": 0.0,
+      "raw_residual_maximum_absolute": 0.0,
+      "applied_residual_mean_absolute": 0.0,
+      "applied_residual_maximum_absolute": 0.0,
+      "maximum_outside_support_difference": 0.0,
+      "output_range_violation_count": 0,
+      "would_have_clamped_fraction_old_additive": 0.0,
+      "directional_cap_saturation_fraction": 0.0,
+      "tanh_raw_residual_saturation_fraction": 0.0
+    },
+    "real_training_batch": {
+      "exact_identity": true,
+      "mean_actual_support_change": 0.0,
+      "maximum_actual_support_change": 0.0,
+      "raw_residual_mean_absolute": 0.0,
+      "raw_residual_maximum_absolute": 0.0,
+      "applied_residual_mean_absolute": 0.0,
+      "applied_residual_maximum_absolute": 0.0,
+      "maximum_outside_support_difference": 0.0,
+      "output_range_violation_count": 0,
+      "would_have_clamped_fraction_old_additive": 0.0,
+      "directional_cap_saturation_fraction": 0.0,
+      "tanh_raw_residual_saturation_fraction": 0.0
+    },
+    "regularizers": {
+      "change": 0.0,
+      "seam": 0.0,
+      "total_variation": 0.0
+    }
+  },
+  "first_adversarial_backward": {
+    "loss": -0.28001102805137634,
+    "gradient_coverage": {
+      "output_head": {
+        "parameter_tensors": 2,
+        "parameter_elements": 4707,
+        "tensors_with_finite_nonzero_gradient": 2,
+        "finite_element_fraction": 1.0,
+        "nonzero_element_fraction": 1.0
+      },
+      "earlier_layers": {
+        "parameter_tensors": 54,
+        "parameter_elements": 5892032,
+        "tensors_with_finite_nonzero_gradient": 0,
+        "finite_element_fraction": 1.0,
+        "nonzero_element_fraction": 0.0
+      }
+    }
+  },
+  "after_one_controlled_output_head_step": {
+    "optimizer": "SGD",
+    "learning_rate": 0.0001,
+    "metrics": {
+      "exact_identity": false,
+      "mean_actual_support_change": 0.0060091144405305386,
+      "maximum_actual_support_change": 0.025789260864257812,
+      "raw_residual_mean_absolute": 0.024133622646331787,
+      "raw_residual_maximum_absolute": 0.10352525115013123,
+      "applied_residual_mean_absolute": 0.006009113974869251,
+      "applied_residual_maximum_absolute": 0.025789247825741768,
+      "maximum_outside_support_difference": 0.0,
+      "output_range_violation_count": 0,
+      "would_have_clamped_fraction_old_additive": 0.0006980594480410218,
+      "directional_cap_saturation_fraction": 0.0,
+      "tanh_raw_residual_saturation_fraction": 0.0
+    },
+    "regularizers": {
+      "change": 0.0060091144405305386,
+      "seam": 0.001843730453401804,
+      "total_variation": 0.00020934872736688703
+    }
+  },
+  "second_adversarial_backward": {
+    "loss": -0.28674036264419556,
+    "gradient_coverage": {
+      "output_head": {
+        "parameter_tensors": 2,
+        "parameter_elements": 4707,
+        "tensors_with_finite_nonzero_gradient": 2,
+        "finite_element_fraction": 1.0,
+        "nonzero_element_fraction": 1.0
+      },
+      "earlier_layers": {
+        "parameter_tensors": 54,
+        "parameter_elements": 5892032,
+        "tensors_with_finite_nonzero_gradient": 54,
+        "finite_element_fraction": 1.0,
+        "nonzero_element_fraction": 1.0
+      }
+    }
+  },
+  "failed_g1_5_comparison": {
+    "previous_untrained_mean_support_change_approximate": 0.119,
+    "previous_pre_clamp_violation_fraction": 0.07349,
+    "corrected_initial_mean_support_change": 0.0,
+    "corrected_initial_output_range_violations": 0
+  },
+  "checkpoint_compatibility": {
+    "old_checkpoint_required_residual_semantics_version": "g1_5a_directional_range_aware_residual_v1",
+    "old_checkpoints_are_resume_compatible": false,
+    "observed_preserved_checkpoint_metadata": {
+      "path": "checkpoints/gan_smoke/stopped_w010_j001.pt",
+      "smoke_version": "g1_5_gated_gan_smoke_v1",
+      "architecture_version": null,
+      "residual_semantics_version": null
+    },
+    "checkpoint_hashes_before": {
+      "checkpoints/gan_smoke/last.pt": "7b8ab1b8b86ad3ac6e99b6b1534a35056a73632dd1fb297a5706b8f96d18a151",
+      "checkpoints/gan_smoke/stopped_w010_j001.pt": "7b8ab1b8b86ad3ac6e99b6b1534a35056a73632dd1fb297a5706b8f96d18a151",
+      "checkpoints/gan_smoke/warmup_010.pt": "129397a1aee5d4b3ed281965763f5e196a64baa5266eb8bf394cf9a1f24ca1c8"
+    },
+    "checkpoint_hashes_after": {
+      "checkpoints/gan_smoke/last.pt": "7b8ab1b8b86ad3ac6e99b6b1534a35056a73632dd1fb297a5706b8f96d18a151",
+      "checkpoints/gan_smoke/stopped_w010_j001.pt": "7b8ab1b8b86ad3ac6e99b6b1534a35056a73632dd1fb297a5706b8f96d18a151",
+      "checkpoints/gan_smoke/warmup_010.pt": "129397a1aee5d4b3ed281965763f5e196a64baa5266eb8bf394cf9a1f24ca1c8"
+    },
+    "unchanged": true
+  },
+  "training_batch_sample_ids": [
+    0,
+    1
+  ],
+  "device": "cuda",
+  "runtime_seconds": 4.101059900000109,
+  "validation_rows_loaded": 0,
+  "official_test_rows_loaded": 0,
+  "materialized_generated_images": 0,
+  "controlled_generator_optimizer_steps": 1,
+  "discriminator_optimizer_steps": 0,
+  "invariants": {
+    "synthetic_initial_identity": true,
+    "real_initial_identity": true,
+    "initial_raw_residual_zero": true,
+    "initial_applied_residual_zero": true,
+    "initial_regularizers_zero": true,
+    "initial_output_range_violations_zero": true,
+    "first_backward_reaches_output_head": true,
+    "first_backward_earlier_layers_are_staged_zero": true,
+    "one_step_output_range_violations_zero": true,
+    "one_step_residual_nonzero": true,
+    "second_backward_reaches_earlier_layers": true,
+    "outside_support_remains_exact": true,
+    "failed_checkpoints_unchanged": true,
+    "preserved_checkpoint_lacks_new_residual_semantics": true
+  }
+}
