@@ -35,6 +35,10 @@ def _summary_markdown(summary: dict[str, Any]) -> str:
         f"- `{reason}`: {count}"
         for reason, count in sorted(summary["normal_rejection_reasons"].items())
     ] or ["- None"]
+    contact_lines = [
+        f"- `{side}`: {count}"
+        for side, count in summary["templates_by_source_contact_side"].items()
+    ]
     valid_distribution = summary["normal_valid_fraction_distribution"]
     return "\n".join(
         [
@@ -54,6 +58,10 @@ def _summary_markdown(summary: dict[str, Any]) -> str:
             f"({summary['full_template_windows']} full, "
             f"{summary['partial_template_windows']} partial)",
             f"- Border-touching template windows: {summary['border_touching_template_windows']}",
+            "",
+            "### Templates by source contact side",
+            "",
+            *contact_lines,
             f"- Maximum component width/height: {summary['maximum_component_width']} / "
             f"{summary['maximum_component_height']}",
             "",
@@ -85,10 +93,13 @@ def _summary_markdown(summary: dict[str, Any]) -> str:
             f"- Official-test rows/images loaded: {summary['official_test_rows_loaded']}",
             f"- Validation predictions loaded: {summary['validation_predictions_loaded']}",
             f"- Materialized generated images: {summary['materialized_image_files']}",
-            f"- Training-manifest SHA-256: `{summary['manifest_sha256']}`",
+            f"- Source-manifest SHA-256: `{summary['source_manifest_sha256']}`",
             f"- Training-split SHA-256: `{summary['split_sha256']}`",
+            f"- GAN-manifest content SHA-256: `{summary['gan_manifest_content_sha256']}`",
             "",
             "Generated inputs remain online and deterministic from seed plus manifest hashes.",
+            "Successful target-side placements, incompatibility rejections, non-border placements,",
+            "accidental contacts, and support-validity counts are emitted by each visualization sheet.",
             "",
         ]
     )

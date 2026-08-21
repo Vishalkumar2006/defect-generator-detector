@@ -88,3 +88,9 @@ F1.1 sets normal-background eligibility to the audited native-valid fraction
 `0.71875` rather than `0.9`. This removes native-width selection bias while keeping
 all reflected padding invalid for defect placement. The training-only distribution
 is recorded in `reports/gan_input_design/normal_valid_fraction_audit.json`.
+
+F1.2 preserves the censoring semantics of native-border defects: explicit contact
+sides are transformed with flips and must match target native edges, while
+non-border defects retain an eight-pixel margin. It also distinguishes source and
+split identities from the canonical `gan_manifest_content_sha256` and adds
+category-aware visual audits with placement accounting.

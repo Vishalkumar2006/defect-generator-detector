@@ -7,7 +7,34 @@ from dataclasses import asdict, dataclass
 
 import numpy as np
 
-from defectgen.data.geometry import BoundingBox, bounding_box, touches_border
+from defectgen.data.geometry import BoundingBox, bounding_box
+
+
+@dataclass(frozen=True)
+class ContactSides:
+    top: bool = False
+    bottom: bool = False
+    left: bool = False
+    right: bool = False
+
+    @property
+    def any(self) -> bool:
+        return self.top or self.bottom or self.left or self.right
+
+    def to_dict(self) -> dict[str, bool]:
+        return asdict(self)
+
+    def transformed(self, *, horizontal_flip: bool, vertical_flip: bool) -> "ContactSides":
+        return ContactSides(
+            top=self.bottom if vertical_flip else self.top,
+            bottom=self.top if vertical_flip else self.bottom,
+            left=self.right if horizontal_flip else self.left,
+            right=self.left if horizontal_flip else self.right,
+        )
+
+    @classmethod
+    def from_dict(cls, value: dict[str, bool]) -> "ContactSides":
+        return cls(**{side: bool(value.get(side, False)) for side in ("top", "bottom", "left", "right")})
 
 
 @dataclass(frozen=True)
@@ -16,7 +43,11 @@ class MaskComponent:
     mask: np.ndarray
     bounding_box: BoundingBox
     positive_pixels: int
-    touches_native_border: bool
+    contact_sides: ContactSides
+
+    @property
+    def touches_native_border(self) -> bool:
+        return self.contact_sides.any
 
 
 @dataclass(frozen=True)
@@ -28,10 +59,16 @@ class ComponentWindow:
     partial_component: bool
     coverage_fraction: float
     positive_pixels: int
-    touches_native_border: bool
+    source_contact_sides: ContactSides
+
+    @property
+    def touches_native_border(self) -> bool:
+        return self.source_contact_sides.any
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        value = asdict(self)
+        value["touches_native_border"] = self.touches_native_border
+        return value
 
 
 @dataclass(frozen=True)
@@ -70,7 +107,12 @@ def connected_components(mask: np.ndarray) -> list[MaskComponent]:
                 mask=component_mask,
                 bounding_box=box,
                 positive_pixels=int(component_mask.sum()),
-                touches_native_border=touches_border(component_mask),
+                contact_sides=ContactSides(
+                    top=bool(component_mask[0].any()),
+                    bottom=bool(component_mask[-1].any()),
+                    left=bool(component_mask[:, 0].any()),
+                    right=bool(component_mask[:, -1].any()),
+                ),
             )
         )
     return components
@@ -150,7 +192,7 @@ def plan_component_windows(
                     partial_component=positive < component.positive_pixels,
                     coverage_fraction=coverage,
                     positive_pixels=positive,
-                    touches_native_border=component.touches_native_border,
+                    source_contact_sides=component.contact_sides,
                 )
             )
     if not windows:

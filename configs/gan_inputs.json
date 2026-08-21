@@ -1,5 +1,5 @@
 {
-  "pipeline_version": "f1_1_gan_inputs_v1",
+  "pipeline_version": "f1_2_gan_inputs_v1",
   "seed": 42,
   "patch": {
     "width": 256,
@@ -16,8 +16,8 @@
     "minimum_scale": 0.9,
     "maximum_scale": 1.1,
     "minimum_retained_area_fraction": 0.75,
-    "placement_attempts": 128,
-    "feather_radius": 5
+    "feather_radius": 5,
+    "non_border_native_margin": 8
   },
   "colour_matching": {
     "enabled": true,

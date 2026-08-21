@@ -66,6 +66,27 @@ defect mask and feathered support are intersected with the target native-valid m
 reflected padding may be visible as background context but cannot receive defect
 content.
 
+### F1.2 censored-border geometry
+
+Native-border contact is represented explicitly as independent `top`, `bottom`,
+`left`, and `right` flags; the former boolean is derived from whether any side is
+active. Horizontal flips exchange left/right and vertical flips exchange
+top/bottom. Scaling retains the transformed side set, including multiple contacts.
+
+A border-censored component is placed only on matching native edges. The selected
+normal-background window must contain every required image edge, and the transformed
+mask is aligned exactly to the corresponding native-valid boundary. Corner contacts
+remain corners. A template requiring two opposite edges is rejected when no single
+256×512 window can contain both. Incompatible component/background geometry is
+reported as `no_compatible_target_background_or_window` with its exact underlying
+reasons; it is never repaired by moving the defect into the interior.
+
+Non-border components retain the configured eight-pixel native-valid margin on all
+sides, preventing accidental border contact. Returned provenance contains source,
+post-flip source, target-window native, and actual target contact sides. Every sample
+also reports accidental contact violations, support pixels outside validity, and the
+maximum composite difference outside support; all three invariants must be zero.
+
 RGB GAN tensors use `[-1,1]`, independently of detector normalization. Condition,
 support, and valid-region masks remain exactly `{0,1}`. The online sample returns
 the valid-region mask as a first-class tensor for the future GAN and discriminator.
@@ -83,3 +104,27 @@ tensors and provenance exactly.
 Generated inputs stay in memory. The manifest command writes only JSON/Markdown
 metadata, while the visualization command writes one small, fixed-seed contact
 sheet rather than a bulk patch dataset.
+
+## Hash definitions
+
+- `source_manifest_sha256` is the former `manifest_sha256`. It hashes canonical,
+  source-order JSON for development-training rows only, using sample ID, official
+  split, development split, image path, mask path, defect label, and image SHA-256.
+- `split_sha256` hashes compact JSON for the source-order list of
+  `[sample_id, has_defect]` pairs after the same training-only filter. Image paths,
+  configuration, and generated template/background records are intentionally not
+  part of this split-assignment identity.
+- `gan_manifest_content_sha256` hashes sorted-key, compact JSON for the complete
+  generated GAN manifest—including pipeline version, full configuration, templates,
+  backgrounds, rejection records, data-boundary counters, source hash, and split
+  hash—excluding only `gan_manifest_content_sha256` itself. Equal content reproduces
+  the hash; any meaningful field change changes it. Online loading verifies it.
+
+## Category-aware visual checks
+
+The visualization command accepts `all`, `border`, `non-border`, `small-thin`,
+`large`, and `narrow-background`. Each sheet includes the native-valid boundary,
+source/transformed/target contact sides, all input/composite masks and images,
+absolute difference, a defect zoom, and numerical invariant checks. A sibling
+`.accounting.json` reports successful target contacts, incompatible rejections,
+non-border placements, accidental contacts, and support outside validity.

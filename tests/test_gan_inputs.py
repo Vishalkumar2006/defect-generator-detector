@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import copy
 import json
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import torch
 
 from defectgen.gan.dataset import OnlineGANInputDataset
 from defectgen.gan.geometry import (
+    ContactSides,
     ComponentWindow,
     connected_components,
     extract_native_window,
@@ -20,9 +22,13 @@ from defectgen.gan.manifest import (
     achievable_valid_fraction,
     assert_gan_training_rows,
     build_gan_input_metadata,
+    gan_manifest_content_hash,
+    source_metadata_hashes,
 )
 from defectgen.gan.normalization import binary_mask_tensor, gan_rgb_to_uint8, rgb_to_gan
 from defectgen.gan.pipeline import REQUIRED_PROVENANCE_FIELDS, construct_coarse_gan_input
+from defectgen.gan.dataset import select_target_window
+from defectgen.gan.visualization import select_visualization_members, summarize_placements
 
 
 PATCH_WIDTH = 256
@@ -49,8 +55,8 @@ def _transform_settings(**overrides) -> dict:
         "minimum_scale": 0.9,
         "maximum_scale": 1.1,
         "minimum_retained_area_fraction": 0.70,
-        "placement_attempts": 128,
         "feather_radius": 3,
+        "non_border_native_margin": 4,
     }
     settings.update(overrides)
     return settings
@@ -77,8 +83,11 @@ def _provenance_base(width: int, height: int) -> dict:
         "partial_component": False,
         "coverage_fraction": 1.0,
         "touches_native_border": False,
+        "source_contact_sides": ContactSides().to_dict(),
+        "target_window_native_contact_sides": ContactSides(True, True, True, True).to_dict(),
         "minimum_positive_pixels": 4,
-        "manifest_sha256": "a" * 64,
+        "source_manifest_sha256": "a" * 64,
+        "gan_manifest_content_sha256": "e" * 64,
         "split_sha256": "b" * 64,
         "pipeline_version": "test_v1",
     }
@@ -156,6 +165,166 @@ def test_border_touching_and_minimum_positive_pixel_rules() -> None:
     assert rejected.rejected_reasons == ("component_below_minimum_positive_pixels",)
 
 
+@pytest.mark.parametrize(
+    ("mask_slice", "expected"),
+    [
+        ((slice(0, 3), slice(10, 16)), ContactSides(top=True)),
+        ((slice(29, 32), slice(10, 16)), ContactSides(bottom=True)),
+        ((slice(10, 16), slice(0, 3)), ContactSides(left=True)),
+        ((slice(10, 16), slice(29, 32)), ContactSides(right=True)),
+        ((slice(0, 3), slice(0, 3)), ContactSides(top=True, left=True)),
+    ],
+)
+def test_connected_components_record_explicit_contact_sides(mask_slice, expected) -> None:
+    mask = np.zeros((32, 32), dtype=bool)
+    mask[mask_slice] = True
+    component = connected_components(mask)[0]
+    assert component.contact_sides == expected
+    assert component.touches_native_border == expected.any
+
+
+def test_contact_sides_swap_under_flips_and_preserve_multiple_contacts() -> None:
+    contacts = ContactSides(top=True, left=True)
+    assert contacts.transformed(horizontal_flip=True, vertical_flip=False) == ContactSides(
+        top=True, right=True
+    )
+    assert contacts.transformed(horizontal_flip=False, vertical_flip=True) == ContactSides(
+        bottom=True, left=True
+    )
+    assert contacts.transformed(horizontal_flip=True, vertical_flip=True) == ContactSides(
+        bottom=True, right=True
+    )
+
+
+def _construct_contact_sample(
+    contacts: ContactSides,
+    *,
+    horizontal_flip: bool = False,
+    vertical_flip: bool = False,
+    scale: float = 1.0,
+    valid_width: int = 64,
+) -> dict:
+    height = width = 64
+    mask = np.zeros((height, width), dtype=bool)
+    top = 0 if contacts.top else (58 if contacts.bottom else 24)
+    left = 0 if contacts.left else (58 if contacts.right else 24)
+    mask[top : top + 6, left : left + 6] = True
+    source = np.full((height, width, 3), 30, dtype=np.uint8)
+    source[mask] = [230, 40, 20]
+    background = np.full_like(source, 110)
+    valid = np.zeros((height, width), dtype=bool)
+    valid[:, :valid_width] = True
+    provenance = _provenance_base(width, height)
+    provenance["source_contact_sides"] = contacts.to_dict()
+    provenance["touches_native_border"] = contacts.any
+    provenance["target_window_native_contact_sides"] = ContactSides(
+        top=True, bottom=True, left=True, right=True
+    ).to_dict()
+    return construct_coarse_gan_input(
+        source,
+        mask,
+        background,
+        valid,
+        seed=42,
+        transform_settings=_transform_settings(
+            horizontal_flip_probability=float(horizontal_flip),
+            vertical_flip_probability=float(vertical_flip),
+            minimum_scale=scale,
+            maximum_scale=scale,
+            feather_radius=2,
+        ),
+        colour_settings=_colour_settings(),
+        provenance_base=provenance,
+    )
+
+
+@pytest.mark.parametrize(
+    "contacts",
+    [
+        ContactSides(top=True),
+        ContactSides(bottom=True),
+        ContactSides(left=True),
+        ContactSides(right=True),
+        ContactSides(top=True, left=True),
+    ],
+)
+def test_border_templates_preserve_target_contacts_and_never_move_to_interior(contacts) -> None:
+    sample = _construct_contact_sample(contacts, scale=1.1)
+    assert sample["provenance"]["target_contact_sides"] == contacts.to_dict()
+    assert sample["provenance"]["transformed_source_contact_sides"] == contacts.to_dict()
+    assert sample["placement_diagnostics"]["accidental_contact_violations"] == 0
+
+
+def test_flipped_border_template_contacts_the_swapped_target_side() -> None:
+    sample = _construct_contact_sample(
+        ContactSides(top=True, left=True), horizontal_flip=True, vertical_flip=True
+    )
+    expected = ContactSides(bottom=True, right=True).to_dict()
+    assert sample["provenance"]["transformed_source_contact_sides"] == expected
+    assert sample["provenance"]["target_contact_sides"] == expected
+
+
+def test_target_window_selection_contains_required_native_edges() -> None:
+    rng = np.random.default_rng(42)
+    window, sides = select_target_window(
+        (700, 300), (PATCH_WIDTH, PATCH_HEIGHT), ContactSides(top=True, left=True), rng
+    )
+    assert window[:2] == (0, 0)
+    assert sides.top and sides.left and not sides.bottom and not sides.right
+    window, sides = select_target_window(
+        (700, 300), (PATCH_WIDTH, PATCH_HEIGHT), ContactSides(bottom=True, right=True), rng
+    )
+    assert window[:2] == (188, 44)
+    assert sides.bottom and sides.right and not sides.top and not sides.left
+    with pytest.raises(ValueError, match="top_and_bottom"):
+        select_target_window(
+            (700, 300),
+            (PATCH_WIDTH, PATCH_HEIGHT),
+            ContactSides(top=True, bottom=True),
+            rng,
+        )
+
+
+def test_non_border_template_retains_configured_native_margin() -> None:
+    sample = _construct_contact_sample(ContactSides())
+    coordinates = torch.nonzero(sample["conditioning_mask"][0], as_tuple=False)
+    assert int(coordinates[:, 0].min()) >= 4
+    assert int(coordinates[:, 1].min()) >= 4
+    assert int(coordinates[:, 0].max()) <= 64 - 4 - 1
+    assert int(coordinates[:, 1].max()) <= 64 - 4 - 1
+    assert sample["provenance"]["target_contact_sides"] == ContactSides().to_dict()
+
+
+def test_incompatible_border_template_is_rejected_instead_of_moved() -> None:
+    height = width = 64
+    mask = np.zeros((height, width), dtype=bool)
+    mask[30:34, :] = True
+    source = np.full((height, width, 3), 50, dtype=np.uint8)
+    background = np.full_like(source, 100)
+    valid = np.zeros((height, width), dtype=bool)
+    valid[:, :40] = True
+    provenance = _provenance_base(width, height)
+    contacts = ContactSides(left=True, right=True)
+    provenance["source_contact_sides"] = contacts.to_dict()
+    provenance["touches_native_border"] = True
+    with pytest.raises(ValueError, match="incompatible_border_placement"):
+        construct_coarse_gan_input(
+            source,
+            mask,
+            background,
+            valid,
+            seed=42,
+            transform_settings=_transform_settings(
+                horizontal_flip_probability=0.0,
+                vertical_flip_probability=0.0,
+                minimum_scale=1.0,
+                maximum_scale=1.0,
+            ),
+            colour_settings=_colour_settings(),
+            provenance_base=provenance,
+        )
+
+
 def test_gan_rgb_range_round_trip_and_binary_mask_contract() -> None:
     image = np.array([[[0, 127, 255], [10, 20, 30]]], dtype=np.uint8)
     normalized = rgb_to_gan(image)
@@ -211,7 +380,9 @@ def _dataset_fixture() -> tuple[dict, dict[str, tuple[np.ndarray, np.ndarray]]]:
     mask[220:240, 100:120] = True
     image[mask] = [230, 60, 30]
     component = connected_components(mask)[0]
-    window = ComponentWindow(0, 0, PATCH_WIDTH, PATCH_HEIGHT, False, 1.0, 400, False)
+    window = ComponentWindow(
+        0, 0, PATCH_WIDTH, PATCH_HEIGHT, False, 1.0, 400, ContactSides()
+    )
     template = {
         **defect,
         "component_id": 0,
@@ -221,6 +392,7 @@ def _dataset_fixture() -> tuple[dict, dict[str, tuple[np.ndarray, np.ndarray]]]:
         "partial_component": False,
         "coverage_fraction": 1.0,
         "positive_pixels": component.positive_pixels,
+        "source_contact_sides": ContactSides().to_dict(),
         "touches_native_border": False,
     }
     normal_image = np.full((PATCH_HEIGHT, PATCH_WIDTH, 3), 125, dtype=np.uint8)
@@ -235,7 +407,7 @@ def _dataset_fixture() -> tuple[dict, dict[str, tuple[np.ndarray, np.ndarray]]]:
         },
         "transform": _transform_settings(),
         "colour_matching": _colour_settings(),
-        "manifest_sha256": "c" * 64,
+        "source_manifest_sha256": "c" * 64,
         "split_sha256": "d" * 64,
         "templates": [template],
         "normal_backgrounds": [{**normal, "available_window_count": 1}],
@@ -246,6 +418,7 @@ def _dataset_fixture() -> tuple[dict, dict[str, tuple[np.ndarray, np.ndarray]]]:
         },
         "materialized_image_files": 0,
     }
+    metadata["gan_manifest_content_sha256"] = gan_manifest_content_hash(metadata)
     arrays = {
         "defect": (image, mask),
         "normal": (normal_image, np.zeros(mask.shape, dtype=bool)),
@@ -288,6 +461,7 @@ def test_narrow_background_propagates_valid_region_and_blocks_padded_columns() -
         arrays["normal"][1][:, :native_width].copy(),
     )
     metadata["patch"]["minimum_normal_valid_fraction"] = 0.71875
+    metadata["gan_manifest_content_sha256"] = gan_manifest_content_hash(metadata)
     loader = lambda row: arrays[row["sample_id"]]
     sample = OnlineGANInputDataset(
         metadata, Path("."), base_seed=42, length=1, sample_loader=loader
@@ -322,6 +496,96 @@ def test_selected_threshold_includes_at_least_95_percent_of_audited_normals() ->
     assert len(fractions) == audit["normal_training_images"] == 1772
     assert accepted == audit["selected_threshold_expected_accepted"]
     assert accepted / len(fractions) >= 0.95
+
+
+def test_canonical_gan_manifest_hash_is_stable_and_content_sensitive() -> None:
+    metadata, _ = _dataset_fixture()
+    expected = metadata["gan_manifest_content_sha256"]
+    assert gan_manifest_content_hash(metadata) == expected
+    assert gan_manifest_content_hash(copy.deepcopy(metadata)) == expected
+    changed = copy.deepcopy(metadata)
+    changed["pipeline_version"] = "meaningfully_changed"
+    assert gan_manifest_content_hash(changed) != expected
+    changed = copy.deepcopy(metadata)
+    changed["normal_backgrounds"][0]["available_window_count"] = 99
+    assert gan_manifest_content_hash(changed) != expected
+    self_hash_only = copy.deepcopy(metadata)
+    self_hash_only["gan_manifest_content_sha256"] = "0" * 64
+    assert gan_manifest_content_hash(self_hash_only) == expected
+
+
+def test_source_manifest_hash_has_explicit_name_and_split_definition() -> None:
+    rows = [_training_row("normal", False), _training_row("defect", True)]
+    source_hash, split_hash = source_metadata_hashes(rows)
+    metadata, _ = _dataset_fixture()
+    assert "source_manifest_sha256" in metadata and "manifest_sha256" not in metadata
+    assert len(source_hash) == len(split_hash) == 64
+    changed_path = copy.deepcopy(rows)
+    changed_path[0]["image_path"] = "different.png"
+    changed_source, unchanged_split = source_metadata_hashes(changed_path)
+    assert changed_source != source_hash
+    assert unchanged_split == split_hash
+    changed_label = copy.deepcopy(rows)
+    changed_label[0]["has_defect"] = True
+    _, changed_split = source_metadata_hashes(changed_label)
+    assert changed_split != split_hash
+
+
+def test_category_aware_visualization_selection() -> None:
+    metadata, _ = _dataset_fixture()
+    base = metadata["templates"][0]
+    border = copy.deepcopy(base)
+    border["source_contact_sides"] = ContactSides(left=True).to_dict()
+    border["touches_native_border"] = True
+    border["positive_pixels"] = 20
+    border["source_mask_bounding_box"] = {
+        "x_min": 0,
+        "y_min": 10,
+        "x_max": 1,
+        "y_max": 19,
+    }
+    large = copy.deepcopy(base)
+    large["positive_pixels"] = 10_000
+    large["source_mask_bounding_box"] = {
+        "x_min": 10,
+        "y_min": 10,
+        "x_max": 209,
+        "y_max": 309,
+    }
+    metadata["templates"] = [base, border, large]
+    narrow = copy.deepcopy(metadata["normal_backgrounds"][0])
+    narrow["achievable_valid_fraction"] = 0.71875
+    wide = copy.deepcopy(narrow)
+    wide["sample_id"] = "wide-normal"
+    wide["achievable_valid_fraction"] = 0.94
+    metadata["normal_backgrounds"] = [narrow, wide]
+    assert select_visualization_members(metadata, "border")["template_indices"] == [1]
+    assert select_visualization_members(metadata, "non-border")["template_indices"] == [0, 2]
+    assert 1 in select_visualization_members(metadata, "small-thin")["template_indices"]
+    assert 2 in select_visualization_members(metadata, "large")["template_indices"]
+    assert select_visualization_members(metadata, "narrow-background")["normal_indices"] == [0]
+
+
+def test_placement_accounting_includes_successes_and_compatibility_rejections() -> None:
+    sample = {
+        "placement_diagnostics": {
+            "successful_target_contact_sides": ContactSides(left=True).to_dict(),
+            "non_border_placement": False,
+            "accidental_contact_violations": 0,
+            "support_pixels_outside_valid_region": 0,
+            "candidate_background_rejection_reasons_before_success": [
+                "incompatible_border_placement"
+            ],
+        }
+    }
+    accounting = summarize_placements(
+        [sample], ["target_window_missing_required_native_top_edge"]
+    )
+    assert accounting["successful_placements_by_target_contact_side"]["left"] == 1
+    assert accounting["incompatible_border_placement_rejections"] == 2
+    assert accounting["non_border_placements"] == 0
+    assert accounting["accidental_contact_violations"] == 0
+    assert accounting["support_pixels_outside_valid_region"] == 0
 
 
 def test_different_dataset_seeds_change_generated_sample() -> None:
@@ -399,6 +663,8 @@ def test_metadata_builder_ignores_forbidden_row_files_and_materializes_nothing(t
     assert len(metadata["rejected_defect_components"]) == 1
     assert len(metadata["rejected_normal_backgrounds"]) == 1
     assert "rejected" not in metadata
+    assert "source_manifest_sha256" in metadata and "manifest_sha256" not in metadata
+    assert metadata["gan_manifest_content_sha256"] == gan_manifest_content_hash(metadata)
     assert summary["total_defective_training_images"] == 1
     assert summary["connected_components_found"] == 2
     assert summary["accepted_defect_components"] == 1
@@ -412,6 +678,7 @@ def test_metadata_builder_ignores_forbidden_row_files_and_materializes_nothing(t
     assert summary["normal_rejection_reasons"] == {
         "normal_below_minimum_valid_fraction": 1
     }
+    assert summary["templates_by_source_contact_side"]["none"] == 1
     assert summary["validation_rows_loaded"] == summary["official_test_rows_loaded"] == 0
     assert metadata["materialized_image_files"] == summary["materialized_image_files"] == 0
     assert not (tmp_path / "reports").exists()

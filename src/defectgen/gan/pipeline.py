@@ -10,6 +10,7 @@ from torch.nn import functional as F
 
 from defectgen.data.geometry import bounding_box
 
+from .geometry import ContactSides
 from .normalization import binary_mask_tensor, rgb_to_gan
 
 
@@ -28,9 +29,14 @@ REQUIRED_PROVENANCE_FIELDS = {
     "partial_component",
     "coverage_fraction",
     "touches_native_border",
+    "source_contact_sides",
+    "transformed_source_contact_sides",
+    "target_window_native_contact_sides",
+    "target_contact_sides",
     "colour_matching",
     "patch_size",
-    "manifest_sha256",
+    "source_manifest_sha256",
+    "gan_manifest_content_sha256",
     "split_sha256",
     "pipeline_version",
 }
@@ -40,6 +46,57 @@ def validate_provenance(provenance: dict[str, Any]) -> None:
     missing = REQUIRED_PROVENANCE_FIELDS - set(provenance)
     if missing:
         raise ValueError(f"GAN input provenance is missing fields: {sorted(missing)}")
+
+
+def sample_transform_parameters(seed: int, settings: dict[str, Any]) -> dict[str, Any]:
+    rng = np.random.default_rng(seed)
+    return {
+        "horizontal_flip": bool(
+            rng.random() < float(settings["horizontal_flip_probability"])
+        ),
+        "vertical_flip": bool(rng.random() < float(settings["vertical_flip_probability"])),
+        "scale": float(
+            rng.uniform(float(settings["minimum_scale"]), float(settings["maximum_scale"]))
+        ),
+    }
+
+
+def _axis_placement(
+    *,
+    mask_minimum: int,
+    mask_maximum: int,
+    valid_minimum: int,
+    valid_maximum: int,
+    patch_extent: int,
+    content_extent: int,
+    contact_minimum: bool,
+    contact_maximum: bool,
+    margin: int,
+    rng: np.random.Generator,
+    border_template: bool,
+) -> int:
+    lower = max(0, valid_minimum - mask_minimum)
+    upper = min(patch_extent - content_extent, valid_maximum - mask_maximum)
+    if contact_minimum:
+        lower = max(lower, valid_minimum - mask_minimum)
+        upper = min(upper, valid_minimum - mask_minimum)
+    else:
+        lower = max(lower, valid_minimum + margin - mask_minimum)
+    if contact_maximum:
+        lower = max(lower, valid_maximum - mask_maximum)
+        upper = min(upper, valid_maximum - mask_maximum)
+    else:
+        upper = min(upper, valid_maximum - margin - mask_maximum)
+    if lower > upper:
+        reason = (
+            "incompatible_border_placement"
+            if border_template
+            else "no_non_border_placement_with_required_margin"
+        )
+        raise ValueError(reason)
+    if lower == upper:
+        return lower
+    return int(rng.integers(lower, upper + 1))
 
 
 def _float_rgb(image: np.ndarray) -> torch.Tensor:
@@ -123,12 +180,20 @@ def construct_coarse_gan_input(
     valid_region = valid_region.astype(bool)
     if not source_mask.any():
         raise ValueError("A source defect template cannot have an empty mask")
-    rng = np.random.default_rng(seed)
-    horizontal_flip = bool(rng.random() < float(transform_settings["horizontal_flip_probability"]))
-    vertical_flip = bool(rng.random() < float(transform_settings["vertical_flip_probability"]))
-    scale = float(
-        rng.uniform(float(transform_settings["minimum_scale"]), float(transform_settings["maximum_scale"]))
+    parameters = sample_transform_parameters(seed, transform_settings)
+    horizontal_flip = parameters["horizontal_flip"]
+    vertical_flip = parameters["vertical_flip"]
+    scale = parameters["scale"]
+    source_contacts = ContactSides.from_dict(provenance_base["source_contact_sides"])
+    transformed_contacts = source_contacts.transformed(
+        horizontal_flip=horizontal_flip, vertical_flip=vertical_flip
     )
+    target_window_contacts = ContactSides.from_dict(
+        provenance_base["target_window_native_contact_sides"]
+    )
+    for side in ("top", "bottom", "left", "right"):
+        if getattr(transformed_contacts, side) and not getattr(target_window_contacts, side):
+            raise ValueError(f"target_window_missing_required_native_{side}_edge")
     feather_radius = int(transform_settings["feather_radius"])
     boundary_radius = int(colour_settings["boundary_radius"])
     context = max(feather_radius, boundary_radius)
@@ -170,18 +235,39 @@ def construct_coarse_gan_input(
     if scaled_height > height or scaled_width > width:
         raise ValueError("transformed_template_exceeds_patch")
 
-    positions: list[tuple[int, int]] = []
-    attempts = int(transform_settings["placement_attempts"])
-    for _ in range(attempts):
-        top = int(rng.integers(0, height - scaled_height + 1))
-        left = int(rng.integers(0, width - scaled_width + 1))
-        selected_valid = torch.from_numpy(valid_region[top : top + scaled_height, left : left + scaled_width])
-        if bool(selected_valid[resized_mask].all()):
-            positions.append((top, left))
-            break
-    if not positions:
-        raise ValueError("no_valid_template_placement")
-    target_top, target_left = positions[0]
+    resized_box = bounding_box(resized_mask.numpy())
+    valid_box = bounding_box(valid_region)
+    assert resized_box is not None and valid_box is not None
+    placement_rng = np.random.default_rng(seed ^ 0xD1CEB00C)
+    margin = int(transform_settings["non_border_native_margin"])
+    if margin < 0:
+        raise ValueError("non_border_native_margin must be non-negative")
+    target_left = _axis_placement(
+        mask_minimum=resized_box.x_min,
+        mask_maximum=resized_box.x_max,
+        valid_minimum=valid_box.x_min,
+        valid_maximum=valid_box.x_max,
+        patch_extent=width,
+        content_extent=scaled_width,
+        contact_minimum=transformed_contacts.left,
+        contact_maximum=transformed_contacts.right,
+        margin=margin,
+        rng=placement_rng,
+        border_template=transformed_contacts.any,
+    )
+    target_top = _axis_placement(
+        mask_minimum=resized_box.y_min,
+        mask_maximum=resized_box.y_max,
+        valid_minimum=valid_box.y_min,
+        valid_maximum=valid_box.y_max,
+        patch_extent=height,
+        content_extent=scaled_height,
+        contact_minimum=transformed_contacts.top,
+        contact_maximum=transformed_contacts.bottom,
+        margin=margin,
+        rng=placement_rng,
+        border_template=transformed_contacts.any,
+    )
     source_layer = torch.zeros((height, width, 3), dtype=torch.float32)
     source_content_valid = torch.zeros((height, width), dtype=torch.bool)
     transformed_mask = torch.zeros((height, width), dtype=torch.bool)
@@ -199,6 +285,21 @@ def construct_coarse_gan_input(
         raise RuntimeError("Transformed defect entered target padding")
     if bool((support & ~target_valid).any()) or bool((alpha > 0)[~target_valid].any()):
         raise RuntimeError("Feathered defect support entered target padding")
+    transformed_box = bounding_box(transformed_mask.numpy())
+    assert transformed_box is not None
+    target_contacts = ContactSides(
+        top=target_window_contacts.top and transformed_box.y_min == valid_box.y_min,
+        bottom=target_window_contacts.bottom and transformed_box.y_max == valid_box.y_max,
+        left=target_window_contacts.left and transformed_box.x_min == valid_box.x_min,
+        right=target_window_contacts.right and transformed_box.x_max == valid_box.x_max,
+    )
+    accidental_contacts = [
+        side
+        for side in ("top", "bottom", "left", "right")
+        if getattr(target_contacts, side) != getattr(transformed_contacts, side)
+    ]
+    if accidental_contacts:
+        raise RuntimeError(f"target_contact_violation:{','.join(accidental_contacts)}")
     background = _float_rgb(normal_background_rgb)
     adjusted_source, colour_parameters = _colour_match(
         source_layer, background, transformed_mask, support, colour_settings
@@ -208,6 +309,10 @@ def construct_coarse_gan_input(
     composite[support] = blended[support]
     if not torch.equal(composite[~support], background[~support]):
         raise RuntimeError("Pixels outside coarse-composite support changed")
+    maximum_difference_outside_support = float(
+        composite.sub(background).abs()[~support].max().item() if bool((~support).any()) else 0.0
+    )
+    support_pixels_outside_valid = int((support & ~target_valid).sum())
     provenance = {
         **provenance_base,
         "generated_sample_seed": int(seed),
@@ -215,10 +320,17 @@ def construct_coarse_gan_input(
         "vertical_flip": vertical_flip,
         "scale": scale,
         "translation": {"x": target_left, "y": target_top},
+        "source_contact_sides": source_contacts.to_dict(),
+        "transformed_source_contact_sides": transformed_contacts.to_dict(),
+        "target_contact_sides": target_contacts.to_dict(),
         "colour_matching": colour_parameters,
         "patch_size": {"width": width, "height": height},
         "transformed_positive_pixels": int(transformed_mask.sum()),
         "retained_area_fraction": retained_fraction,
+        "non_border_native_margin": margin,
+        "accidental_contact_violations": 0,
+        "support_pixels_outside_valid_region": support_pixels_outside_valid,
+        "maximum_difference_outside_support": maximum_difference_outside_support,
     }
     validate_provenance(provenance)
     return {
@@ -230,5 +342,12 @@ def construct_coarse_gan_input(
         "valid_region": binary_mask_tensor(valid_region),
         "coarse_composite": rgb_to_gan(composite.numpy()),
         "difference_from_background": composite.sub(background).abs().permute(2, 0, 1),
+        "placement_diagnostics": {
+            "successful_target_contact_sides": target_contacts.to_dict(),
+            "non_border_placement": not transformed_contacts.any,
+            "accidental_contact_violations": 0,
+            "support_pixels_outside_valid_region": support_pixels_outside_valid,
+            "maximum_difference_outside_support": maximum_difference_outside_support,
+        },
         "provenance": provenance,
     }

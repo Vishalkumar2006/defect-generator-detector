@@ -69,7 +69,8 @@ def load_gan_training_rows(manifest_path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def training_manifest_hashes(rows: list[dict[str, Any]]) -> tuple[str, str]:
+def source_metadata_hashes(rows: list[dict[str, Any]]) -> tuple[str, str]:
+    """Hash training-only source rows and their ordered sample/label assignment."""
     assert_gan_training_rows(rows)
     canonical_rows = [
         {
@@ -91,6 +92,15 @@ def training_manifest_hashes(rows: list[dict[str, Any]]) -> tuple[str, str]:
         [(row["sample_id"], bool(row["has_defect"])) for row in rows], separators=(",", ":")
     ).encode("utf-8")
     return hashlib.sha256(manifest_bytes).hexdigest(), hashlib.sha256(split_bytes).hexdigest()
+
+
+def gan_manifest_content_hash(metadata: dict[str, Any]) -> str:
+    """Hash canonical complete GAN metadata, excluding only its own hash field."""
+    content = {
+        key: value for key, value in metadata.items() if key != "gan_manifest_content_sha256"
+    }
+    canonical = json.dumps(content, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def _load_pair(repo_root: Path, row: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
@@ -169,7 +179,7 @@ def _normal_window_count(shape: tuple[int, int], patch_size: tuple[int, int], ov
 def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
     manifest_path = repo_root / configuration["data"]["development_manifest"]
     rows = load_gan_training_rows(manifest_path)
-    manifest_sha256, split_sha256 = training_manifest_hashes(rows)
+    source_manifest_sha256, split_sha256 = source_metadata_hashes(rows)
     patch = configuration["patch"]
     patch_size = (int(patch["width"]), int(patch["height"]))
     templates: list[dict[str, Any]] = []
@@ -230,6 +240,8 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
                         "component_width": box.width,
                         "component_height": box.height,
                         "positive_pixels": component.positive_pixels,
+                        "source_contact_sides": component.contact_sides.to_dict(),
+                        "touches_native_border": component.touches_native_border,
                         "reasons": list(plan.rejected_reasons),
                     }
                 )
@@ -253,6 +265,7 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
                         "partial_component": window.partial_component,
                         "coverage_fraction": window.coverage_fraction,
                         "positive_pixels": window.positive_pixels,
+                        "source_contact_sides": window.source_contact_sides.to_dict(),
                         "touches_native_border": window.touches_native_border,
                     }
                 )
@@ -260,11 +273,12 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
         raise ValueError("GAN input metadata requires usable defect templates and normal backgrounds")
     metadata = {
         "pipeline_version": configuration["pipeline_version"],
+        "configuration": configuration,
         "seed": int(configuration["seed"]),
         "patch": patch,
         "transform": configuration["template_transform"],
         "colour_matching": configuration["colour_matching"],
-        "manifest_sha256": manifest_sha256,
+        "source_manifest_sha256": source_manifest_sha256,
         "split_sha256": split_sha256,
         "templates": templates,
         "normal_backgrounds": normals,
@@ -278,6 +292,7 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
         },
         "materialized_image_files": 0,
     }
+    metadata["gan_manifest_content_sha256"] = gan_manifest_content_hash(metadata)
     positive_pixels = [item["positive_pixels"] for item in templates]
     coverage = [item["coverage_fraction"] for item in templates]
     defect_reason_counts: dict[str, int] = {}
@@ -289,6 +304,21 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
         reason = item["reason"]
         normal_reason_counts[reason] = normal_reason_counts.get(reason, 0) + 1
     accepted_normal_fraction = len(normals) / total_normal_training_images
+    source_contact_counts = {side: 0 for side in ("top", "bottom", "left", "right")}
+    source_contact_counts.update({"none": 0, "multiple": 0})
+    source_contact_combinations: dict[str, int] = {}
+    for template in templates:
+        active = [side for side, contact in template["source_contact_sides"].items() if contact]
+        if not active:
+            source_contact_counts["none"] += 1
+            combination = "none"
+        else:
+            for side in active:
+                source_contact_counts[side] += 1
+            if len(active) > 1:
+                source_contact_counts["multiple"] += 1
+            combination = "+".join(active)
+        source_contact_combinations[combination] = source_contact_combinations.get(combination, 0) + 1
     summary = {
         "pipeline_version": configuration["pipeline_version"],
         "total_defective_training_images": total_defective_training_images,
@@ -303,6 +333,8 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
         "border_touching_template_windows": sum(
             item["touches_native_border"] for item in templates
         ),
+        "templates_by_source_contact_side": source_contact_counts,
+        "templates_by_source_contact_combination": source_contact_combinations,
         "maximum_component_width": max(width for width, _ in component_dimensions),
         "maximum_component_height": max(height for _, height in component_dimensions),
         "total_normal_training_images": total_normal_training_images,
@@ -323,7 +355,8 @@ def build_gan_input_metadata(repo_root: Path, configuration: dict[str, Any]):
         "official_test_rows_loaded": 0,
         "validation_predictions_loaded": 0,
         "materialized_image_files": 0,
-        "manifest_sha256": manifest_sha256,
+        "source_manifest_sha256": source_manifest_sha256,
         "split_sha256": split_sha256,
+        "gan_manifest_content_sha256": metadata["gan_manifest_content_sha256"],
     }
     return metadata, summary
