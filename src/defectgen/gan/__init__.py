@@ -6,17 +6,33 @@ from .geometry import ContactSides, ComponentWindow, connected_components, deter
 from .manifest import build_gan_input_metadata
 from .normalization import gan_rgb_to_uint8, rgb_to_gan
 from .pipeline import construct_coarse_gan_input
+from .training_pairs import (
+    GANInternalSplit,
+    GANTrainingPairConfig,
+    GANTrainingPairDataset,
+    GANTrainingSample,
+    create_internal_gan_split,
+    load_gan_training_pair_config,
+    load_training_pair_manifest,
+)
 
 __all__ = [
     "ComponentWindow",
     "ContactSides",
     "GANPlacementCompatibilityIndex",
+    "GANInternalSplit",
     "GANSamplingFailure",
+    "GANTrainingPairConfig",
+    "GANTrainingPairDataset",
+    "GANTrainingSample",
     "OnlineGANInputDataset",
     "build_gan_input_metadata",
     "connected_components",
     "construct_coarse_gan_input",
+    "create_internal_gan_split",
     "deterministic_component_windows",
     "gan_rgb_to_uint8",
+    "load_gan_training_pair_config",
+    "load_training_pair_manifest",
     "rgb_to_gan",
 ]

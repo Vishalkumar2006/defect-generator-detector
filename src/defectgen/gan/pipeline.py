@@ -172,11 +172,15 @@ def construct_coarse_gan_input(
     colour_settings: dict[str, Any],
     provenance_base: dict[str, Any],
     transform_parameters: dict[str, Any] | None = None,
+    source_valid_region: np.ndarray | None = None,
+    include_training_details: bool = False,
 ) -> dict[str, Any]:
     if source_rgb.shape != normal_background_rgb.shape or source_rgb.shape[:2] != source_mask.shape:
         raise ValueError("Source, mask, and normal background must share patch geometry")
     if valid_region.shape != source_mask.shape:
         raise ValueError("Valid-region mask must match the patch")
+    if source_valid_region is not None and source_valid_region.shape != source_mask.shape:
+        raise ValueError("Source valid-region mask must match the source patch")
     source_mask = source_mask.astype(bool)
     valid_region = valid_region.astype(bool)
     if not source_mask.any():
@@ -338,7 +342,7 @@ def construct_coarse_gan_input(
         "maximum_difference_outside_support": maximum_difference_outside_support,
     }
     validate_provenance(provenance)
-    return {
+    result = {
         "normal_background": rgb_to_gan(background.numpy()),
         "source_template": rgb_to_gan(source_layer.numpy()),
         "conditioning_mask": binary_mask_tensor(transformed_mask),
@@ -356,3 +360,74 @@ def construct_coarse_gan_input(
         },
         "provenance": provenance,
     }
+    if include_training_details:
+        source_valid = (
+            np.ones(source_mask.shape, dtype=bool)
+            if source_valid_region is None
+            else source_valid_region.astype(bool, copy=False)
+        )
+        y_coordinates, x_coordinates = torch.meshgrid(
+            torch.arange(height, dtype=torch.float32),
+            torch.arange(width, dtype=torch.float32),
+            indexing="ij",
+        )
+        transformed_x = x_coordinates - target_left
+        transformed_y = y_coordinates - target_top
+        if horizontal_flip:
+            transformed_x = scaled_width - 1 - transformed_x
+        if vertical_flip:
+            transformed_y = scaled_height - 1 - transformed_y
+        source_x = crop_left + (transformed_x + 0.5) * (
+            (crop_right - crop_left) / scaled_width
+        ) - 0.5
+        source_y = crop_top + (transformed_y + 0.5) * (
+            (crop_bottom - crop_top) / scaled_height
+        ) - 0.5
+        grid = torch.stack(
+            (
+                (source_x + 0.5) * (2.0 / width) - 1.0,
+                (source_y + 0.5) * (2.0 / height) - 1.0,
+            ),
+            dim=-1,
+        ).unsqueeze(0)
+        source_canvas = _float_rgb(source_rgb).permute(2, 0, 1).unsqueeze(0)
+        transformed_real = F.grid_sample(
+            source_canvas,
+            grid,
+            mode="bilinear",
+            padding_mode="reflection",
+            align_corners=False,
+        )[0]
+        source_valid_tensor = torch.from_numpy(source_valid).float()[None, None]
+        transformed_real_valid = F.grid_sample(
+            source_valid_tensor,
+            grid,
+            mode="nearest",
+            padding_mode="zeros",
+            align_corners=False,
+        )[0, 0].bool()
+        result["training_details"] = {
+            "transformed_real_image": transformed_real.mul(2.0).sub(1.0),
+            "transformed_real_mask": alpha.unsqueeze(0).clone(),
+            "transformed_real_valid_region": binary_mask_tensor(
+                transformed_real_valid
+            ),
+            "source_patch_valid_region": binary_mask_tensor(source_valid),
+            "shared_spatial_transform": {
+                "horizontal_flip": horizontal_flip,
+                "vertical_flip": vertical_flip,
+                "scale": scale,
+                "translation": {"x": target_left, "y": target_top},
+                "source_crop": {
+                    "top": crop_top,
+                    "left": crop_left,
+                    "width": crop_right - crop_left,
+                    "height": crop_bottom - crop_top,
+                },
+                "transformed_crop": {
+                    "width": scaled_width,
+                    "height": scaled_height,
+                },
+            },
+        }
+    return result

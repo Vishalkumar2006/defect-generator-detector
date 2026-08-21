@@ -110,6 +110,7 @@ class OnlineGANInputDataset(Dataset):
         sample_loader: SampleLoader | None = None,
         template_indices: list[int] | tuple[int, ...] | None = None,
         normal_indices: list[int] | tuple[int, ...] | None = None,
+        include_training_details: bool = False,
     ) -> None:
         _validate_metadata(metadata)
         self.metadata = metadata
@@ -158,6 +159,7 @@ class OnlineGANInputDataset(Dataset):
         if self.length <= 0:
             raise ValueError("Online GAN dataset length must be positive")
         self._sample_loader = sample_loader or self._load_training_pair
+        self.include_training_details = bool(include_training_details)
 
     def __len__(self) -> int:
         return self.length
@@ -212,8 +214,17 @@ class OnlineGANInputDataset(Dataset):
 
     def _load_template_component(
         self, template: dict[str, Any]
-    ) -> tuple[np.ndarray, np.ndarray, int, dict[str, Any], ContactSides]:
+    ) -> tuple[
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        int,
+        dict[str, Any],
+        ContactSides,
+        tuple[int, int],
+    ]:
         source_image, source_mask = self._sample_loader(template)
+        source_native_shape = source_image.shape[:2]
         components = connected_components(source_mask)
         component_id = int(template["component_id"])
         if not 0 <= component_id < len(components):
@@ -230,7 +241,7 @@ class OnlineGANInputDataset(Dataset):
             positive_pixels=int(coordinates["positive_pixels"]),
             source_contact_sides=ContactSides.from_dict(coordinates["source_contact_sides"]),
         )
-        source_patch, component_patch, _ = extract_native_window(
+        source_patch, component_patch, source_valid = extract_native_window(
             source_image, component.mask, source_window
         )
         if int(component_patch.sum()) != source_window.positive_pixels:
@@ -238,7 +249,15 @@ class OnlineGANInputDataset(Dataset):
         source_contacts = ContactSides.from_dict(template["source_contact_sides"])
         if source_contacts != component.contact_sides:
             raise ValueError("Template source-contact metadata no longer matches its component")
-        return source_patch, component_patch, component_id, coordinates, source_contacts
+        return (
+            source_patch,
+            component_patch,
+            source_valid,
+            component_id,
+            coordinates,
+            source_contacts,
+            source_native_shape,
+        )
 
     def audit_metadata_compatibility(self) -> dict[str, Any]:
         """Read-only, training-only preflight of every template's feasible states."""
@@ -249,7 +268,7 @@ class OnlineGANInputDataset(Dataset):
         states_examined = 0
         states_excluded = 0
         for template in self.templates:
-            _, component_patch, component_id, _, source_contacts = (
+            _, component_patch, _, component_id, _, source_contacts, _ = (
                 self._load_template_component(template)
             )
             identity = f"{template['sample_id']}:{component_id}:{template['window_index']}"
@@ -317,7 +336,15 @@ class OnlineGANInputDataset(Dataset):
         sample_seed = self._sample_seed(index)
         rng = np.random.default_rng(sample_seed)
         template, selected_class, target_border_fraction = self._select_template(rng)
-        source_patch, component_patch, component_id, coordinates, source_contacts = (
+        (
+            source_patch,
+            component_patch,
+            source_valid,
+            component_id,
+            coordinates,
+            source_contacts,
+            source_native_shape,
+        ) = (
             self._load_template_component(template)
         )
 
@@ -455,7 +482,22 @@ class OnlineGANInputDataset(Dataset):
             colour_settings=self.metadata["colour_matching"],
             provenance_base=provenance_base,
             transform_parameters=transform_parameters,
+            source_valid_region=source_valid,
+            include_training_details=self.include_training_details,
         )
+        if self.include_training_details:
+            sample["training_details"].update(
+                {
+                    "source_native_dimensions": {
+                        "height": source_native_shape[0],
+                        "width": source_native_shape[1],
+                    },
+                    "normal_native_dimensions": {
+                        "height": int(normal["native_height"]),
+                        "width": int(normal["native_width"]),
+                    },
+                }
+            )
         accounting = {
             "compatibility_candidates_examined": feasible.candidates_examined,
             "compatibility_candidates_excluded": feasible.candidates_excluded,

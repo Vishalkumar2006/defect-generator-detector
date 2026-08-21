@@ -123,3 +123,9 @@ policy prevents real/fake conditioning-format differences, while dilated mask
 projection prevents unrelated PatchGAN background logits from dominating. The
 synthetic audit and mathematical definitions are under `reports/gan_losses/` and
 `docs/gan-losses.md`.
+
+G1.3 adds the deterministic data bridge between the F1.4 online sampler and a
+future GAN trainer. It creates synchronized real/fake mask-conditioned pairs,
+keeps native-valid masks on both branches, and uses a grouped development-training
+train/monitor split without accessing detector validation or official test data.
+The contract and audit procedure are documented in `docs/gan-training-pairs.md`.

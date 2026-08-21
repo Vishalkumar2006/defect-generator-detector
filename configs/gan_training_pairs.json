@@ -1,0 +1,13 @@
+{
+  "data_bridge_version": "g1_3_gan_training_pairs_v1",
+  "manifest_path": "reports/gan_inputs/manifest.json",
+  "loss_config_path": "configs/gan_losses.json",
+  "base_seed": 42,
+  "monitor_fraction": 0.10,
+  "image_height": 512,
+  "image_width": 256,
+  "normalization_range": [-1, 1],
+  "discriminator_mask_threshold": 0.5,
+  "deterministic_monitoring": true,
+  "audit_sample_count": 256
+}
