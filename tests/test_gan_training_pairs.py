@@ -200,11 +200,13 @@ def test_training_sample_contract_shapes_dtypes_ranges_and_sources() -> None:
     assert {field.name for field in fields(GANTrainingSample)} == {
         "composite_image",
         "generator_mask",
+        "transformed_defect_alpha",
         "fake_discriminator_mask",
         "real_image",
         "real_discriminator_mask",
         "fake_valid_mask",
         "real_valid_mask",
+        "real_valid_coverage",
         "metadata",
     }
     for image in (sample.composite_image, sample.real_image):
@@ -212,16 +214,30 @@ def test_training_sample_contract_shapes_dtypes_ranges_and_sources() -> None:
         assert torch.isfinite(image).all() and image.min() >= -1 and image.max() <= 1
     for mask in (
         sample.generator_mask,
+        sample.transformed_defect_alpha,
         sample.fake_discriminator_mask,
         sample.real_discriminator_mask,
         sample.fake_valid_mask,
         sample.real_valid_mask,
+        sample.real_valid_coverage,
     ):
         assert mask.shape == (1, HEIGHT, WIDTH) and mask.dtype == torch.float32
         assert torch.isfinite(mask).all() and mask.min() >= 0 and mask.max() <= 1
     assert set(sample.fake_discriminator_mask.unique().tolist()) <= {0.0, 1.0}
     assert bool(((sample.generator_mask > 0) & (sample.generator_mask < 1)).any())
     assert torch.equal(sample.fake_discriminator_mask, sample.real_discriminator_mask)
+    assert bool(
+        (
+            sample.transformed_defect_alpha
+            <= sample.real_valid_coverage + 1e-6
+        ).all()
+    )
+    assert not bool(
+        (
+            sample.real_discriminator_mask.bool()
+            & ~sample.real_valid_mask.bool()
+        ).any()
+    )
     assert sample.fake_discriminator_mask.any()
     assert sample.metadata["normal_background_sample_id"] in internal.train_background_ids
     assert sample.metadata["template_source_sample_id"] in internal.train_defect_source_ids
@@ -292,11 +308,13 @@ def _assert_samples_equal(first: GANTrainingSample, second: GANTrainingSample) -
     for name in (
         "composite_image",
         "generator_mask",
+        "transformed_defect_alpha",
         "fake_discriminator_mask",
         "real_image",
         "real_discriminator_mask",
         "fake_valid_mask",
         "real_valid_mask",
+        "real_valid_coverage",
     ):
         assert torch.equal(getattr(first, name), getattr(second, name))
     assert first.metadata == second.metadata

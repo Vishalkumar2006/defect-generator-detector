@@ -1,0 +1,15 @@
+{
+  "validity_alignment_version": "g1_3b_discriminator_view_validity_v1",
+  "training_pair_config_path": "configs/gan_training_pairs.json",
+  "architecture_config_path": "configs/gan_architecture.json",
+  "pre_fix_audit_path": "reports/gan_training_pairs/validity_alignment/pre_fix_containment_audit.json",
+  "audit_sample_count": 128,
+  "valid_mask_threshold": 0.5,
+  "continuous_real_valid_coverage_threshold": 1e-6,
+  "continuous_real_valid_coverage_policy": "strictly_greater_than",
+  "invalid_fill_value": 0.0,
+  "alpha_coverage_tolerance": 1e-6,
+  "per_sample_support_warning_threshold": 0.95,
+  "mean_support_warning_threshold": 0.99,
+  "stratify_by_target_contact_combination": true
+}

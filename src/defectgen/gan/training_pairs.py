@@ -19,6 +19,7 @@ from defectgen.training.gan_losses import (
 )
 
 from .dataset import OnlineGANInputDataset, SampleLoader, _validate_metadata
+from .pipeline import REAL_VALID_COVERAGE_THRESHOLD
 
 
 DATA_BRIDGE_VERSION = "g1_3_gan_training_pairs_v1"
@@ -223,11 +224,13 @@ def create_internal_gan_split(
 class GANTrainingSample:
     composite_image: torch.Tensor
     generator_mask: torch.Tensor
+    transformed_defect_alpha: torch.Tensor
     fake_discriminator_mask: torch.Tensor
     real_image: torch.Tensor
     real_discriminator_mask: torch.Tensor
     fake_valid_mask: torch.Tensor
     real_valid_mask: torch.Tensor
+    real_valid_coverage: torch.Tensor
     metadata: dict[str, Any]
 
 
@@ -253,10 +256,12 @@ def _validate_training_sample(sample: GANTrainingSample, height: int, width: int
     images = (sample.composite_image, sample.real_image)
     masks = (
         sample.generator_mask,
+        sample.transformed_defect_alpha,
         sample.fake_discriminator_mask,
         sample.real_discriminator_mask,
         sample.fake_valid_mask,
         sample.real_valid_mask,
+        sample.real_valid_coverage,
     )
     if any(image.shape != (3, height, width) for image in images):
         raise RuntimeError("GAN training images violated the [3,H,W] contract")
@@ -360,15 +365,21 @@ class GANTrainingPairDataset(Dataset):
         f1_sample = self._online[index]
         details = f1_sample["training_details"]
         generator_mask = f1_sample["feathered_support"].float().contiguous()
-        real_fractional_mask = details["transformed_real_mask"].float().contiguous()
-        if not torch.equal(generator_mask, real_fractional_mask):
-            raise RuntimeError("Real/fake fractional masks did not share one transform")
+        transformed_defect_alpha = details["transformed_defect_alpha"].float().contiguous()
+        real_valid_coverage = (
+            details["transformed_real_valid_coverage"].float().contiguous()
+        )
+        maximum_alpha_coverage_violation = float(
+            (transformed_defect_alpha - real_valid_coverage).clamp_min(0.0).max()
+        )
+        if maximum_alpha_coverage_violation > 1e-6:
+            raise RuntimeError("Transformed defect alpha exceeded real-valid coverage")
         fake_discriminator_mask = canonicalize_discriminator_mask(
             generator_mask.unsqueeze(0),
             threshold=self.config.discriminator_mask_threshold,
         )[0]
         real_discriminator_mask = canonicalize_discriminator_mask(
-            real_fractional_mask.unsqueeze(0),
+            generator_mask.unsqueeze(0),
             threshold=self.config.discriminator_mask_threshold,
         )[0]
         if not torch.equal(fake_discriminator_mask, real_discriminator_mask):
@@ -377,6 +388,11 @@ class GANTrainingPairDataset(Dataset):
         transform = copy.deepcopy(details["shared_spatial_transform"])
         fake_valid = f1_sample["valid_region"].float().contiguous()
         real_valid = details["transformed_real_valid_region"].float().contiguous()
+        canonical = real_discriminator_mask.bool()
+        if bool((canonical & ~real_valid.bool()).any()):
+            raise RuntimeError("Canonical defect mask entered non-native real padding")
+        if bool((canonical & ~fake_valid.bool()).any()):
+            raise RuntimeError("Canonical defect mask entered non-native fake padding")
         sample_metadata = {
             "data_bridge_version": self.config.data_bridge_version,
             "split": self.split,
@@ -407,6 +423,10 @@ class GANTrainingPairDataset(Dataset):
             ),
             "real_padding_after_transform": _padding_summary(real_valid),
             "fake_padding": _padding_summary(fake_valid),
+            "continuous_validity_threshold": REAL_VALID_COVERAGE_THRESHOLD,
+            "continuous_validity_threshold_policy": "strictly_greater_than",
+            "alpha_coverage_maximum_violation": maximum_alpha_coverage_violation,
+            "source_defect_subset_source_validity": True,
             "deterministic_sample_seed": int(provenance["generated_sample_seed"]),
             "source_manifest_sha256": provenance["source_manifest_sha256"],
             "gan_manifest_content_sha256": provenance["gan_manifest_content_sha256"],
@@ -415,11 +435,13 @@ class GANTrainingPairDataset(Dataset):
         sample = GANTrainingSample(
             composite_image=f1_sample["coarse_composite"].float().contiguous(),
             generator_mask=generator_mask,
+            transformed_defect_alpha=transformed_defect_alpha,
             fake_discriminator_mask=fake_discriminator_mask.contiguous(),
             real_image=details["transformed_real_image"].float().contiguous(),
             real_discriminator_mask=real_discriminator_mask.contiguous(),
             fake_valid_mask=fake_valid,
             real_valid_mask=real_valid,
+            real_valid_coverage=real_valid_coverage,
             metadata=sample_metadata,
         )
         _validate_training_sample(sample, self.config.image_height, self.config.image_width)

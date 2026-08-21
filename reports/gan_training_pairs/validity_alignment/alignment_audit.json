@@ -1,0 +1,3989 @@
+{
+  "validity_alignment_version": "g1_3b_discriminator_view_validity_v1",
+  "requested_samples": 128,
+  "stratification": {
+    "available_target_contact_combinations": [
+      "none",
+      "top",
+      "bottom",
+      "left",
+      "right",
+      "top+left",
+      "top+right",
+      "bottom+left",
+      "bottom+right",
+      "left+right"
+    ],
+    "requested_counts": {
+      "none": 13,
+      "top": 13,
+      "bottom": 13,
+      "left": 13,
+      "right": 13,
+      "top+left": 13,
+      "top+right": 13,
+      "bottom+left": 13,
+      "bottom+right": 12,
+      "left+right": 12
+    },
+    "observed_counts": {
+      "none": 13,
+      "top": 13,
+      "bottom": 13,
+      "left": 13,
+      "right": 13,
+      "top+left": 13,
+      "top+right": 13,
+      "bottom+left": 13,
+      "bottom+right": 12,
+      "left+right": 12
+    },
+    "candidates_examined": 348
+  },
+  "pre_fix_audit_path": "reports/gan_training_pairs/validity_alignment/pre_fix_containment_audit.json",
+  "pre_fix_canonical_containment": {
+    "real_valid": {
+      "full_containment_count": 110,
+      "full_containment_rate": 0.859375
+    },
+    "fake_valid": {
+      "full_containment_count": 128,
+      "full_containment_rate": 1.0
+    },
+    "joint_valid": {
+      "full_containment_count": 110,
+      "full_containment_rate": 0.859375
+    }
+  },
+  "post_fix_canonical_containment": {
+    "real_valid": {
+      "minimum": 1.0,
+      "mean": 1.0,
+      "maximum": 1.0,
+      "full_containment_count": 128,
+      "full_containment_rate": 1.0
+    },
+    "fake_valid": {
+      "minimum": 1.0,
+      "mean": 1.0,
+      "maximum": 1.0,
+      "full_containment_count": 128,
+      "full_containment_rate": 1.0
+    },
+    "joint_valid": {
+      "minimum": 1.0,
+      "mean": 1.0,
+      "maximum": 1.0,
+      "full_containment_count": 128,
+      "full_containment_rate": 1.0
+    }
+  },
+  "support_containment": {
+    "real_valid": {
+      "minimum": 0.7226645435244161,
+      "mean": 0.9096896873243187,
+      "maximum": 1.0,
+      "full_containment_count": 33,
+      "full_containment_rate": 0.2578125
+    },
+    "fake_valid": {
+      "minimum": 0.697452229299363,
+      "mean": 0.9067336417695508,
+      "maximum": 1.0,
+      "full_containment_count": 36,
+      "full_containment_rate": 0.28125
+    },
+    "joint_valid": {
+      "minimum": 0.697452229299363,
+      "mean": 0.9036787920870658,
+      "maximum": 1.0,
+      "full_containment_count": 30,
+      "full_containment_rate": 0.234375
+    }
+  },
+  "support_warning_policy": {
+    "per_sample_threshold": 0.95,
+    "mean_threshold": 0.99,
+    "samples_below_threshold": 88,
+    "sample_ids_below_threshold": [
+      {
+        "stratum_index": 4,
+        "target_contact_combination": "none",
+        "template_id": "train-10352:0:0",
+        "template_source_sample_id": "train-10352",
+        "normal_background_sample_id": "train-12022",
+        "deterministic_sample_seed": 17514901779793031284,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8732706142778085,
+          "fake_valid": 1.0,
+          "joint_valid": 0.8732706142778085
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 5,
+        "target_contact_combination": "none",
+        "template_id": "train-10045:0:0",
+        "template_source_sample_id": "train-10045",
+        "normal_background_sample_id": "train-11701",
+        "deterministic_sample_seed": 6653659127459208176,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 0.8703494926719278,
+          "joint_valid": 0.8703494926719278
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 7,
+        "target_contact_combination": "none",
+        "template_id": "train-12041:0:0",
+        "template_source_sample_id": "train-12041",
+        "normal_background_sample_id": "train-10925",
+        "deterministic_sample_seed": 11840630349112750609,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8885869565217391,
+          "fake_valid": 1.0,
+          "joint_valid": 0.8885869565217391
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 12,
+        "target_contact_combination": "none",
+        "template_id": "train-10352:0:0",
+        "template_source_sample_id": "train-10352",
+        "normal_background_sample_id": "train-10984",
+        "deterministic_sample_seed": 17037192307094511385,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8715909090909091,
+          "fake_valid": 1.0,
+          "joint_valid": 0.8715909090909091
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 1,
+        "target_contact_combination": "left",
+        "template_id": "train-10090:0:0",
+        "template_source_sample_id": "train-10090",
+        "normal_background_sample_id": "train-11724",
+        "deterministic_sample_seed": 8413672820291575019,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8601662887377173,
+          "fake_valid": 0.8458049886621315,
+          "joint_valid": 0.8458049886621315
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 2,
+        "target_contact_combination": "left",
+        "template_id": "train-12255:0:0",
+        "template_source_sample_id": "train-12255",
+        "normal_background_sample_id": "train-11070",
+        "deterministic_sample_seed": 12617858130391651464,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.7226645435244161,
+          "fake_valid": 0.697452229299363,
+          "joint_valid": 0.697452229299363
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 4,
+        "target_contact_combination": "left",
+        "template_id": "train-10382:0:0",
+        "template_source_sample_id": "train-10382",
+        "normal_background_sample_id": "train-12022",
+        "deterministic_sample_seed": 17514901779793031284,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9372456275437245,
+          "fake_valid": 0.9372456275437245,
+          "joint_valid": 0.9372456275437245
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 6,
+        "target_contact_combination": "left",
+        "template_id": "train-10201:0:0",
+        "template_source_sample_id": "train-10201",
+        "normal_background_sample_id": "train-10974",
+        "deterministic_sample_seed": 15154809607929468003,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9165198536387045,
+          "fake_valid": 0.9087274698468627,
+          "joint_valid": 0.9087274698468627
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 8,
+        "target_contact_combination": "left",
+        "template_id": "train-10797:0:0",
+        "template_source_sample_id": "train-10797",
+        "normal_background_sample_id": "train-11413",
+        "deterministic_sample_seed": 9872844122449927902,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8861060851347491,
+          "fake_valid": 0.8861060851347491,
+          "joint_valid": 0.8861060851347491
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 9,
+        "target_contact_combination": "left",
+        "template_id": "train-11658:0:0",
+        "template_source_sample_id": "train-11658",
+        "normal_background_sample_id": "train-11963",
+        "deterministic_sample_seed": 12547706173317205097,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.7333333333333333,
+          "fake_valid": 0.7333333333333333,
+          "joint_valid": 0.7333333333333333
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 12,
+        "target_contact_combination": "left",
+        "template_id": "train-10382:0:0",
+        "template_source_sample_id": "train-10382",
+        "normal_background_sample_id": "train-10984",
+        "deterministic_sample_seed": 17037192307094511385,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9457679532699577,
+          "fake_valid": 0.9457679532699577,
+          "joint_valid": 0.9457679532699577
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 13,
+        "target_contact_combination": "left",
+        "template_id": "train-12245:0:0",
+        "template_source_sample_id": "train-12245",
+        "normal_background_sample_id": "train-11141",
+        "deterministic_sample_seed": 6751082970355731417,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9244267664950866,
+          "fake_valid": 0.9169396350023398,
+          "joint_valid": 0.9169396350023398
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 14,
+        "target_contact_combination": "left",
+        "template_id": "train-11874:0:0",
+        "template_source_sample_id": "train-11874",
+        "normal_background_sample_id": "train-10098",
+        "deterministic_sample_seed": 4963054482850636736,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9162735849056604,
+          "fake_valid": 0.9139150943396226,
+          "joint_valid": 0.9085804132973945
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 16,
+        "target_contact_combination": "left",
+        "template_id": "train-10090:0:0",
+        "template_source_sample_id": "train-10090",
+        "normal_background_sample_id": "train-10862",
+        "deterministic_sample_seed": 18101936097115280373,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8555053838138242,
+          "fake_valid": 0.8419590135463703,
+          "joint_valid": 0.8419590135463703
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 17,
+        "target_contact_combination": "left",
+        "template_id": "train-11228:0:0",
+        "template_source_sample_id": "train-11228",
+        "normal_background_sample_id": "train-11009",
+        "deterministic_sample_seed": 9889209135355028838,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9086659475008989,
+          "fake_valid": 0.8995864796835671,
+          "joint_valid": 0.8995864796835671
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 19,
+        "target_contact_combination": "left",
+        "template_id": "train-10201:0:0",
+        "template_source_sample_id": "train-10201",
+        "normal_background_sample_id": "train-11577",
+        "deterministic_sample_seed": 1611298002850036168,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9241917502787068,
+          "fake_valid": 0.9171125975473802,
+          "joint_valid": 0.9171125975473802
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 21,
+        "target_contact_combination": "left",
+        "template_id": "train-11629:0:0",
+        "template_source_sample_id": "train-11629",
+        "normal_background_sample_id": "train-11976",
+        "deterministic_sample_seed": 368768129703063418,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.898328530259366,
+          "fake_valid": 0.8888760806916427,
+          "joint_valid": 0.8888760806916427
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 0,
+        "target_contact_combination": "right",
+        "template_id": "train-11775:0:0",
+        "template_source_sample_id": "train-11775",
+        "normal_background_sample_id": "train-11400",
+        "deterministic_sample_seed": 9499445013127564184,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.924293977543382,
+          "fake_valid": 0.924293977543382,
+          "joint_valid": 0.924293977543382
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 5,
+        "target_contact_combination": "right",
+        "template_id": "train-10090:0:0",
+        "template_source_sample_id": "train-10090",
+        "normal_background_sample_id": "train-11701",
+        "deterministic_sample_seed": 6653659127459208176,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8454410674573758,
+          "fake_valid": 0.8309859154929577,
+          "joint_valid": 0.8309859154929577
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 7,
+        "target_contact_combination": "right",
+        "template_id": "train-12237:0:0",
+        "template_source_sample_id": "train-12237",
+        "normal_background_sample_id": "train-10925",
+        "deterministic_sample_seed": 11840630349112750609,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9082251082251083,
+          "fake_valid": 0.8989177489177489,
+          "joint_valid": 0.8989177489177489
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 10,
+        "target_contact_combination": "right",
+        "template_id": "train-10951:0:0",
+        "template_source_sample_id": "train-10951",
+        "normal_background_sample_id": "train-11630",
+        "deterministic_sample_seed": 7857066768757043483,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9051821254224559,
+          "fake_valid": 0.8952309425460008,
+          "joint_valid": 0.8952309425460008
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 11,
+        "target_contact_combination": "right",
+        "template_id": "train-11052:1:0",
+        "template_source_sample_id": "train-11052",
+        "normal_background_sample_id": "train-10662",
+        "deterministic_sample_seed": 8424331908705382276,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8320496362858365,
+          "fake_valid": 0.8119383825417201,
+          "joint_valid": 0.8119383825417201
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 15,
+        "target_contact_combination": "right",
+        "template_id": "train-11052:1:0",
+        "template_source_sample_id": "train-11052",
+        "normal_background_sample_id": "train-10114",
+        "deterministic_sample_seed": 10253044365749330252,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8006088280060882,
+          "fake_valid": 0.7808219178082192,
+          "joint_valid": 0.7808219178082192
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 18,
+        "target_contact_combination": "right",
+        "template_id": "train-10602:0:0",
+        "template_source_sample_id": "train-10602",
+        "normal_background_sample_id": "train-11136",
+        "deterministic_sample_seed": 17129574266353130980,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8983990147783252,
+          "fake_valid": 0.8891625615763546,
+          "joint_valid": 0.8891625615763546
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 22,
+        "target_contact_combination": "right",
+        "template_id": "train-11658:0:0",
+        "template_source_sample_id": "train-11658",
+        "normal_background_sample_id": "train-11469",
+        "deterministic_sample_seed": 12533917068702450686,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.7478991596638656,
+          "fake_valid": 0.7478991596638656,
+          "joint_valid": 0.7478991596638656
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 23,
+        "target_contact_combination": "right",
+        "template_id": "train-12237:0:0",
+        "template_source_sample_id": "train-12237",
+        "normal_background_sample_id": "train-11001",
+        "deterministic_sample_seed": 9775344736855614053,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9163695691582573,
+          "fake_valid": 0.9079098434950752,
+          "joint_valid": 0.9079098434950752
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 24,
+        "target_contact_combination": "right",
+        "template_id": "train-11874:0:0",
+        "template_source_sample_id": "train-11874",
+        "normal_background_sample_id": "train-12015",
+        "deterministic_sample_seed": 7523476936615902733,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9071515076235134,
+          "fake_valid": 0.9092631121324101,
+          "joint_valid": 0.899201937707667
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 30,
+        "target_contact_combination": "right",
+        "template_id": "train-11670:0:0",
+        "template_source_sample_id": "train-11670",
+        "normal_background_sample_id": "train-12251",
+        "deterministic_sample_seed": 18070354348707315051,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9047415634344297,
+          "fake_valid": 0.9047415634344297,
+          "joint_valid": 0.9047415634344297
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 0,
+        "target_contact_combination": "top+left",
+        "template_id": "train-11980:0:0",
+        "template_source_sample_id": "train-11980",
+        "normal_background_sample_id": "train-11400",
+        "deterministic_sample_seed": 9499445013127564184,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8018122228648544,
+          "fake_valid": 0.782147676884519,
+          "joint_valid": 0.782147676884519
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 1,
+        "target_contact_combination": "top+left",
+        "template_id": "train-10021:0:0",
+        "template_source_sample_id": "train-10021",
+        "normal_background_sample_id": "train-11724",
+        "deterministic_sample_seed": 8413672820291575019,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8828956706884316,
+          "fake_valid": 0.8699787083037616,
+          "joint_valid": 0.8699787083037616
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 6,
+        "target_contact_combination": "top+left",
+        "template_id": "train-10021:0:0",
+        "template_source_sample_id": "train-10021",
+        "normal_background_sample_id": "train-10974",
+        "deterministic_sample_seed": 15154809607929468003,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.865906962222916,
+          "fake_valid": 0.8523259444270996,
+          "joint_valid": 0.8523259444270996
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 16,
+        "target_contact_combination": "top+left",
+        "template_id": "train-10021:0:0",
+        "template_source_sample_id": "train-10021",
+        "normal_background_sample_id": "train-10862",
+        "deterministic_sample_seed": 18101936097115280373,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8809946714031972,
+          "fake_valid": 0.8691956356254757,
+          "joint_valid": 0.8691956356254757
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 17,
+        "target_contact_combination": "top+left",
+        "template_id": "train-11574:0:0",
+        "template_source_sample_id": "train-11574",
+        "normal_background_sample_id": "train-11009",
+        "deterministic_sample_seed": 9889209135355028838,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.7668172094128833,
+          "fake_valid": 0.7454242928452579,
+          "joint_valid": 0.7454242928452579
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 19,
+        "target_contact_combination": "top+left",
+        "template_id": "train-10021:0:0",
+        "template_source_sample_id": "train-10021",
+        "normal_background_sample_id": "train-11577",
+        "deterministic_sample_seed": 1611298002850036168,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8802110138960371,
+          "fake_valid": 0.8683736489963974,
+          "joint_valid": 0.8683736489963974
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 20,
+        "target_contact_combination": "top+left",
+        "template_id": "train-10569:0:0",
+        "template_source_sample_id": "train-10569",
+        "normal_background_sample_id": "train-10773",
+        "deterministic_sample_seed": 5836091825998225243,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9496363006581227,
+          "fake_valid": 0.9445098718392795,
+          "joint_valid": 0.9445098718392795
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 22,
+        "target_contact_combination": "top+left",
+        "template_id": "train-11917:0:0",
+        "template_source_sample_id": "train-11917",
+        "normal_background_sample_id": "train-11469",
+        "deterministic_sample_seed": 12533917068702450686,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.809579230080573,
+          "fake_valid": 0.809579230080573,
+          "joint_valid": 0.809579230080573
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 23,
+        "target_contact_combination": "top+left",
+        "template_id": "train-12210:0:0",
+        "template_source_sample_id": "train-12210",
+        "normal_background_sample_id": "train-11001",
+        "deterministic_sample_seed": 9775344736855614053,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8404653914415303,
+          "fake_valid": 0.8404653914415303,
+          "joint_valid": 0.8404653914415303
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 25,
+        "target_contact_combination": "top+left",
+        "template_id": "train-11957:0:0",
+        "template_source_sample_id": "train-11957",
+        "normal_background_sample_id": "train-11665",
+        "deterministic_sample_seed": 18425254281364648453,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.7506318449873631,
+          "fake_valid": 0.7506318449873631,
+          "joint_valid": 0.7506318449873631
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 34,
+        "target_contact_combination": "top+left",
+        "template_id": "train-12210:0:0",
+        "template_source_sample_id": "train-12210",
+        "normal_background_sample_id": "train-11761",
+        "deterministic_sample_seed": 8560473636276330654,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8257549054165197,
+          "fake_valid": 0.8257549054165197,
+          "joint_valid": 0.8257549054165197
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 40,
+        "target_contact_combination": "top+left",
+        "template_id": "train-10021:0:0",
+        "template_source_sample_id": "train-10021",
+        "normal_background_sample_id": "train-10649",
+        "deterministic_sample_seed": 2929031743073620088,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8746870653685674,
+          "fake_valid": 0.8620305980528512,
+          "joint_valid": 0.8620305980528512
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 2,
+        "target_contact_combination": "top+right",
+        "template_id": "train-12314:0:0",
+        "template_source_sample_id": "train-12314",
+        "normal_background_sample_id": "train-11070",
+        "deterministic_sample_seed": 12617858130391651464,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.878562945368171,
+          "fake_valid": 0.878562945368171,
+          "joint_valid": 0.878562945368171
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 4,
+        "target_contact_combination": "top+right",
+        "template_id": "train-10157:0:0",
+        "template_source_sample_id": "train-10157",
+        "normal_background_sample_id": "train-12022",
+        "deterministic_sample_seed": 17514901779793031284,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9060608881854576,
+          "fake_valid": 0.8955404524718369,
+          "joint_valid": 0.8955404524718369
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 8,
+        "target_contact_combination": "top+right",
+        "template_id": "train-11074:0:0",
+        "template_source_sample_id": "train-11074",
+        "normal_background_sample_id": "train-11413",
+        "deterministic_sample_seed": 9872844122449927902,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.7558663738296151,
+          "fake_valid": 0.7558663738296151,
+          "joint_valid": 0.7558663738296151
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 9,
+        "target_contact_combination": "top+right",
+        "template_id": "train-11917:0:0",
+        "template_source_sample_id": "train-11917",
+        "normal_background_sample_id": "train-11963",
+        "deterministic_sample_seed": 12547706173317205097,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8163684968126671,
+          "fake_valid": 0.7989923915278635,
+          "joint_valid": 0.7989923915278635
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 18,
+        "target_contact_combination": "top+right",
+        "template_id": "train-11052:0:0",
+        "template_source_sample_id": "train-11052",
+        "normal_background_sample_id": "train-11136",
+        "deterministic_sample_seed": 17129574266353130980,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9136748688987495,
+          "fake_valid": 0.899757966922146,
+          "joint_valid": 0.899757966922146
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 26,
+        "target_contact_combination": "top+right",
+        "template_id": "train-10536:0:0",
+        "template_source_sample_id": "train-10536",
+        "normal_background_sample_id": "train-10386",
+        "deterministic_sample_seed": 1746853528884908938,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8852952602952603,
+          "fake_valid": 0.8747086247086248,
+          "joint_valid": 0.8747086247086248
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 31,
+        "target_contact_combination": "top+right",
+        "template_id": "train-11506:0:0",
+        "template_source_sample_id": "train-11506",
+        "normal_background_sample_id": "train-11306",
+        "deterministic_sample_seed": 12254248593754992477,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8479087452471483,
+          "fake_valid": 0.8479087452471483,
+          "joint_valid": 0.8479087452471483
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 39,
+        "target_contact_combination": "top+right",
+        "template_id": "train-12056:0:0",
+        "template_source_sample_id": "train-12056",
+        "normal_background_sample_id": "train-10490",
+        "deterministic_sample_seed": 17399327281561411171,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9427312775330396,
+          "fake_valid": 0.9374350344008315,
+          "joint_valid": 0.9374350344008315
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 43,
+        "target_contact_combination": "top+right",
+        "template_id": "train-12314:0:0",
+        "template_source_sample_id": "train-12314",
+        "normal_background_sample_id": "train-12311",
+        "deterministic_sample_seed": 16511831041329526141,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.878562945368171,
+          "fake_valid": 0.878562945368171,
+          "joint_valid": 0.878562945368171
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 49,
+        "target_contact_combination": "top+right",
+        "template_id": "train-12314:0:0",
+        "template_source_sample_id": "train-12314",
+        "normal_background_sample_id": "train-11781",
+        "deterministic_sample_seed": 11526096292931985752,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.881915654038599,
+          "fake_valid": 0.881915654038599,
+          "joint_valid": 0.881915654038599
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 66,
+        "target_contact_combination": "top+right",
+        "template_id": "train-11957:0:0",
+        "template_source_sample_id": "train-11957",
+        "normal_background_sample_id": "train-10424",
+        "deterministic_sample_seed": 3903191761127503538,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.7419354838709677,
+          "fake_valid": 0.7419354838709677,
+          "joint_valid": 0.7419354838709677
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 78,
+        "target_contact_combination": "top+right",
+        "template_id": "train-10569:0:0",
+        "template_source_sample_id": "train-10569",
+        "normal_background_sample_id": "train-12249",
+        "deterministic_sample_seed": 10949853627869927044,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9512675686326021,
+          "fake_valid": 0.9462761066596611,
+          "joint_valid": 0.9462761066596611
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 3,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-11770:0:0",
+        "template_source_sample_id": "train-11770",
+        "normal_background_sample_id": "train-10684",
+        "deterministic_sample_seed": 10587190964503705844,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8446509585833455,
+          "fake_valid": 0.8305283184545588,
+          "joint_valid": 0.8305283184545588
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 7,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-12210:0:0",
+        "template_source_sample_id": "train-12210",
+        "normal_background_sample_id": "train-10925",
+        "deterministic_sample_seed": 11840630349112750609,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8380761994355598,
+          "fake_valid": 0.8380761994355598,
+          "joint_valid": 0.8380761994355598
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 10,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-11195:0:0",
+        "template_source_sample_id": "train-11195",
+        "normal_background_sample_id": "train-11630",
+        "deterministic_sample_seed": 7857066768757043483,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8731024667931688,
+          "fake_valid": 0.8731024667931688,
+          "joint_valid": 0.8731024667931688
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 11,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-11506:0:0",
+        "template_source_sample_id": "train-11506",
+        "normal_background_sample_id": "train-10662",
+        "deterministic_sample_seed": 8424331908705382276,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8699609882964889,
+          "fake_valid": 0.8699609882964889,
+          "joint_valid": 0.8699609882964889
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 14,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-11980:0:0",
+        "template_source_sample_id": "train-11980",
+        "normal_background_sample_id": "train-10098",
+        "deterministic_sample_seed": 4963054482850636736,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8063367746529014,
+          "fake_valid": 0.786934852260591,
+          "joint_valid": 0.786934852260591
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 15,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-11506:0:0",
+        "template_source_sample_id": "train-11506",
+        "normal_background_sample_id": "train-10114",
+        "deterministic_sample_seed": 10253044365749330252,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8443649373881932,
+          "fake_valid": 0.8443649373881932,
+          "joint_valid": 0.8443649373881932
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 21,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-11770:0:0",
+        "template_source_sample_id": "train-11770",
+        "normal_background_sample_id": "train-11976",
+        "deterministic_sample_seed": 368768129703063418,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8542003733665214,
+          "fake_valid": 0.840945861854387,
+          "joint_valid": 0.840945861854387
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 27,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-11957:0:0",
+        "template_source_sample_id": "train-11957",
+        "normal_background_sample_id": "train-10896",
+        "deterministic_sample_seed": 5262020991105034661,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.7343324250681199,
+          "fake_valid": 0.7343324250681199,
+          "joint_valid": 0.7343324250681199
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 29,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-10536:0:0",
+        "template_source_sample_id": "train-10536",
+        "normal_background_sample_id": "train-11245",
+        "deterministic_sample_seed": 13594737945107421546,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.887424614697342,
+          "fake_valid": 0.8759213759213759,
+          "joint_valid": 0.8759213759213759
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 32,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-11195:0:0",
+        "template_source_sample_id": "train-11195",
+        "normal_background_sample_id": "train-10932",
+        "deterministic_sample_seed": 7077516664987123801,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8616578077862376,
+          "fake_valid": 0.8616578077862376,
+          "joint_valid": 0.8616578077862376
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 35,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-10157:0:0",
+        "template_source_sample_id": "train-10157",
+        "normal_background_sample_id": "train-10831",
+        "deterministic_sample_seed": 12640410673681786529,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.914012487157196,
+          "fake_valid": 0.9043705050185726,
+          "joint_valid": 0.9043705050185726
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 36,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-10569:0:0",
+        "template_source_sample_id": "train-10569",
+        "normal_background_sample_id": "train-11461",
+        "deterministic_sample_seed": 1082659026485072049,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9541186259360513,
+          "fake_valid": 0.9494829430643053,
+          "joint_valid": 0.9494829430643053
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 38,
+        "target_contact_combination": "bottom+left",
+        "template_id": "train-10536:0:0",
+        "template_source_sample_id": "train-10536",
+        "normal_background_sample_id": "train-10470",
+        "deterministic_sample_seed": 9140999425444657877,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": true,
+          "right": false
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8853704136480486,
+          "fake_valid": 0.8736854405234868,
+          "joint_valid": 0.8736854405234868
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 5,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-10021:0:0",
+        "template_source_sample_id": "train-10021",
+        "normal_background_sample_id": "train-11701",
+        "deterministic_sample_seed": 6653659127459208176,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8802110138960371,
+          "fake_valid": 0.8683736489963974,
+          "joint_valid": 0.8683736489963974
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 12,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-10157:0:0",
+        "template_source_sample_id": "train-10157",
+        "normal_background_sample_id": "train-10984",
+        "deterministic_sample_seed": 17037192307094511385,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9140003878223774,
+          "fake_valid": 0.9032383168508823,
+          "joint_valid": 0.9032383168508823
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 13,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-12314:0:0",
+        "template_source_sample_id": "train-12314",
+        "normal_background_sample_id": "train-11141",
+        "deterministic_sample_seed": 6751082970355731417,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8918950711680979,
+          "fake_valid": 0.8918950711680979,
+          "joint_valid": 0.8918950711680979
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 24,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-11980:0:0",
+        "template_source_sample_id": "train-11980",
+        "normal_background_sample_id": "train-12015",
+        "deterministic_sample_seed": 7523476936615902733,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8032535885167464,
+          "fake_valid": 0.7835406698564593,
+          "joint_valid": 0.7835406698564593
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 30,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-11957:0:0",
+        "template_source_sample_id": "train-11957",
+        "normal_background_sample_id": "train-12251",
+        "deterministic_sample_seed": 18070354348707315051,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.7459165154264973,
+          "fake_valid": 0.7459165154264973,
+          "joint_valid": 0.7459165154264973
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 33,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-11980:0:0",
+        "template_source_sample_id": "train-11980",
+        "normal_background_sample_id": "train-10243",
+        "deterministic_sample_seed": 18402060856412488914,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8032535885167464,
+          "fake_valid": 0.7835406698564593,
+          "joint_valid": 0.7835406698564593
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 37,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-12301:0:0",
+        "template_source_sample_id": "train-12301",
+        "normal_background_sample_id": "train-11498",
+        "deterministic_sample_seed": 18245992901485010731,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9026325733719612,
+          "fake_valid": 0.9026325733719612,
+          "joint_valid": 0.9026325733719612
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 41,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-10536:0:0",
+        "template_source_sample_id": "train-10536",
+        "normal_background_sample_id": "train-12300",
+        "deterministic_sample_seed": 758534374977496028,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8765642775881684,
+          "fake_valid": 0.8650739476678043,
+          "joint_valid": 0.8650739476678043
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 48,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-10157:0:0",
+        "template_source_sample_id": "train-10157",
+        "normal_background_sample_id": "train-11680",
+        "deterministic_sample_seed": 7660071192455736985,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9092427616926503,
+          "fake_valid": 0.8986636971046771,
+          "joint_valid": 0.8986636971046771
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 50,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-12210:0:0",
+        "template_source_sample_id": "train-12210",
+        "normal_background_sample_id": "train-10897",
+        "deterministic_sample_seed": 14850968333202781703,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8257549054165197,
+          "fake_valid": 0.8257549054165197,
+          "joint_valid": 0.8257549054165197
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 59,
+        "target_contact_combination": "bottom+right",
+        "template_id": "train-10536:0:0",
+        "template_source_sample_id": "train-10536",
+        "normal_background_sample_id": "train-10202",
+        "deterministic_sample_seed": 16456251456269156774,
+        "source_contact_sides": {
+          "top": true,
+          "bottom": false,
+          "left": true,
+          "right": false
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": true,
+          "left": false,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8710315009264978,
+          "fake_valid": 0.8590487955528103,
+          "joint_valid": 0.8590487955528103
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 0,
+        "target_contact_combination": "left+right",
+        "template_id": "train-11214:0:0",
+        "template_source_sample_id": "train-11214",
+        "normal_background_sample_id": "train-11389",
+        "deterministic_sample_seed": 9499445013127564184,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.863714046761936,
+          "fake_valid": 0.8612414094032944,
+          "joint_valid": 0.8612414094032944
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 1,
+        "target_contact_combination": "left+right",
+        "template_id": "train-10421:0:0",
+        "template_source_sample_id": "train-10421",
+        "normal_background_sample_id": "train-11464",
+        "deterministic_sample_seed": 8413672820291575019,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8991488972270523,
+          "fake_valid": 0.8943900430127207,
+          "joint_valid": 0.8943900430127207
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 2,
+        "target_contact_combination": "left+right",
+        "template_id": "train-11214:0:0",
+        "template_source_sample_id": "train-11214",
+        "normal_background_sample_id": "train-11900",
+        "deterministic_sample_seed": 12617858130391651464,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8621652824848236,
+          "fake_valid": 0.8596700309113254,
+          "joint_valid": 0.8596700309113254
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 3,
+        "target_contact_combination": "left+right",
+        "template_id": "train-10907:0:0",
+        "template_source_sample_id": "train-10907",
+        "normal_background_sample_id": "train-10111",
+        "deterministic_sample_seed": 10587190964503705844,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9305414979757085,
+          "fake_valid": 0.9269673582995951,
+          "joint_valid": 0.9269673582995951
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 4,
+        "target_contact_combination": "left+right",
+        "template_id": "train-10421:0:0",
+        "template_source_sample_id": "train-10421",
+        "normal_background_sample_id": "train-10942",
+        "deterministic_sample_seed": 17514901779793031284,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8967517401392111,
+          "fake_valid": 0.8918213457076566,
+          "joint_valid": 0.8918213457076566
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 5,
+        "target_contact_combination": "left+right",
+        "template_id": "train-10421:0:0",
+        "template_source_sample_id": "train-10421",
+        "normal_background_sample_id": "train-11456",
+        "deterministic_sample_seed": 6653659127459208176,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9132958142806894,
+          "fake_valid": 0.90889905029898,
+          "joint_valid": 0.90889905029898
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 6,
+        "target_contact_combination": "left+right",
+        "template_id": "train-10421:0:0",
+        "template_source_sample_id": "train-10421",
+        "normal_background_sample_id": "train-11900",
+        "deterministic_sample_seed": 15154809607929468003,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8958861376486644,
+          "fake_valid": 0.8909144082667186,
+          "joint_valid": 0.8909144082667186
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 7,
+        "target_contact_combination": "left+right",
+        "template_id": "train-11214:0:0",
+        "template_source_sample_id": "train-11214",
+        "normal_background_sample_id": "train-11900",
+        "deterministic_sample_seed": 11840630349112750609,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8623661530425699,
+          "fake_valid": 0.859866432861993,
+          "joint_valid": 0.859866432861993
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 8,
+        "target_contact_combination": "left+right",
+        "template_id": "train-10421:0:0",
+        "template_source_sample_id": "train-10421",
+        "normal_background_sample_id": "train-11287",
+        "deterministic_sample_seed": 9872844122449927902,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.8995940460081191,
+          "fake_valid": 0.8948128101037438,
+          "joint_valid": 0.8948128101037438
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 9,
+        "target_contact_combination": "left+right",
+        "template_id": "train-10907:0:0",
+        "template_source_sample_id": "train-10907",
+        "normal_background_sample_id": "train-12270",
+        "deterministic_sample_seed": 12547706173317205097,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9273392401664653,
+          "fake_valid": 0.9236474694589878,
+          "joint_valid": 0.9236474694589878
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 10,
+        "target_contact_combination": "left+right",
+        "template_id": "train-10907:0:0",
+        "template_source_sample_id": "train-10907",
+        "normal_background_sample_id": "train-11544",
+        "deterministic_sample_seed": 7857066768757043483,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9481562809629649,
+          "fake_valid": 0.9448624909621616,
+          "joint_valid": 0.9448624909621616
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      },
+      {
+        "stratum_index": 11,
+        "target_contact_combination": "left+right",
+        "template_id": "train-10907:0:0",
+        "template_source_sample_id": "train-10907",
+        "normal_background_sample_id": "train-10786",
+        "deterministic_sample_seed": 8424331908705382276,
+        "source_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "transformed_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "target_contact_sides": {
+          "top": false,
+          "bottom": false,
+          "left": true,
+          "right": true
+        },
+        "canonical_containment": {
+          "real_valid": 1.0,
+          "fake_valid": 1.0,
+          "joint_valid": 1.0
+        },
+        "support_containment": {
+          "real_valid": 0.9330218068535826,
+          "fake_valid": 0.9295770428947999,
+          "joint_valid": 0.9295770428947999
+        },
+        "alpha_coverage_maximum_violation": 0.0,
+        "alpha_coverage_violation_pixels": 0
+      }
+    ],
+    "warnings": [
+      "88 samples below 95.00% joint support containment",
+      "mean joint support containment 0.903679 below 0.990000"
+    ]
+  },
+  "alpha_versus_valid_coverage": {
+    "tolerance": 1e-06,
+    "violation_samples": 0,
+    "violation_pixels": 0,
+    "maximum_violation": 0.0
+  },
+  "results_by_target_contact_combination": {
+    "none": {
+      "count": 13,
+      "support_real_valid": {
+        "minimum": 0.8715909090909091,
+        "mean": 0.9714896625238817,
+        "maximum": 1.0,
+        "below_full_containment": 4
+      },
+      "support_fake_valid": {
+        "minimum": 0.8703494926719278,
+        "mean": 0.9900268840516867,
+        "maximum": 1.0,
+        "below_full_containment": 1
+      },
+      "support_joint_valid": {
+        "minimum": 0.8703494926719278,
+        "mean": 0.9615165465755685,
+        "maximum": 1.0,
+        "below_full_containment": 5
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 13
+      }
+    },
+    "top": {
+      "count": 13,
+      "support_real_valid": {
+        "minimum": 0.9970700113087283,
+        "mean": 0.9997746162545176,
+        "maximum": 1.0,
+        "below_full_containment": 1
+      },
+      "support_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "support_joint_valid": {
+        "minimum": 0.9970700113087283,
+        "mean": 0.9997746162545176,
+        "maximum": 1.0,
+        "below_full_containment": 1
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 13
+      }
+    },
+    "bottom": {
+      "count": 13,
+      "support_real_valid": {
+        "minimum": 0.9979394719896973,
+        "mean": 0.9998414978453614,
+        "maximum": 1.0,
+        "below_full_containment": 1
+      },
+      "support_fake_valid": {
+        "minimum": 0.9802773129333014,
+        "mean": 0.9974326502111925,
+        "maximum": 1.0,
+        "below_full_containment": 2
+      },
+      "support_joint_valid": {
+        "minimum": 0.9802773129333014,
+        "mean": 0.9972741480565539,
+        "maximum": 1.0,
+        "below_full_containment": 3
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 13
+      }
+    },
+    "left": {
+      "count": 13,
+      "support_real_valid": {
+        "minimum": 0.7226645435244161,
+        "mean": 0.8791688960335496,
+        "maximum": 0.9457679532699577,
+        "below_full_containment": 13
+      },
+      "support_fake_valid": {
+        "minimum": 0.697452229299363,
+        "mean": 0.8717558913770034,
+        "maximum": 0.9457679532699577,
+        "below_full_containment": 13
+      },
+      "support_joint_valid": {
+        "minimum": 0.697452229299363,
+        "mean": 0.871345531296832,
+        "maximum": 0.9457679532699577,
+        "below_full_containment": 13
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 13
+      }
+    },
+    "right": {
+      "count": 13,
+      "support_real_valid": {
+        "minimum": 0.7478991596638656,
+        "mean": 0.8859001563060461,
+        "maximum": 0.9692565679150363,
+        "below_full_containment": 13
+      },
+      "support_fake_valid": {
+        "minimum": 0.7478991596638656,
+        "mean": 0.8790388922717018,
+        "maximum": 0.9692565679150363,
+        "below_full_containment": 13
+      },
+      "support_joint_valid": {
+        "minimum": 0.7478991596638656,
+        "mean": 0.8782649557774909,
+        "maximum": 0.9692565679150363,
+        "below_full_containment": 13
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 13
+      }
+    },
+    "top+left": {
+      "count": 13,
+      "support_real_valid": {
+        "minimum": 0.7506318449873631,
+        "mean": 0.8535010437765924,
+        "maximum": 0.9661210806547033,
+        "below_full_containment": 13
+      },
+      "support_fake_valid": {
+        "minimum": 0.7454242928452579,
+        "mean": 0.8448574610481181,
+        "maximum": 0.9627292447249063,
+        "below_full_containment": 13
+      },
+      "support_joint_valid": {
+        "minimum": 0.7454242928452579,
+        "mean": 0.8448574610481181,
+        "maximum": 0.9627292447249063,
+        "below_full_containment": 13
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 13
+      }
+    },
+    "top+right": {
+      "count": 13,
+      "support_real_valid": {
+        "minimum": 0.7419354838709677,
+        "mean": 0.8749751417657611,
+        "maximum": 0.9745263348744447,
+        "below_full_containment": 13
+      },
+      "support_fake_valid": {
+        "minimum": 0.7419354838709677,
+        "mean": 0.8699647239807174,
+        "maximum": 0.9720786873356904,
+        "below_full_containment": 13
+      },
+      "support_joint_valid": {
+        "minimum": 0.7419354838709677,
+        "mean": 0.8699647239807174,
+        "maximum": 0.9720786873356904,
+        "below_full_containment": 13
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 13
+      }
+    },
+    "bottom+left": {
+      "count": 13,
+      "support_real_valid": {
+        "minimum": 0.7343324250681199,
+        "mean": 0.8590468517545519,
+        "maximum": 0.9541186259360513,
+        "below_full_containment": 13
+      },
+      "support_fake_valid": {
+        "minimum": 0.7343324250681199,
+        "mean": 0.8525664709126958,
+        "maximum": 0.9494829430643053,
+        "below_full_containment": 13
+      },
+      "support_joint_valid": {
+        "minimum": 0.7343324250681199,
+        "mean": 0.8525664709126958,
+        "maximum": 0.9494829430643053,
+        "below_full_containment": 13
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 13
+      }
+    },
+    "bottom+right": {
+      "count": 12,
+      "support_real_valid": {
+        "minimum": 0.7459165154264973,
+        "mean": 0.8666855643814663,
+        "maximum": 0.9764705882352941,
+        "below_full_containment": 12
+      },
+      "support_fake_valid": {
+        "minimum": 0.7459165154264973,
+        "mean": 0.858489799519169,
+        "maximum": 0.9741987829614605,
+        "below_full_containment": 12
+      },
+      "support_joint_valid": {
+        "minimum": 0.7459165154264973,
+        "mean": 0.858489799519169,
+        "maximum": 0.9741987829614605,
+        "below_full_containment": 12
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 12
+      }
+    },
+    "left+right": {
+      "count": 12,
+      "support_real_valid": {
+        "minimum": 0.8621652824848236,
+        "mean": 0.9026650786293158,
+        "maximum": 0.9481562809629649,
+        "below_full_containment": 12
+      },
+      "support_fake_valid": {
+        "minimum": 0.8596700309113254,
+        "mean": 0.8988891576818315,
+        "maximum": 0.9448624909621616,
+        "below_full_containment": 12
+      },
+      "support_joint_valid": {
+        "minimum": 0.8596700309113254,
+        "mean": 0.8988891576818315,
+        "maximum": 0.9448624909621616,
+        "below_full_containment": 12
+      },
+      "canonical_real_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_fake_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "canonical_joint_valid": {
+        "minimum": 1.0,
+        "mean": 1.0,
+        "maximum": 1.0,
+        "below_full_containment": 0
+      },
+      "alpha_coverage_maximum_violation": {
+        "minimum": 0.0,
+        "mean": 0.0,
+        "maximum": 0.0,
+        "below_full_containment": 12
+      }
+    }
+  },
+  "strict_containment_failures": [],
+  "original_real_fake_valid_fraction_asymmetry": {
+    "minimum": 0.00042724609375,
+    "mean": 0.17293846607208252,
+    "maximum": 0.6317520141601562
+  },
+  "validation_rows_loaded": 0,
+  "official_test_rows_loaded": 0,
+  "training_steps": 0,
+  "materialized_generated_training_images": 0,
+  "status": "PASS",
+  "corrective_alignment_executed": true,
+  "runtime_seconds": 263.5732166000089,
+  "samples_per_second": 0.48563356190416385,
+  "candidates_per_second": 1.3203162464269453,
+  "aligned_view_valid_fraction_asymmetry": {
+    "minimum": 0.0,
+    "mean": 0.0,
+    "maximum": 0.0
+  },
+  "maximum_real_fake_difference_outside_joint_validity": 0.0,
+  "maximum_native_valid_pixel_mutation": 0.0,
+  "real_fake_canonical_mask_equality_rate": 1.0,
+  "localized_logits_affected_by_padding_before_alignment": {
+    "real": {
+      "minimum": 0.0,
+      "mean": 0.4287478049156741,
+      "maximum": 0.8309859154929577
+    },
+    "fake": {
+      "minimum": 0.0,
+      "mean": 0.40853259423996285,
+      "maximum": 0.7605633802816901
+    }
+  },
+  "aligned_padding_only_equality_rate": 1.0,
+  "generator_gradient_coverage_after_alignment": {
+    "canonical_defect_pixels": {
+      "minimum": 1.0,
+      "mean": 1.0,
+      "maximum": 1.0
+    },
+    "joint_valid_support_pixels": {
+      "minimum": 1.0,
+      "mean": 1.0,
+      "maximum": 1.0
+    },
+    "support_pixels_outside_joint_validity": {
+      "minimum": 0.0,
+      "mean": 0.0,
+      "maximum": 0.0
+    },
+    "outside_joint_support_pixel_count": 112533
+  },
+  "maximum_gradient_in_invalid_fake_pixels": 0.0,
+  "invalid_fill_value": 0.0,
+  "invariants": {
+    "zero_alpha_coverage_violations": true,
+    "real_canonical_containment_complete": true,
+    "fake_canonical_containment_complete": true,
+    "joint_canonical_containment_complete": true,
+    "canonical_masks_equal": true,
+    "aligned_padding_bit_exact_equal": true,
+    "padding_only_branches_bit_exact_equal": true,
+    "aligned_validity_asymmetry_zero": true,
+    "native_valid_pixels_unchanged": true,
+    "canonical_gradient_coverage_complete": true,
+    "joint_support_gradient_coverage_complete": true,
+    "outside_joint_support_gradients_zero": true,
+    "invalid_fake_gradients_zero": true,
+    "all_contact_combinations_present": true
+  }
+}

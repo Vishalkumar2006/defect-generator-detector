@@ -41,6 +41,8 @@ REQUIRED_PROVENANCE_FIELDS = {
     "pipeline_version",
 }
 
+REAL_VALID_COVERAGE_THRESHOLD = 1e-6
+
 
 def validate_provenance(provenance: dict[str, Any]) -> None:
     missing = REQUIRED_PROVENANCE_FIELDS - set(provenance)
@@ -366,6 +368,8 @@ def construct_coarse_gan_input(
             if source_valid_region is None
             else source_valid_region.astype(bool, copy=False)
         )
+        if bool((source_mask & ~source_valid).any()):
+            raise RuntimeError("Source defect mask entered non-native source padding")
         y_coordinates, x_coordinates = torch.meshgrid(
             torch.arange(height, dtype=torch.float32),
             torch.arange(width, dtype=torch.float32),
@@ -398,20 +402,43 @@ def construct_coarse_gan_input(
             padding_mode="reflection",
             align_corners=False,
         )[0]
+        source_defect_tensor = torch.from_numpy(source_mask).float()[None, None]
         source_valid_tensor = torch.from_numpy(source_valid).float()[None, None]
-        transformed_real_valid = F.grid_sample(
-            source_valid_tensor,
+        transformed_defect_alpha = F.grid_sample(
+            source_defect_tensor,
             grid,
-            mode="nearest",
+            mode="bilinear",
             padding_mode="zeros",
             align_corners=False,
-        )[0, 0].bool()
+        )[0, 0].clamp(0.0, 1.0)
+        transformed_real_valid_coverage = F.grid_sample(
+            source_valid_tensor,
+            grid,
+            mode="bilinear",
+            padding_mode="zeros",
+            align_corners=False,
+        )[0, 0].clamp(0.0, 1.0)
+        alpha_coverage_violation = float(
+            (transformed_defect_alpha - transformed_real_valid_coverage)
+            .clamp_min(0.0)
+            .max()
+        )
+        if alpha_coverage_violation > 1e-6:
+            raise RuntimeError(
+                "Transformed defect alpha exceeded continuous real-valid coverage"
+            )
+        transformed_real_valid = (
+            transformed_real_valid_coverage > REAL_VALID_COVERAGE_THRESHOLD
+        )
         result["training_details"] = {
             "transformed_real_image": transformed_real.mul(2.0).sub(1.0),
-            "transformed_real_mask": alpha.unsqueeze(0).clone(),
+            "transformed_real_mask": transformed_defect_alpha.unsqueeze(0),
+            "transformed_defect_alpha": transformed_defect_alpha.unsqueeze(0),
+            "transformed_real_valid_coverage": transformed_real_valid_coverage.unsqueeze(0),
             "transformed_real_valid_region": binary_mask_tensor(
                 transformed_real_valid
             ),
+            "alpha_coverage_maximum_violation": alpha_coverage_violation,
             "source_patch_valid_region": binary_mask_tensor(source_valid),
             "shared_spatial_transform": {
                 "horizontal_flip": horizontal_flip,
@@ -427,6 +454,14 @@ def construct_coarse_gan_input(
                 "transformed_crop": {
                     "width": scaled_width,
                     "height": scaled_height,
+                },
+                "continuous_mask_validity_transform": {
+                    "grid": "shared",
+                    "mode": "bilinear",
+                    "padding_mode": "zeros",
+                    "align_corners": False,
+                    "validity_threshold": REAL_VALID_COVERAGE_THRESHOLD,
+                    "threshold_policy": "strictly_greater_than",
                 },
             },
         }

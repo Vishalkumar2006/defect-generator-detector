@@ -47,11 +47,13 @@ def _sample_hash(sample: GANTrainingSample) -> str:
     for field in (
         "composite_image",
         "generator_mask",
+        "transformed_defect_alpha",
         "fake_discriminator_mask",
         "real_image",
         "real_discriminator_mask",
         "fake_valid_mask",
         "real_valid_mask",
+        "real_valid_coverage",
     ):
         tensor = getattr(sample, field).detach().cpu().contiguous()
         digest.update(field.encode("utf-8"))

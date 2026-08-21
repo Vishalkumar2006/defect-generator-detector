@@ -129,3 +129,11 @@ future GAN trainer. It creates synchronized real/fake mask-conditioned pairs,
 keeps native-valid masks on both branches, and uses a grouped development-training
 train/monitor split without accessing detector validation or official test data.
 The contract and audit procedure are documented in `docs/gan-training-pairs.md`.
+
+G1.3b propagates continuous real native-valid coverage with the exact transformed
+defect grid, then constructs discriminator views on the intersection of real and
+fake native validity. Both branches are exactly zero outside that intersection;
+inside it their original pixels and fake-branch gradients are preserved. Strict
+canonical-mask containment is separated from informational feather-and-halo
+support containment, with the correction and audit policy documented in
+`docs/gan-training-pairs.md`.
