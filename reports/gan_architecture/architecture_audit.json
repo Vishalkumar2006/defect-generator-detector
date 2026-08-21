@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "architecture_version": "g1_1_masked_residual_gan_v1",
+  "input_shape": [
+    1,
+    3,
+    512,
+    256
+  ],
+  "generator_trainable_parameters": 5896739,
+  "discriminator_trainable_parameters": 695649,
+  "discriminator_logit_shape": [
+    1,
+    1,
+    62,
+    30
+  ],
+  "maximum_absolute_change_outside_support": 0.0,
+  "border_maximum_absolute_change_outside_support": 0.0,
+  "zero_mask_maximum_absolute_change": 0.0,
+  "generator_parameters_with_nonzero_gradients": 56,
+  "invariants": {
+    "production_output_shape_matches": true,
+    "discriminator_logits_nonempty": true,
+    "output_in_normalized_range": true,
+    "maximum_change_outside_support_is_zero": true,
+    "border_change_outside_support_is_zero": true,
+    "zero_mask_change_is_zero": true,
+    "forward_tensors_finite": true,
+    "backward_gradients_finite": true,
+    "generator_has_nonzero_gradients": true
+  },
+  "validation_rows_loaded": 0,
+  "official_test_rows_loaded": 0,
+  "materialized_generated_images": 0,
+  "training_steps": 0
+}

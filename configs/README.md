@@ -13,3 +13,11 @@ as a fresh seed-42 run:
 ```powershell
 .\.venv\Scripts\python.exe .\scripts\train_final_real_baseline.py --config .\configs\final_real_baseline_bf16.json
 ```
+
+`gan_architecture.json` defines the architecture-only G1.1 mask-conditioned
+residual GAN. It does not define losses, optimization, dataloading, checkpointing,
+or training. Run its synthetic CPU audit with:
+
+```powershell
+.\.venv\Scripts\python.exe .\scripts\audit_gan_architecture.py --config .\configs\gan_architecture.json
+```

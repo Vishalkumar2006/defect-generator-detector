@@ -109,3 +109,10 @@ reports expected versus observed target-side counts and horizontal-counterpart
 pool symmetry. The failed F1.3 1,000-sample audit remains in
 `reports/gan_inputs/sampling_audit.{json,md}` as diagnostic evidence; new defaults
 write `sampling_audit_f1_4.{json,md}`.
+
+G1.1 adds architecture definitions only: a mask-conditioned residual generator
+with exact outside-support copying and a spectrally normalized mask-conditioned
+PatchGAN discriminator. The synthetic architecture audit uses a 512 x 256 input,
+loads no dataset rows, performs no training step, and writes its invariant report
+under `reports/gan_architecture/`. Architecture details are documented in
+`docs/gan-architecture.md`.

@@ -1,0 +1,13 @@
+{
+  "architecture_version": "g1_1_masked_residual_gan_v1",
+  "image_height": 512,
+  "image_width": 256,
+  "generator_base_channels": 32,
+  "generator_downsample_stages": 3,
+  "generator_residual_blocks": 4,
+  "group_norm_groups": 8,
+  "support_dilation_radius": 12,
+  "residual_scale": 0.25,
+  "discriminator_base_channels": 32,
+  "discriminator_spectral_norm": true
+}
