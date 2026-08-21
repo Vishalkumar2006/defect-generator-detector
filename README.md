@@ -144,3 +144,9 @@ executes exactly one isolated discriminator update and one isolated generator
 update using the G1.3b aligned views. Its provisional settings, lazy-R1 convention,
 numerical guards, and audit command are documented in
 `docs/gan-training-mechanics.md`.
+
+G1.5 adds a deterministic, checkpointable discriminator-warmup and gated GAN smoke
+runner with frozen-detector semantic monitoring. The preserved run accepted its
+10-step warmup but stopped after the first joint update when genuine clamp
+saturation exceeded the mandatory 5% gate; it did not reach the 20- or 200-step
+targets. The mechanics and evidence are documented in `docs/gan-smoke.md`.

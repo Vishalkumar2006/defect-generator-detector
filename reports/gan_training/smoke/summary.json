@@ -1,0 +1,319 @@
+{
+  "status": "STOPPED",
+  "smoke_version": "g1_5_gated_gan_smoke_v1",
+  "configuration_provisional": true,
+  "warmup_steps": 10,
+  "warmup_gate_status": "accepted",
+  "micro_smoke_gate_passed": false,
+  "joint_discriminator_steps": 1,
+  "joint_generator_steps": 1,
+  "trainer_discriminator_optimizer_steps": 11,
+  "trainer_generator_optimizer_steps": 1,
+  "monitor_only_evaluations": 3,
+  "early_stop": true,
+  "early_stop_reason": "clamp_saturation_above_limit",
+  "final_monitor": {
+    "kind": "monitor",
+    "phase": "warmup_10",
+    "warmup_step": 10,
+    "joint_step": 0,
+    "logits": {
+      "batch_ids": [
+        "monitor:0:train-11549:0:0",
+        "monitor:3:train-10060:0:0"
+      ],
+      "real_logits": {
+        "mean": -0.581599235534668,
+        "standard_deviation": 0.48143020272254944,
+        "minimum": -1.578125,
+        "maximum": 0.51171875
+      },
+      "fake_logits": {
+        "mean": -0.6025562286376953,
+        "standard_deviation": 0.5262700319290161,
+        "minimum": -3.078125,
+        "maximum": 0.416015625
+      },
+      "real_minus_fake_logit_margin": 0.020956993103027344,
+      "real_hinge": 1.907942771911621,
+      "fake_hinge": 0.07918054610490799,
+      "real_active_logit_sign_accuracy": 0.014005602337419987,
+      "fake_active_logit_sign_accuracy": 0.994397759437561,
+      "optimizer_steps": 0
+    },
+    "train_margin": 0.017545253038406372,
+    "train_minus_monitor_margin": -0.0034117400646209717,
+    "semantic": {
+      "composite": {
+        "mean_probability_inside_mask": 0.4739814663854694,
+        "mean_probability_outside_mask": 0.005899197733404955,
+        "inside_outside_probability_contrast": 0.4680822686520644,
+        "dice_at_0_5": 0.5527691670826503,
+        "iou_at_0_5": 0.46433280621256146,
+        "samples_with_any_predicted_positive_fraction": 0.7142857142857143
+      },
+      "refined": {
+        "mean_probability_inside_mask": 0.9622924327850342,
+        "mean_probability_outside_mask": 0.04702356457710266,
+        "inside_outside_probability_contrast": 0.9152688682079315,
+        "dice_at_0_5": 0.5181710656200137,
+        "iou_at_0_5": 0.37823407139096943,
+        "samples_with_any_predicted_positive_fraction": 1.0
+      },
+      "genuine_real": {
+        "mean_probability_inside_mask": 0.5817895872002866,
+        "mean_probability_outside_mask": 0.01738348149124899,
+        "inside_outside_probability_contrast": 0.5644061057090377,
+        "dice_at_0_5": 0.5612687702689853,
+        "iou_at_0_5": 0.46263834834098816,
+        "samples_with_any_predicted_positive_fraction": 0.8571428571428571
+      },
+      "refined_vs_composite": {
+        "mean_probability_inside_mask": 0.4883109663995648,
+        "mean_probability_outside_mask": 0.041124366843697704,
+        "inside_outside_probability_contrast": 0.4471865995558671,
+        "dice_at_0_5": -0.03459810146263664,
+        "iou_at_0_5": -0.08609873482159203,
+        "samples_with_any_predicted_positive_fraction": 0.2857142857142857
+      }
+    },
+    "retention_gate": {
+      "inside_retention_ratio": 2.030232194780464,
+      "warning": false,
+      "consecutive_below_stop": 0,
+      "stop": false
+    },
+    "dice_drop": 0.03459810146263664,
+    "warnings": [],
+    "optimizer_steps": {
+      "generator": 0,
+      "discriminator": 10
+    }
+  },
+  "best_monitor": {
+    "kind": "monitor",
+    "phase": "step_0",
+    "warmup_step": 0,
+    "joint_step": 0,
+    "logits": {
+      "batch_ids": [
+        "monitor:0:train-11549:0:0",
+        "monitor:3:train-10060:0:0"
+      ],
+      "real_logits": {
+        "mean": 0.3728650212287903,
+        "standard_deviation": 0.39990103244781494,
+        "minimum": -0.6875,
+        "maximum": 1.40625
+      },
+      "fake_logits": {
+        "mean": 0.3648526966571808,
+        "standard_deviation": 0.3991891145706177,
+        "minimum": -1.125,
+        "maximum": 1.484375
+      },
+      "real_minus_fake_logit_margin": 0.008012324571609497,
+      "real_hinge": 0.45678848028182983,
+      "fake_hinge": 1.5001764297485352,
+      "real_active_logit_sign_accuracy": 0.8907563090324402,
+      "fake_active_logit_sign_accuracy": 0.11764705926179886,
+      "optimizer_steps": 0
+    },
+    "train_margin": null,
+    "train_minus_monitor_margin": null,
+    "semantic": {
+      "composite": {
+        "mean_probability_inside_mask": 0.4739814663854694,
+        "mean_probability_outside_mask": 0.005899197733404955,
+        "inside_outside_probability_contrast": 0.4680822686520644,
+        "dice_at_0_5": 0.5527691670826503,
+        "iou_at_0_5": 0.46433280621256146,
+        "samples_with_any_predicted_positive_fraction": 0.7142857142857143
+      },
+      "refined": {
+        "mean_probability_inside_mask": 0.9622924327850342,
+        "mean_probability_outside_mask": 0.04702356457710266,
+        "inside_outside_probability_contrast": 0.9152688682079315,
+        "dice_at_0_5": 0.5181710656200137,
+        "iou_at_0_5": 0.37823407139096943,
+        "samples_with_any_predicted_positive_fraction": 1.0
+      },
+      "genuine_real": {
+        "mean_probability_inside_mask": 0.5817895872002866,
+        "mean_probability_outside_mask": 0.01738348149124899,
+        "inside_outside_probability_contrast": 0.5644061057090377,
+        "dice_at_0_5": 0.5612687702689853,
+        "iou_at_0_5": 0.46263834834098816,
+        "samples_with_any_predicted_positive_fraction": 0.8571428571428571
+      },
+      "refined_vs_composite": {
+        "mean_probability_inside_mask": 0.4883109663995648,
+        "mean_probability_outside_mask": 0.041124366843697704,
+        "inside_outside_probability_contrast": 0.4471865995558671,
+        "dice_at_0_5": -0.03459810146263664,
+        "iou_at_0_5": -0.08609873482159203,
+        "samples_with_any_predicted_positive_fraction": 0.2857142857142857
+      }
+    },
+    "retention_gate": {
+      "inside_retention_ratio": 2.030232194780464,
+      "warning": false,
+      "consecutive_below_stop": 0,
+      "stop": false
+    },
+    "dice_drop": 0.03459810146263664,
+    "warnings": [],
+    "optimizer_steps": {
+      "generator": 0,
+      "discriminator": 0
+    }
+  },
+  "gradient_clipping_fractions": {
+    "discriminator": 0.9090909090909091,
+    "generator": 1.0
+  },
+  "r1": {
+    "gamma": 1.0,
+    "interval": 16,
+    "schedule_convention": "(global_step + 1) % r1_interval == 0",
+    "events": 0,
+    "scheduled_steps": [],
+    "raw_penalties": [],
+    "scaled_contributions": []
+  },
+  "locality_violations": 0,
+  "invalid_gradient_violations": 0,
+  "template_utilization": {
+    "train-10021:0:0": 1,
+    "train-10208:0:0": 1,
+    "train-10304:0:0": 1,
+    "train-10337:0:0": 1,
+    "train-10382:0:0": 1,
+    "train-10383:0:0": 1,
+    "train-10536:0:0": 1,
+    "train-10654:0:0": 1,
+    "train-10695:1:0": 1,
+    "train-10770:0:0": 1,
+    "train-10893:0:0": 1,
+    "train-11040:0:0": 1,
+    "train-11299:0:0": 1,
+    "train-11363:1:0": 2,
+    "train-11543:0:0": 1,
+    "train-11629:0:0": 1,
+    "train-11775:0:0": 1,
+    "train-11808:0:0": 1,
+    "train-11874:0:0": 1,
+    "train-11956:0:0": 1,
+    "train-12245:0:0": 1
+  },
+  "background_utilization": {
+    "train-10098": 1,
+    "train-10114": 1,
+    "train-10662": 1,
+    "train-10684": 1,
+    "train-10773": 1,
+    "train-10862": 1,
+    "train-10925": 1,
+    "train-10974": 1,
+    "train-10984": 1,
+    "train-11009": 1,
+    "train-11070": 1,
+    "train-11136": 1,
+    "train-11141": 1,
+    "train-11400": 1,
+    "train-11413": 1,
+    "train-11576": 1,
+    "train-11630": 1,
+    "train-11701": 1,
+    "train-11724": 1,
+    "train-11963": 1,
+    "train-11976": 1,
+    "train-12022": 1
+  },
+  "contact_side_counts": {
+    "bottom": 1,
+    "bottom+right": 1,
+    "left": 3,
+    "none": 12,
+    "right": 2,
+    "top": 2,
+    "top+right": 1
+  },
+  "fixed_monitor_support_containment": {
+    "non-border": 1.0,
+    "single-horizontal-border": 1.0,
+    "single-vertical-border": 0.9228969216346741,
+    "corner": 0.8537604212760925,
+    "left+right": 0.9223268032073975,
+    "small-thin": 1.0,
+    "large": 0.9223268032073975
+  },
+  "fixed_monitor_sample_ids": [
+    "non-border:train-11549:0:0:train-11397",
+    "single-horizontal-border:train-10060:0:0:train-10489",
+    "single-vertical-border:train-11585:0:0:train-11779",
+    "corner:train-11417:0:0:train-11499",
+    "left+right:train-11315:0:0:train-11251",
+    "small-thin:train-10583:0:0:train-11633",
+    "large:train-11315:0:0:train-11251"
+  ],
+  "monitor_source_usage": {
+    "non-border": {
+      "template_id": "train-11549:0:0",
+      "template_source_sample_id": "train-11549",
+      "background_sample_id": "train-11397"
+    },
+    "single-horizontal-border": {
+      "template_id": "train-10060:0:0",
+      "template_source_sample_id": "train-10060",
+      "background_sample_id": "train-10489"
+    },
+    "single-vertical-border": {
+      "template_id": "train-11585:0:0",
+      "template_source_sample_id": "train-11585",
+      "background_sample_id": "train-11779"
+    },
+    "corner": {
+      "template_id": "train-11417:0:0",
+      "template_source_sample_id": "train-11417",
+      "background_sample_id": "train-11499"
+    },
+    "left+right": {
+      "template_id": "train-11315:0:0",
+      "template_source_sample_id": "train-11315",
+      "background_sample_id": "train-11251"
+    },
+    "small-thin": {
+      "template_id": "train-10583:0:0",
+      "template_source_sample_id": "train-10583",
+      "background_sample_id": "train-11633"
+    },
+    "large": {
+      "template_id": "train-11315:0:0",
+      "template_source_sample_id": "train-11315",
+      "background_sample_id": "train-11251"
+    }
+  },
+  "train_monitor_source_disjoint": true,
+  "warnings": [
+    "discriminator_gradient_clipping_above_50_percent",
+    "fixed_monitor_mean_support_containment_below_99_percent",
+    "fixed_monitor_support_containment_below_95_percent",
+    "generator_gradient_clipping_above_50_percent",
+    "strongly_unequal_contact_side_sampling"
+  ],
+  "visual_artifacts": [
+    "reports/gan_training/smoke/contact_sheets/step_000.png",
+    "reports/gan_training/smoke/contact_sheets/after_warmup_010.png"
+  ],
+  "materialized_monitor_sheets": 2,
+  "validation_rows_loaded": 0,
+  "official_test_rows_loaded": 0,
+  "materialized_training_images": 0,
+  "runtime_seconds": 22.30636709999817,
+  "peak_allocated_vram_bytes": 1271938048,
+  "peak_reserved_vram_bytes": 1595932672,
+  "checkpoint_directory": "checkpoints/gan_smoke",
+  "best_checkpoint_created": false,
+  "checkpoint_resume_contract_verified_by_cpu_test": true
+}

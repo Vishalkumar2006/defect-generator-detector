@@ -321,6 +321,14 @@ def _logit_statistics(logits: torch.Tensor) -> dict[str, float]:
     }
 
 
+def _weighted_sign_accuracy(
+    logits: torch.Tensor, weights: torch.Tensor, *, positive: bool
+) -> float:
+    active = weights > 0
+    correct = logits > 0 if positive else logits < 0
+    return float(correct[active].float().mean())
+
+
 @contextmanager
 def _temporarily_disable_parameter_gradients(module: nn.Module) -> Iterator[None]:
     parameters = list(module.parameters())
@@ -462,12 +470,22 @@ class GANOneStepTrainer:
         }
 
     def discriminator_step(
-        self, batch: GANTrainingBatch, *, global_step: int
+        self,
+        batch: GANTrainingBatch,
+        *,
+        global_step: int,
+        verify_parameter_isolation: bool = True,
     ) -> dict[str, Any]:
         selected = self._require_train_batch(batch)
-        generator_parameters_before = parameter_hash(self.generator)
-        generator_state_before = module_state_hash(self.generator)
-        discriminator_parameters_before = parameter_hash(self.discriminator)
+        generator_parameters_before = (
+            parameter_hash(self.generator) if verify_parameter_isolation else None
+        )
+        generator_state_before = (
+            module_state_hash(self.generator) if verify_parameter_isolation else None
+        )
+        discriminator_parameters_before = (
+            parameter_hash(self.discriminator) if verify_parameter_isolation else None
+        )
         self.generator_optimizer.zero_grad(set_to_none=True)
         self.discriminator_optimizer.zero_grad(set_to_none=True)
         with torch.no_grad(), precision_autocast(self.device, self.precision):
@@ -542,12 +560,21 @@ class GANOneStepTrainer:
             label="discriminator",
         )
         self.discriminator_optimizer_steps += 1
-        generator_parameters_after = parameter_hash(self.generator)
-        generator_state_after = module_state_hash(self.generator)
-        discriminator_parameters_after = parameter_hash(self.discriminator)
-        if generator_parameters_before != generator_parameters_after or generator_state_before != generator_state_after:
+        generator_parameters_after = (
+            parameter_hash(self.generator) if verify_parameter_isolation else None
+        )
+        generator_state_after = (
+            module_state_hash(self.generator) if verify_parameter_isolation else None
+        )
+        discriminator_parameters_after = (
+            parameter_hash(self.discriminator) if verify_parameter_isolation else None
+        )
+        if verify_parameter_isolation and (
+            generator_parameters_before != generator_parameters_after
+            or generator_state_before != generator_state_after
+        ):
             raise RuntimeError("Discriminator step mutated generator parameters or buffers")
-        if discriminator_parameters_before == discriminator_parameters_after:
+        if verify_parameter_isolation and discriminator_parameters_before == discriminator_parameters_after:
             raise RuntimeError("Discriminator optimizer step changed no parameters")
         if any(parameter.grad is not None for parameter in self.generator.parameters()):
             raise RuntimeError("Generator gradients were constructed during discriminator step")
@@ -556,7 +583,20 @@ class GANOneStepTrainer:
             "losses": values,
             "real_logits": _logit_statistics(real_logits),
             "fake_logits": _logit_statistics(fake_logits),
+            "real_minus_fake_logit_margin": float(
+                real_logits.detach().float().mean() - fake_logits.detach().float().mean()
+            ),
+            "real_active_logit_sign_accuracy": _weighted_sign_accuracy(
+                real_logits.float(), real_weights, positive=True
+            ),
+            "fake_active_logit_sign_accuracy": _weighted_sign_accuracy(
+                fake_logits.float(), fake_weights, positive=False
+            ),
             "gradient_clipping": clipping,
+            "gradient_clipping_applied": (
+                clipping["pre_clipping_norm"]
+                > self.config.discriminator_gradient_clip_max_norm
+            ),
             "r1_scheduled": scheduled,
             "r1_gamma": self.config.r1_gamma,
             "r1_interval": self.config.r1_interval,
@@ -573,18 +613,25 @@ class GANOneStepTrainer:
             "generator_parameter_hash_after": generator_parameters_after,
             "discriminator_parameter_hash_before": discriminator_parameters_before,
             "discriminator_parameter_hash_after": discriminator_parameters_after,
-            "generator_parameters_changed": False,
-            "discriminator_parameters_changed": True,
+            "generator_parameters_changed": False if verify_parameter_isolation else None,
+            "discriminator_parameters_changed": True if verify_parameter_isolation else None,
+            "parameter_isolation_hashes_computed": verify_parameter_isolation,
             "generator_gradients_constructed": False,
             "optimizer_state_finite": optimizer_state_is_finite(
                 self.discriminator_optimizer
             ),
         }
 
-    def generator_step(self, batch: GANTrainingBatch) -> dict[str, Any]:
+    def generator_step(
+        self, batch: GANTrainingBatch, *, verify_parameter_isolation: bool = True
+    ) -> dict[str, Any]:
         selected = self._require_train_batch(batch)
-        generator_parameters_before = parameter_hash(self.generator)
-        discriminator_parameters_before = parameter_hash(self.discriminator)
+        generator_parameters_before = (
+            parameter_hash(self.generator) if verify_parameter_isolation else None
+        )
+        discriminator_parameters_before = (
+            parameter_hash(self.discriminator) if verify_parameter_isolation else None
+        )
         self.generator_optimizer.zero_grad(set_to_none=True)
         self.discriminator_optimizer.zero_grad(set_to_none=True)
         discriminator_states_before = [
@@ -699,6 +746,35 @@ class GANOneStepTrainer:
                     if bool(invalid.any())
                     else 0.0
                 )
+                absolute_change = (
+                    generated.refined_image.detach().float()
+                    - selected.composite_image.detach().float()
+                ).abs()
+                canonical_pixels = aligned.discriminator_mask.bool().expand_as(
+                    absolute_change
+                )
+                support_pixels = generated.support_mask.expand_as(absolute_change)
+                mean_canonical_change = float(absolute_change[canonical_pixels].mean())
+                mean_support_change = float(absolute_change[support_pixels].mean())
+                maximum_residual = float(absolute_change.max())
+                mean_residual = float(absolute_change[support_pixels].mean())
+                clamp_saturation = float(
+                    (generated.refined_image.detach().float().abs() >= 1.0)
+                    [support_pixels]
+                    .float()
+                    .mean()
+                )
+                tanh_saturation = float(
+                    (generated.raw_residual.detach().float().abs() >= 0.99)
+                    [support_pixels]
+                    .float()
+                    .mean()
+                )
+                exact_outside_support_change = float(
+                    absolute_change[outside_support].max()
+                    if bool(outside_support.any())
+                    else 0.0
+                )
         finally:
             restored = [
                 parameter.requires_grad for parameter in self.discriminator.parameters()
@@ -706,11 +782,15 @@ class GANOneStepTrainer:
         if restored != discriminator_states_before:
             raise RuntimeError("Discriminator requires_grad state was not restored")
         self.generator_optimizer_steps += 1
-        generator_parameters_after = parameter_hash(self.generator)
-        discriminator_parameters_after = parameter_hash(self.discriminator)
-        if generator_parameters_before == generator_parameters_after:
+        generator_parameters_after = (
+            parameter_hash(self.generator) if verify_parameter_isolation else None
+        )
+        discriminator_parameters_after = (
+            parameter_hash(self.discriminator) if verify_parameter_isolation else None
+        )
+        if verify_parameter_isolation and generator_parameters_before == generator_parameters_after:
             raise RuntimeError("Generator optimizer step changed no parameters")
-        if discriminator_parameters_before != discriminator_parameters_after:
+        if verify_parameter_isolation and discriminator_parameters_before != discriminator_parameters_after:
             raise RuntimeError("Generator step mutated discriminator parameters")
         if any(parameter.grad is not None for parameter in self.discriminator.parameters()):
             raise RuntimeError("Discriminator parameter gradients exist after generator step")
@@ -727,6 +807,17 @@ class GANOneStepTrainer:
             "losses": values,
             "fake_logits": _logit_statistics(fake_logits),
             "gradient_clipping": clipping,
+            "gradient_clipping_applied": (
+                clipping["pre_clipping_norm"]
+                > self.config.generator_gradient_clip_max_norm
+            ),
+            "mean_absolute_residual_inside_support": mean_residual,
+            "maximum_absolute_residual": maximum_residual,
+            "mean_change_inside_canonical_defect": mean_canonical_change,
+            "mean_change_inside_support_halo": mean_support_change,
+            "clamp_saturation_fraction": clamp_saturation,
+            "tanh_residual_saturation_fraction": tanh_saturation,
+            "exact_outside_support_change": exact_outside_support_change,
             "canonical_defect_gradient_coverage": canonical_gradient_coverage,
             "maximum_invalid_fake_pixel_gradient": maximum_invalid_gradient,
             "generator_locality_before_step": locality_before,
@@ -738,8 +829,9 @@ class GANOneStepTrainer:
             "generator_parameter_hash_after": generator_parameters_after,
             "discriminator_parameter_hash_before": discriminator_parameters_before,
             "discriminator_parameter_hash_after": discriminator_parameters_after,
-            "generator_parameters_changed": True,
-            "discriminator_parameters_changed": False,
+            "generator_parameters_changed": True if verify_parameter_isolation else None,
+            "discriminator_parameters_changed": False if verify_parameter_isolation else None,
+            "parameter_isolation_hashes_computed": verify_parameter_isolation,
             "optimizer_state_finite": optimizer_state_is_finite(
                 self.generator_optimizer
             ),
@@ -769,10 +861,30 @@ class GANOneStepTrainer:
                 fake_logits = self.discriminator(
                     aligned.fake_discriminator_view, aligned.discriminator_mask
                 )
+            weights = patch_logit_localization_weights(
+                aligned.discriminator_mask,
+                real_logits.float(),
+                localization_radius=self.loss_config.localization_radius,
+                mask_threshold=self.loss_config.canonical_mask_threshold,
+            )
+            hinge = localized_discriminator_hinge_loss(
+                real_logits.float(), fake_logits.float(), weights, weights
+            )
         return {
             "batch_ids": selected.batch_ids,
             "real_logits": _logit_statistics(real_logits),
             "fake_logits": _logit_statistics(fake_logits),
+            "real_minus_fake_logit_margin": float(
+                real_logits.detach().float().mean() - fake_logits.detach().float().mean()
+            ),
+            "real_hinge": float(hinge.real.detach()),
+            "fake_hinge": float(hinge.fake.detach()),
+            "real_active_logit_sign_accuracy": _weighted_sign_accuracy(
+                real_logits.float(), weights, positive=True
+            ),
+            "fake_active_logit_sign_accuracy": _weighted_sign_accuracy(
+                fake_logits.float(), weights, positive=False
+            ),
             "optimizer_steps": 0,
         }
 

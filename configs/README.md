@@ -39,3 +39,9 @@ model and writes no checkpoint:
 ```powershell
 .\.venv\Scripts\python.exe .\scripts\audit_gan_one_step.py --config .\configs\gan_one_step.json
 ```
+
+`gan_smoke.json` records the explicitly provisional G1.5 CUDA BF16 smoke settings,
+including discriminator warmup, the 20-to-200 stage gate, frozen-detector warnings,
+and hard numerical/semantic stops. The preserved run stopped correctly after its
+first joint update; do not resume it without a new authorized phase. Checkpoint
+binaries under `checkpoints/gan_smoke/` remain ignored by git.
