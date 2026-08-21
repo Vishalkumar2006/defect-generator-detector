@@ -1,0 +1,56 @@
+{
+  "status": "FAILED_NUMERICAL_STABILITY",
+  "experiment_identity": "historical_final_real_baseline_fp16_seed42",
+  "configuration": "configs/final_real_baseline.json",
+  "failure": {
+    "phase": "validation",
+    "epoch": 4,
+    "failing_batch_index_persisted": false,
+    "failing_sample_ids_persisted": false,
+    "nonfinite_component_persisted": false
+  },
+  "completed_epochs": [1, 2, 3],
+  "infinite_gradient_events": [
+    {
+      "epoch": 1,
+      "batch_index": 338,
+      "scaler_before": 65536.0,
+      "scaler_after": 32768.0,
+      "optimizer_update_executed": false
+    },
+    {
+      "epoch": 3,
+      "batch_index": 14,
+      "scaler_before": 32768.0,
+      "scaler_after": 16384.0,
+      "optimizer_update_executed": false
+    }
+  ],
+  "checkpoints": {
+    "best": {
+      "relative_path": "checkpoints/final_real_baseline/best.pt",
+      "epoch": 2,
+      "sha256": "78ca53a900de712447aecb89602d4636ec83ec0c7daba997fe0bcafcd05b2fce",
+      "model_tensors_finite": true,
+      "optimizer_tensors_finite": true,
+      "validation_forward_finite": ["fp16", "bf16", "fp32"],
+      "parameter_hash_unchanged": true
+    },
+    "last": {
+      "relative_path": "checkpoints/final_real_baseline/last.pt",
+      "epoch": 3,
+      "sha256": "524254f5bc95cadb71f77eac4565ba8e098ee9c75fef479cd9365400a392f2d4",
+      "model_tensors_finite": true,
+      "optimizer_tensors_finite": true,
+      "validation_forward_finite": ["fp16", "bf16", "fp32"],
+      "parameter_hash_unchanged": true
+    }
+  },
+  "disposition": {
+    "resume_allowed": false,
+    "final_reference": false,
+    "publication_ready": false,
+    "checkpoints_are_diagnostic_only": true
+  },
+  "official_test_samples_loaded": 0
+}

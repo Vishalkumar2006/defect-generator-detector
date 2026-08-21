@@ -51,14 +51,13 @@ Day 1, Phases A–C provide repository scaffolding, safe extraction, an official
 
 The provisional D1 class-weight pilot and its corrected numerical-step accounting are documented in [`docs\numerical-stability.md`](docs/numerical-stability.md). Numerical probes and future training commands are executed manually; implementation tasks do not automatically run them.
 
-## Frozen final real baseline (E1)
+## Historical FP16 baseline (E1)
 
-The E1 real-only experiment is frozen in `configs/final_real_baseline.json` and
-implemented by `scripts/train_final_real_baseline.py`. It adds deterministic
-synchronized H/V training flips, ReduceLROnPlateau scheduling, validation-loss
-early stopping, auditable per-epoch numerical telemetry, exact best/last resume
-state, and a single validation-only threshold sweep after reloading the best
-checkpoint. The official test split is never constructed by this workflow.
+The experiment configured by `configs/final_real_baseline.json` failed during
+epoch 4 validation after two genuine infinite-gradient events. Its finite epoch-2
+and epoch-3 checkpoints and small reports are retained only for diagnostics. Do
+not resume it or use it as the final real-only comparator. See
+`docs/failed-fp16-baseline.md`.
 
 The controlled future real-versus-synthetic protocol is documented in
 `docs/fair-synthetic-comparison.md`.

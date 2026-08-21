@@ -40,6 +40,10 @@ from defectgen.training.final_baseline import (  # noqa: E402
     threshold_candidates,
     validate_final_baseline_configuration,
 )
+from defectgen.training.failure_diagnostics import (  # noqa: E402
+    nonfinite_components,
+    write_numerical_failure_report,
+)
 from defectgen.training.losses import CombinedBCEDiceLoss  # noqa: E402
 from defectgen.training.metrics import detailed_validation_metrics, validation_threshold_sweep  # noqa: E402
 from defectgen.training.numerics import NumericalStepController, precision_autocast  # noqa: E402
@@ -129,7 +133,7 @@ def _build_loaders(configuration, training, validation):
     )
 
 
-def _train_epoch(model, loader, criterion, controller, device):
+def _train_epoch(model, loader, criterion, controller, device, *, failure_context=None):
     model.train()
     sums = {"bce": 0.0, "dice": 0.0, "total": 0.0}
     samples = defective = successful_samples = 0
@@ -137,12 +141,51 @@ def _train_epoch(model, loader, criterion, controller, device):
     maximum_gradient_norm = 0.0
     maximum_absolute_logit = 0.0
     anomalies: list[dict[str, Any]] = []
+    last_batch_index = 0
+    last_sample_ids: list[str] = []
     for batch_index, batch in enumerate(loader, start=1):
+        last_batch_index = batch_index
+        last_sample_ids = [str(value) for value in batch.get("sample_id", [])]
         inputs = batch["image"].to(device, non_blocking=True)
         targets = batch["mask"].to(device, non_blocking=True)
         valid = batch["valid_region"].to(device, non_blocking=True)
-        telemetry = controller.run_batch(model, inputs, targets, valid, criterion)
+        try:
+            telemetry = controller.run_batch(model, inputs, targets, valid, criterion)
+        except Exception as error:
+            if failure_context is not None:
+                write_numerical_failure_report(
+                    **failure_context,
+                    phase="training",
+                    batch_index=batch_index,
+                    sample_ids=last_sample_ids,
+                    precision_mode=controller.precision_mode,
+                    logits=None,
+                    loss_components=None,
+                    scaler_scale=(float(controller.scaler.get_scale()) if controller.scaler else None),
+                    most_recent_gradient_norm=maximum_gradient_norm,
+                    error=str(error),
+                    explicit_nonfinite_component="training_step_exception",
+                )
+            raise
         if telemetry.optimizer_updates_this_batch > 1:
+            if failure_context is not None:
+                write_numerical_failure_report(
+                    **failure_context,
+                    phase="training",
+                    batch_index=batch_index,
+                    sample_ids=last_sample_ids,
+                    precision_mode=controller.precision_mode,
+                    logits=None,
+                    loss_components={
+                        "bce": telemetry.bce_loss,
+                        "dice": telemetry.dice_loss,
+                        "total": telemetry.total_loss,
+                    },
+                    scaler_scale=telemetry.scale_after,
+                    most_recent_gradient_norm=telemetry.unscaled_gradient_norm,
+                    error="A training attempt executed more than one optimizer update",
+                    explicit_nonfinite_component="optimizer_update_invariant",
+                )
             raise RuntimeError("A training attempt executed more than one optimizer update")
         batch_size = len(inputs)
         if telemetry.optimizer_step_executed:
@@ -157,6 +200,20 @@ def _train_epoch(model, loader, criterion, controller, device):
         samples += batch_size
         defective += int(batch["has_defect"].sum().item())
     if successful_samples == 0:
+        if failure_context is not None:
+            write_numerical_failure_report(
+                **failure_context,
+                phase="training",
+                batch_index=last_batch_index,
+                sample_ids=last_sample_ids,
+                precision_mode=controller.precision_mode,
+                logits=None,
+                loss_components=None,
+                scaler_scale=(float(controller.scaler.get_scale()) if controller.scaler else None),
+                most_recent_gradient_norm=maximum_gradient_norm,
+                error="Every optimizer attempt in the epoch was skipped",
+                explicit_nonfinite_component="all_optimizer_attempts_skipped",
+            )
         raise RuntimeError("Every optimizer attempt in the epoch was skipped")
     after = controller.state_dict()["counters"]
     events = {key: int(after[key]) - int(counter_before[key]) for key in after}
@@ -170,7 +227,18 @@ def _train_epoch(model, loader, criterion, controller, device):
     )
 
 
-def _validate(model, loader, criterion, device, precision_mode, *, keep_outputs: bool):
+def _validate(
+    model,
+    loader,
+    criterion,
+    device,
+    precision_mode,
+    *,
+    keep_outputs: bool,
+    failure_context=None,
+    scaler_scale: float | None = None,
+    most_recent_gradient_norm: float | None = None,
+):
     model.eval()
     sums = {"bce": 0.0, "dice": 0.0, "total": 0.0}
     samples = 0
@@ -183,15 +251,33 @@ def _validate(model, loader, criterion, device, precision_mode, *, keep_outputs:
         "sample_ids": [],
     }
     with torch.no_grad():
-        for batch in loader:
+        for batch_index, batch in enumerate(loader, start=1):
             inputs = batch["image"].to(device, non_blocking=True)
             targets = batch["mask"].to(device, non_blocking=True)
             valid = batch["valid_region"].to(device, non_blocking=True)
             with precision_autocast(device.type, precision_mode):
                 logits = model(inputs)
             components = criterion.components(logits.float(), targets.float(), valid.float())
-            if not all(bool(torch.isfinite(value)) for value in components.values()):
-                raise RuntimeError("Non-finite validation loss; automatic fp32 retry is disabled")
+            failures = nonfinite_components(logits, components)
+            if failures:
+                message = (
+                    f"Non-finite validation component(s): {', '.join(failures)}; "
+                    "automatic fp32 retry is disabled"
+                )
+                if failure_context is not None:
+                    write_numerical_failure_report(
+                        **failure_context,
+                        phase="validation",
+                        batch_index=batch_index,
+                        sample_ids=[str(value) for value in batch.get("sample_id", [])],
+                        precision_mode=precision_mode,
+                        logits=logits,
+                        loss_components=components,
+                        scaler_scale=scaler_scale,
+                        most_recent_gradient_norm=most_recent_gradient_norm,
+                        error=message,
+                    )
+                raise RuntimeError(message)
             batch_size = len(inputs)
             for key in sums:
                 sums[key] += float(components[key].item()) * batch_size
@@ -321,6 +407,12 @@ def run_final_real_baseline(
     anomalies: list[dict[str, Any]] = []
     best = {"epoch": 0, "validation_total_loss": math.inf}
     anomaly_path = report_dir / "numerical_anomalies.json"
+    failure_report_path = report_dir / "latest_numerical_failure.json"
+    failure_base_context = {
+        "path": failure_report_path,
+        "checkpoint_paths": {"best": best_path, "last": last_path},
+        "repo_root": REPO_ROOT,
+    }
     if resume:
         if not last_path.is_file():
             raise FileNotFoundError(f"Cannot resume; checkpoint is absent: {last_path}")
@@ -354,10 +446,25 @@ def run_final_real_baseline(
         torch.cuda.reset_peak_memory_stats()
         learning_rate = float(optimizer.param_groups[0]["lr"])
         train_losses, sampled_fraction, events, epoch_anomalies, maximum_gradient, maximum_logit = (
-            _train_epoch(model, train_loader, criterion, controller, device)
+            _train_epoch(
+                model,
+                train_loader,
+                criterion,
+                controller,
+                device,
+                failure_context={**failure_base_context, "epoch": epoch},
+            )
         )
         validation_losses, outputs, maximum_validation_logit = _validate(
-            model, validation_loader, criterion, device, "fp16", keep_outputs=True
+            model,
+            validation_loader,
+            criterion,
+            device,
+            "fp16",
+            keep_outputs=True,
+            failure_context={**failure_base_context, "epoch": epoch},
+            scaler_scale=float(scaler.get_scale()),
+            most_recent_gradient_norm=maximum_gradient,
         )
         metrics, _ = detailed_validation_metrics(
             outputs["probabilities"],
@@ -451,7 +558,15 @@ def run_final_real_baseline(
     )
     gate.mark_best_checkpoint_loaded()
     best_losses, outputs, _ = _validate(
-        model, validation_loader, criterion, device, "fp16", keep_outputs=True
+        model,
+        validation_loader,
+        criterion,
+        device,
+        "fp16",
+        keep_outputs=True,
+        failure_context={**failure_base_context, "epoch": int(best_payload["epoch"])},
+        scaler_scale=float(scaler.get_scale()),
+        most_recent_gradient_norm=None,
     )
     metrics_at_half, _ = detailed_validation_metrics(
         outputs["probabilities"], outputs["targets"], outputs["valid_regions"], outputs["labels"], 0.5
