@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 from pathlib import Path
 
 import numpy as np
@@ -15,13 +16,18 @@ from defectgen.gan.geometry import (
     extract_native_window,
     plan_component_windows,
 )
-from defectgen.gan.manifest import assert_gan_training_rows, build_gan_input_metadata
+from defectgen.gan.manifest import (
+    achievable_valid_fraction,
+    assert_gan_training_rows,
+    build_gan_input_metadata,
+)
 from defectgen.gan.normalization import binary_mask_tensor, gan_rgb_to_uint8, rgb_to_gan
 from defectgen.gan.pipeline import REQUIRED_PROVENANCE_FIELDS, construct_coarse_gan_input
 
 
 PATCH_WIDTH = 256
 PATCH_HEIGHT = 512
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _training_row(sample_id: str, has_defect: bool) -> dict:
@@ -98,6 +104,13 @@ def test_exact_native_window_geometry_and_padding_validity() -> None:
     assert valid.sum() == 9
     assert not valid[3:, :].any() and not valid[:, 3:].any()
     assert not patch_mask[~valid].any()
+
+
+def test_narrow_native_normal_remains_eligible_without_counting_padding() -> None:
+    fraction = achievable_valid_fraction((602, 184), (PATCH_WIDTH, PATCH_HEIGHT))
+    assert fraction == 0.71875
+    assert fraction >= 0.71875
+    assert achievable_valid_fraction((512, 100), (PATCH_WIDTH, PATCH_HEIGHT)) < 0.71875
 
 
 def test_long_component_uses_overlapping_partial_windows_with_full_coverage() -> None:
@@ -267,6 +280,50 @@ def test_online_dataset_is_exactly_deterministic_and_uses_training_normals_only(
     assert list(tmp_path.iterdir()) == []
 
 
+def test_narrow_background_propagates_valid_region_and_blocks_padded_columns() -> None:
+    metadata, arrays = _dataset_fixture()
+    native_width = 184
+    arrays["normal"] = (
+        arrays["normal"][0][:, :native_width].copy(),
+        arrays["normal"][1][:, :native_width].copy(),
+    )
+    metadata["patch"]["minimum_normal_valid_fraction"] = 0.71875
+    loader = lambda row: arrays[row["sample_id"]]
+    sample = OnlineGANInputDataset(
+        metadata, Path("."), base_seed=42, length=1, sample_loader=loader
+    )[0]
+    valid = sample["valid_region"].bool()
+    condition = sample["conditioning_mask"].bool()
+    support = sample["support_mask"].bool()
+    feather = sample["feathered_support"] > 0
+    assert bool(valid[:, :, :native_width].all())
+    assert not bool(valid[:, :, native_width:].any())
+    assert not bool(condition[~valid].any())
+    assert not bool(support[~valid].any())
+    assert not bool(feather[~valid].any())
+    outside_support = ~support.expand(3, -1, -1)
+    assert torch.equal(
+        sample["coarse_composite"][outside_support],
+        sample["normal_background"][outside_support],
+    )
+
+
+def test_selected_threshold_includes_at_least_95_percent_of_audited_normals() -> None:
+    audit_path = REPO_ROOT / "reports" / "gan_input_design" / "normal_valid_fraction_audit.json"
+    audit = json.loads(audit_path.read_text(encoding="utf-8"))
+    threshold = float(audit["selected_minimum_valid_fraction"])
+    histogram = audit["native_width"]["histogram"]
+    fractions = [
+        min(1.0, int(width) / PATCH_WIDTH)
+        for width, count in histogram.items()
+        for _ in range(int(count))
+    ]
+    accepted = sum(fraction >= threshold for fraction in fractions)
+    assert len(fractions) == audit["normal_training_images"] == 1772
+    assert accepted == audit["selected_threshold_expected_accepted"]
+    assert accepted / len(fractions) >= 0.95
+
+
 def test_different_dataset_seeds_change_generated_sample() -> None:
     metadata, arrays = _dataset_fixture()
     loader = lambda row: arrays[row["sample_id"]]
@@ -279,11 +336,14 @@ def test_different_dataset_seeds_change_generated_sample() -> None:
 def test_metadata_builder_ignores_forbidden_row_files_and_materializes_nothing(tmp_path: Path) -> None:
     data = tmp_path / "data"
     data.mkdir()
-    normal = np.full((PATCH_HEIGHT, PATCH_WIDTH, 3), 100, dtype=np.uint8)
-    defect = normal.copy()
+    normal = np.full((PATCH_HEIGHT, 184, 3), 100, dtype=np.uint8)
+    rejected_normal = np.full((PATCH_HEIGHT, 100, 3), 100, dtype=np.uint8)
+    defect = np.full((PATCH_HEIGHT, PATCH_WIDTH, 3), 100, dtype=np.uint8)
     mask = np.zeros((PATCH_HEIGHT, PATCH_WIDTH), dtype=np.uint8)
     mask[200:210, 100:112] = 255
+    mask[10, 10] = 255
     Image.fromarray(normal).save(data / "normal.png")
+    Image.fromarray(rejected_normal).save(data / "rejected_normal.png")
     Image.fromarray(defect).save(data / "defect.png")
     Image.fromarray(mask).save(data / "defect_mask.png")
     manifest = data / "split.csv"
@@ -298,6 +358,10 @@ def test_metadata_builder_ignores_forbidden_row_files_and_materializes_nothing(t
     ]
     rows = [
         {**_training_row("normal", False), "image_path": "data/normal.png"},
+        {
+            **_training_row("rejected-normal", False),
+            "image_path": "data/rejected_normal.png",
+        },
         {
             **_training_row("defect", True),
             "image_path": "data/defect.png",
@@ -324,7 +388,7 @@ def test_metadata_builder_ignores_forbidden_row_files_and_materializes_nothing(t
             "overlap_fraction": 0.5,
             "minimum_positive_pixels": 8,
             "minimum_component_coverage": 0.05,
-            "minimum_normal_valid_fraction": 0.9,
+            "minimum_normal_valid_fraction": 0.71875,
         },
         "template_transform": _transform_settings(),
         "colour_matching": _colour_settings(),
@@ -332,6 +396,22 @@ def test_metadata_builder_ignores_forbidden_row_files_and_materializes_nothing(t
     }
     metadata, summary = build_gan_input_metadata(tmp_path, configuration)
     assert len(metadata["templates"]) == len(metadata["normal_backgrounds"]) == 1
+    assert len(metadata["rejected_defect_components"]) == 1
+    assert len(metadata["rejected_normal_backgrounds"]) == 1
+    assert "rejected" not in metadata
+    assert summary["total_defective_training_images"] == 1
+    assert summary["connected_components_found"] == 2
+    assert summary["accepted_defect_components"] == 1
+    assert summary["rejected_defect_components"] == 1
+    assert summary["defect_rejection_reasons"] == {
+        "component_below_minimum_positive_pixels": 1
+    }
+    assert summary["total_normal_training_images"] == 2
+    assert summary["accepted_normal_background_images"] == 1
+    assert summary["rejected_normal_background_images"] == 1
+    assert summary["normal_rejection_reasons"] == {
+        "normal_below_minimum_valid_fraction": 1
+    }
     assert summary["validation_rows_loaded"] == summary["official_test_rows_loaded"] == 0
     assert metadata["materialized_image_files"] == summary["materialized_image_files"] == 0
     assert not (tmp_path / "reports").exists()

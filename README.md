@@ -83,3 +83,8 @@ and normal backgrounds only, hard-rejects validation or official-test records,
 keeps masks binary, and does not materialize a generated dataset. This phase has no
 GAN model or training implementation. The rules and provenance contract are in
 `docs/gan-input-pipeline.md`.
+
+F1.1 sets normal-background eligibility to the audited native-valid fraction
+`0.71875` rather than `0.9`. This removes native-width selection bias while keeping
+all reflected padding invalid for defect placement. The training-only distribution
+is recorded in `reports/gan_input_design/normal_valid_fraction_audit.json`.

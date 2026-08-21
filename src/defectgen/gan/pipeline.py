@@ -192,8 +192,13 @@ def construct_coarse_gan_input(
     transformed_mask[target_top : target_top + scaled_height, target_left : target_left + scaled_width] = resized_mask
     alpha, support = _feather(transformed_mask, feather_radius)
     support &= source_content_valid
-    support &= torch.from_numpy(valid_region)
+    target_valid = torch.from_numpy(valid_region)
+    support &= target_valid
     alpha *= support.float()
+    if bool((transformed_mask & ~target_valid).any()):
+        raise RuntimeError("Transformed defect entered target padding")
+    if bool((support & ~target_valid).any()) or bool((alpha > 0)[~target_valid].any()):
+        raise RuntimeError("Feathered defect support entered target padding")
     background = _float_rgb(normal_background_rgb)
     adjusted_source, colour_parameters = _colour_match(
         source_layer, background, transformed_mask, support, colour_settings
