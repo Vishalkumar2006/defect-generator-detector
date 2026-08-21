@@ -30,3 +30,6 @@ synthetic_data/
 
 # Numerical probes keep compact summaries/anomalies; per-batch dumps are local diagnostics.
 reports/numerical_stability/*/batch_telemetry.csv
+
+# Raw precision diagnostics contain local absolute checkpoint paths; sanitized findings are tracked.
+reports/final_real_baseline/precision_diagnostic/

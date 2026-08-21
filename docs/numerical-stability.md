@@ -64,3 +64,8 @@ Numerical and future training commands are run manually by the user. Automation 
 ```
 
 Inspect `reports\numerical_stability\current_fp16\summary.json`, `batch_telemetry.csv`, and `anomalies.json` before selecting another profile.
+
+The later user-run stabilized BF16 profile used learning rate 0.0003, maximum
+gradient norm 1.0, no GradScaler, and 512 attempts. It passed with 512 actual
+updates and no numerical events. Its compact evidence is retained under
+`reports/numerical_stability/bf16/`; the per-batch CSV remains ignored.

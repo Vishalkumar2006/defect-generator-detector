@@ -1,6 +1,6 @@
-# Frozen E1 reference and future synthetic-data comparison
+# Frozen E1.2 BF16 reference and future synthetic-data comparison
 
-E1 is the frozen real-only reference experiment. Its architecture, valid-region
+E1.2 is the frozen stabilized BF16 real-only reference experiment. Its architecture, valid-region
 preprocessing, loss, optimizer, scheduler, early stopping, sampler, augmentation,
 seed, optimizer-attempt budget, checkpoint selection, and validation finalization
 must not be retuned after seeing a synthetic-data result.
@@ -13,8 +13,9 @@ The future real-only and real-plus-synthetic runs must use the same:
 - native-geometry 256 x 672 canvas, image normalization, image/mask padding, and
   valid-region loss and metrics;
 - synchronized training-only horizontal and vertical flips;
-- AdamW optimizer, learning-rate schedule, physical batch size, fp16 policy,
-  GradScaler policy, early stopping, and best-checkpoint rule;
+- AdamW optimizer at initial learning rate 0.0003, learning-rate schedule,
+  physical batch size, BF16/no-GradScaler policy, maximum gradient norm 1.0,
+  early stopping, and best-checkpoint rule;
 - number and ordering of attempted optimizer updates, including the same behavior
   for a skipped numerical attempt;
 - validation set, threshold candidates, fixed diagnostic IDs, and report metrics.
@@ -42,7 +43,7 @@ used to tune the synthetic replacement fraction or regenerate synthetic data.
 The official test split remains untouched until both configurations, checkpoints,
 and selected validation thresholds are frozen. The only final test comparison is:
 
-1. frozen E1 real-only baseline;
+1. frozen E1.2 stabilized BF16 real-only baseline;
 2. frozen real-plus-synthetic condition.
 
 No GAN, ablation, failed run, or intermediate checkpoint is evaluated on the

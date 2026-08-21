@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import sys
@@ -34,13 +35,20 @@ from defectgen.training.engine import (  # noqa: E402
 )
 from defectgen.training.final_baseline import (  # noqa: E402
     EarlyStopping,
+    HISTORICAL_FP16_IDENTITY,
     PostTrainingValidationGate,
+    STABILIZED_BF16_IDENTITY,
     build_plateau_scheduler,
+    configuration_fingerprint,
+    configuration_identity,
     load_final_baseline_configuration,
     threshold_candidates,
     validate_final_baseline_configuration,
 )
 from defectgen.training.failure_diagnostics import (  # noqa: E402
+    atomic_write_json,
+    git_worktree_state,
+    model_state_sha256,
     nonfinite_components,
     write_numerical_failure_report,
 )
@@ -52,6 +60,7 @@ from defectgen.training.reproducibility import configure_reproducibility  # noqa
 
 EPOCH_FIELDS = [
     "epoch",
+    "precision_mode",
     "train_bce",
     "train_dice",
     "train_total_loss",
@@ -73,8 +82,13 @@ EPOCH_FIELDS = [
     "amp_overflow_scale_drop",
     "fp32_retry_attempted",
     "fp32_retry_executed",
+    "grad_scaler_applicable",
+    "grad_scaler_scale_initial",
     "grad_scaler_scale",
+    "gradient_clip_max_norm",
     "maximum_training_gradient_norm",
+    "maximum_pre_clipping_gradient_norm",
+    "maximum_post_clipping_gradient_norm",
     "maximum_training_absolute_logit",
     "maximum_validation_absolute_logit",
     "epoch_seconds",
@@ -133,12 +147,59 @@ def _build_loaders(configuration, training, validation):
     )
 
 
+def _dataset_reproducibility_metadata(configuration, training, validation) -> dict[str, Any]:
+    manifest_path = REPO_ROOT / configuration["data"]["manifest"]
+    split_payload = {
+        "training": [row["sample_id"] for row in training.rows],
+        "validation": [row["sample_id"] for row in validation.rows],
+    }
+    split_bytes = json.dumps(split_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return {
+        "manifest_relative_path": configuration["data"]["manifest"],
+        "manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        "selected_splits_sha256": hashlib.sha256(split_bytes).hexdigest(),
+        "training_split": configuration["data"]["training_split"],
+        "validation_split": configuration["data"]["validation_split"],
+        "training_samples": len(training),
+        "validation_samples": len(validation),
+        "official_test_samples_loaded": 0,
+    }
+
+
+def _validate_stabilized_output_identity(
+    configuration: dict[str, Any], report_dir: Path, checkpoint_dir: Path, *, resume: bool
+) -> None:
+    identity = configuration_identity(configuration)
+    if identity == HISTORICAL_FP16_IDENTITY:
+        raise ValueError("The historical failed FP16 experiment is preserved and cannot be run or resumed")
+    if identity != STABILIZED_BF16_IDENTITY:
+        raise ValueError(f"Unsupported final baseline identity: {identity}")
+    expected_report = (REPO_ROOT / configuration["paths"]["report_directory"]).resolve()
+    expected_checkpoint = (REPO_ROOT / configuration["paths"]["checkpoint_directory"]).resolve()
+    if report_dir.resolve() != expected_report or checkpoint_dir.resolve() != expected_checkpoint:
+        raise ValueError("Run directories do not match the frozen stabilized experiment identity")
+    historical = {
+        (REPO_ROOT / "reports" / "final_real_baseline").resolve(),
+        (REPO_ROOT / "checkpoints" / "final_real_baseline").resolve(),
+    }
+    if report_dir.resolve() in historical or checkpoint_dir.resolve() in historical:
+        raise ValueError("Stabilized BF16 outputs may not use the preserved FP16 directories")
+    if not resume:
+        for path in (report_dir, checkpoint_dir):
+            if path.is_dir() and any(path.iterdir()):
+                raise FileExistsError(f"Fresh-run directory is not empty: {path}")
+    elif not (checkpoint_dir / "last.pt").is_file():
+        raise FileNotFoundError(f"Cannot resume; checkpoint is absent: {checkpoint_dir / 'last.pt'}")
+
+
 def _train_epoch(model, loader, criterion, controller, device, *, failure_context=None):
     model.train()
     sums = {"bce": 0.0, "dice": 0.0, "total": 0.0}
     samples = defective = successful_samples = 0
     counter_before = controller.state_dict()["counters"]
-    maximum_gradient_norm = 0.0
+    maximum_pre_clipping_gradient_norm = 0.0
+    maximum_post_clipping_gradient_norm = 0.0
+    most_recent_gradient_norm: float | None = None
     maximum_absolute_logit = 0.0
     anomalies: list[dict[str, Any]] = []
     last_batch_index = 0
@@ -162,7 +223,7 @@ def _train_epoch(model, loader, criterion, controller, device, *, failure_contex
                     logits=None,
                     loss_components=None,
                     scaler_scale=(float(controller.scaler.get_scale()) if controller.scaler else None),
-                    most_recent_gradient_norm=maximum_gradient_norm,
+                    most_recent_gradient_norm=most_recent_gradient_norm,
                     error=str(error),
                     explicit_nonfinite_component="training_step_exception",
                 )
@@ -193,7 +254,13 @@ def _train_epoch(model, loader, criterion, controller, device, *, failure_contex
                 sums[key] += getattr(telemetry, f"{key}_loss") * batch_size
             successful_samples += batch_size
         if telemetry.unscaled_gradient_norm is not None:
-            maximum_gradient_norm = max(maximum_gradient_norm, telemetry.unscaled_gradient_norm)
+            most_recent_gradient_norm = telemetry.pre_clipping_gradient_norm
+            maximum_pre_clipping_gradient_norm = max(
+                maximum_pre_clipping_gradient_norm, telemetry.pre_clipping_gradient_norm
+            )
+            maximum_post_clipping_gradient_norm = max(
+                maximum_post_clipping_gradient_norm, telemetry.post_clipping_gradient_norm
+            )
         maximum_absolute_logit = max(maximum_absolute_logit, telemetry.maximum_absolute_logit)
         if telemetry.is_anomaly:
             anomalies.append({"batch_index": batch_index, **telemetry.to_dict()})
@@ -210,7 +277,7 @@ def _train_epoch(model, loader, criterion, controller, device, *, failure_contex
                 logits=None,
                 loss_components=None,
                 scaler_scale=(float(controller.scaler.get_scale()) if controller.scaler else None),
-                most_recent_gradient_norm=maximum_gradient_norm,
+                most_recent_gradient_norm=most_recent_gradient_norm,
                 error="Every optimizer attempt in the epoch was skipped",
                 explicit_nonfinite_component="all_optimizer_attempts_skipped",
             )
@@ -222,7 +289,9 @@ def _train_epoch(model, loader, criterion, controller, device, *, failure_contex
         defective / samples,
         events,
         anomalies,
-        maximum_gradient_norm,
+        maximum_pre_clipping_gradient_norm,
+        maximum_post_clipping_gradient_norm,
+        most_recent_gradient_norm,
         maximum_absolute_logit,
     )
 
@@ -357,12 +426,40 @@ def _save_epoch_plot(records: list[dict[str, Any]], output_path: Path) -> None:
     plt.close(figure)
 
 
+def _scaler_scale(scaler) -> float | None:
+    return float(scaler.get_scale()) if scaler is not None else None
+
+
+def _stable_resume_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: metadata[key]
+        for key in (
+            "experiment_identity",
+            "configuration_sha256",
+            "dataset",
+            "seed",
+            "model_initialization_sha256",
+            "precision_mode",
+            "augmentation",
+            "optimizer_attempts_per_epoch",
+            "maximum_optimizer_attempts",
+            "gradient_clip_max_norm",
+        )
+    }
+
+
 def run_final_real_baseline(
     configuration: dict[str, Any], *, report_dir: Path, checkpoint_dir: Path, resume: bool
 ) -> dict[str, Any]:
     validate_final_baseline_configuration(configuration)
+    _validate_stabilized_output_identity(
+        configuration, report_dir, checkpoint_dir, resume=resume
+    )
+    precision_mode = str(configuration["precision"]["mode"])
     if not torch.cuda.is_available():
-        raise RuntimeError("CUDA unavailable; frozen fp16 E1 training refuses CPU fallback")
+        raise RuntimeError("CUDA unavailable; stabilized BF16 training refuses CPU fallback")
+    if precision_mode == "bf16" and not torch.cuda.is_bf16_supported():
+        raise RuntimeError("CUDA device does not support BF16; refusing to begin the experiment")
     configure_reproducibility(int(configuration["seed"]), deterministic=True, warn_only=True)
     training, validation = _build_datasets(configuration)
     train_loader, validation_loader, sampler, loader_generator = _build_loaders(
@@ -374,7 +471,9 @@ def run_final_real_baseline(
         input_channels=int(configuration["model"]["input_channels"]),
         output_channels=int(configuration["model"]["output_channels"]),
         base_channels=int(configuration["model"]["base_channels"]),
-    ).to(device)
+    )
+    initialization_hash = model_state_sha256(model)
+    model.to(device)
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=float(configuration["optimizer"]["learning_rate"]),
@@ -386,12 +485,16 @@ def run_final_real_baseline(
         dice_weight=float(configuration["loss"]["dice_weight"]),
         pos_weight=float(configuration["loss"]["pos_weight"]),
     )
-    scaler = torch.amp.GradScaler("cuda")
+    scaler_enabled = bool(configuration["precision"]["grad_scaler"])
+    if precision_mode == "bf16" and scaler_enabled:
+        raise ValueError("BF16 configuration must not enable GradScaler")
+    scaler = torch.amp.GradScaler("cuda") if scaler_enabled else None
+    gradient_clip_max_norm = configuration["precision"]["gradient_clip_max_norm"]
     controller = NumericalStepController(
         optimizer,
-        precision_mode="fp16",
+        precision_mode=precision_mode,
         scaler=scaler,
-        gradient_clip_max_norm=None,
+        gradient_clip_max_norm=gradient_clip_max_norm,
         automatic_fp32_retry=False,
     )
     stopping = EarlyStopping(
@@ -400,6 +503,23 @@ def run_final_real_baseline(
     )
     report_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    reproducibility_metadata = {
+        "experiment_identity": configuration_identity(configuration),
+        "git": git_worktree_state(REPO_ROOT),
+        "configuration": configuration,
+        "configuration_sha256": configuration_fingerprint(configuration),
+        "dataset": _dataset_reproducibility_metadata(configuration, training, validation),
+        "seed": int(configuration["seed"]),
+        "model_initialization_sha256": initialization_hash,
+        "precision_mode": precision_mode,
+        "grad_scaler_applicable": scaler is not None,
+        "augmentation": configuration["augmentation"],
+        "optimizer_attempts_per_epoch": len(train_loader),
+        "maximum_optimizer_attempts": len(train_loader)
+        * int(configuration["training"]["maximum_epochs"]),
+        "gradient_clip_max_norm": gradient_clip_max_norm,
+        "detector_protocol": "frozen_real_only_v1",
+    }
     best_path = checkpoint_dir / "best.pt"
     last_path = checkpoint_dir / "last.pt"
     start_epoch = 1
@@ -414,8 +534,6 @@ def run_final_real_baseline(
         "repo_root": REPO_ROOT,
     }
     if resume:
-        if not last_path.is_file():
-            raise FileNotFoundError(f"Cannot resume; checkpoint is absent: {last_path}")
         payload = load_training_checkpoint(
             last_path,
             model=model,
@@ -432,6 +550,19 @@ def run_final_real_baseline(
         start_epoch = int(payload["epoch"]) + 1
         records = list(payload["metric_records"])
         best = dict(payload["best_validation"])
+        checkpoint_reproducibility = payload.get("checkpoint_metadata", {}).get("reproducibility")
+        if checkpoint_reproducibility is None:
+            raise ValueError("Checkpoint lacks stabilized reproducibility metadata")
+        if _stable_resume_metadata(checkpoint_reproducibility) != _stable_resume_metadata(
+            reproducibility_metadata
+        ):
+            raise ValueError("Checkpoint reproducibility metadata does not match the current run")
+        resume_git_state = reproducibility_metadata["git"]
+        reproducibility_metadata["git"] = checkpoint_reproducibility["git"]
+        reproducibility_metadata["resume_git_history"] = [
+            *checkpoint_reproducibility.get("resume_git_history", []),
+            resume_git_state,
+        ]
         if payload.get("checkpoint_metadata", {}).get("finalized"):
             raise RuntimeError("This E1 run is already finalized; refusing a second threshold sweep")
         if stopping.stopped:
@@ -439,13 +570,25 @@ def run_final_real_baseline(
         if anomaly_path.is_file():
             anomalies = json.loads(anomaly_path.read_text(encoding="utf-8"))
 
+    atomic_write_json(report_dir / "run_metadata.json", reproducibility_metadata)
+
     maximum_epochs = int(configuration["training"]["maximum_epochs"])
     for epoch in range(start_epoch, maximum_epochs + 1):
         epoch_start = time.perf_counter()
         training.set_epoch(epoch)
         torch.cuda.reset_peak_memory_stats()
         learning_rate = float(optimizer.param_groups[0]["lr"])
-        train_losses, sampled_fraction, events, epoch_anomalies, maximum_gradient, maximum_logit = (
+        scaler_scale_initial = _scaler_scale(scaler)
+        (
+            train_losses,
+            sampled_fraction,
+            events,
+            epoch_anomalies,
+            maximum_pre_clipping_gradient,
+            maximum_post_clipping_gradient,
+            most_recent_gradient,
+            maximum_logit,
+        ) = (
             _train_epoch(
                 model,
                 train_loader,
@@ -460,11 +603,11 @@ def run_final_real_baseline(
             validation_loader,
             criterion,
             device,
-            "fp16",
+            precision_mode,
             keep_outputs=True,
             failure_context={**failure_base_context, "epoch": epoch},
-            scaler_scale=float(scaler.get_scale()),
-            most_recent_gradient_norm=maximum_gradient,
+            scaler_scale=_scaler_scale(scaler),
+            most_recent_gradient_norm=most_recent_gradient,
         )
         metrics, _ = detailed_validation_metrics(
             outputs["probabilities"],
@@ -478,6 +621,7 @@ def run_final_real_baseline(
         next_learning_rate = float(optimizer.param_groups[0]["lr"])
         record = {
             "epoch": epoch,
+            "precision_mode": precision_mode,
             "train_bce": train_losses["bce"],
             "train_dice": train_losses["dice"],
             "train_total_loss": train_losses["total"],
@@ -492,8 +636,13 @@ def run_final_real_baseline(
             "next_learning_rate": next_learning_rate,
             "sampled_training_defective_fraction": sampled_fraction,
             **{key: events[key] for key in events},
-            "grad_scaler_scale": float(scaler.get_scale()),
-            "maximum_training_gradient_norm": maximum_gradient,
+            "grad_scaler_applicable": scaler is not None,
+            "grad_scaler_scale_initial": scaler_scale_initial,
+            "grad_scaler_scale": _scaler_scale(scaler),
+            "gradient_clip_max_norm": gradient_clip_max_norm,
+            "maximum_training_gradient_norm": maximum_pre_clipping_gradient,
+            "maximum_pre_clipping_gradient_norm": maximum_pre_clipping_gradient,
+            "maximum_post_clipping_gradient_norm": maximum_post_clipping_gradient,
             "maximum_training_absolute_logit": maximum_logit,
             "maximum_validation_absolute_logit": maximum_validation_logit,
             "epoch_seconds": time.perf_counter() - epoch_start,
@@ -519,11 +668,19 @@ def run_final_real_baseline(
             "metric_records": records,
             "numerical_controller": controller,
             "early_stopping_state": stopping.state_dict(),
-            "checkpoint_metadata": {"kind": "best" if improved else "last", "finalized": False},
+            "checkpoint_metadata": {
+                "kind": "best" if improved else "last",
+                "finalized": False,
+                "reproducibility": reproducibility_metadata,
+            },
         }
         if improved:
             save_training_checkpoint(best_path, **checkpoint_arguments)
-        checkpoint_arguments["checkpoint_metadata"] = {"kind": "last", "finalized": False}
+        checkpoint_arguments["checkpoint_metadata"] = {
+            "kind": "last",
+            "finalized": False,
+            "reproducibility": reproducibility_metadata,
+        }
         save_training_checkpoint(last_path, **checkpoint_arguments)
         write_metric_logs(records, report_dir / "epoch_metrics.csv", report_dir / "epoch_metrics.json")
         anomaly_path.write_text(json.dumps(anomalies, indent=2) + "\n", encoding="utf-8")
@@ -532,7 +689,7 @@ def run_final_real_baseline(
             f"epoch {epoch}/{maximum_epochs}: train={train_losses['total']:.6f}, "
             f"validation={validation_losses['total']:.6f}, dice@0.5={metrics['global_dice']:.6f}, "
             f"updates={events['optimizer_step_executed']}/{events['attempted_batches']}, "
-            f"lr={learning_rate:.6g}, next_lr={next_learning_rate:.6g}",
+            f"lr={learning_rate:.6g}, next_lr={next_learning_rate:.6g}, precision={precision_mode}",
             flush=True,
         )
         del outputs
@@ -562,10 +719,10 @@ def run_final_real_baseline(
         validation_loader,
         criterion,
         device,
-        "fp16",
+        precision_mode,
         keep_outputs=True,
         failure_context={**failure_base_context, "epoch": int(best_payload["epoch"])},
-        scaler_scale=float(scaler.get_scale()),
+        scaler_scale=_scaler_scale(scaler),
         most_recent_gradient_norm=None,
     )
     metrics_at_half, _ = detailed_validation_metrics(
@@ -617,11 +774,13 @@ def run_final_real_baseline(
         "selected_validation_threshold": selected_threshold,
         "threshold_selection_objective": "maximum global Dice",
         "threshold_sweep_executions": 1,
+        "reproducibility": reproducibility_metadata,
     }
     update_checkpoint_metadata(best_path, final_metadata)
     update_checkpoint_metadata(last_path, final_metadata)
     summary = {
-        "status": "PASS - FROZEN E1 REAL-ONLY BASELINE",
+        "status": "PASS - STABILIZED BF16 FINAL REAL-ONLY BASELINE",
+        "experiment_identity": configuration_identity(configuration),
         "best_epoch": int(best_payload["epoch"]),
         "epochs_completed": len(records),
         "stopped_early": len(records) < maximum_epochs,
@@ -636,6 +795,20 @@ def run_final_real_baseline(
         "official_test_samples_loaded": 0,
         "threshold_sweep_executions": 1,
         "model_parameter_count": count_parameters(model),
+        "reproducibility": reproducibility_metadata,
+        "numerical_counters": {
+            key: sum(int(record[key]) for record in records)
+            for key in (
+                "attempted_batches",
+                "optimizer_step_executed",
+                "optimizer_step_skipped",
+                "nonfinite_forward_loss",
+                "nonfinite_gradient",
+                "amp_overflow_scale_drop",
+                "fp32_retry_attempted",
+                "fp32_retry_executed",
+            )
+        },
         "checkpoint_best": best_path.relative_to(REPO_ROOT).as_posix(),
         "checkpoint_last": last_path.relative_to(REPO_ROOT).as_posix(),
         "configuration": configuration,
@@ -648,7 +821,7 @@ def run_final_real_baseline(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--config", type=Path, default=REPO_ROOT / "configs" / "final_real_baseline.json"
+        "--config", type=Path, default=REPO_ROOT / "configs" / "final_real_baseline_bf16.json"
     )
     parser.add_argument("--resume", action="store_true")
     return parser.parse_args()
@@ -660,10 +833,6 @@ def main() -> int:
         configuration = load_final_baseline_configuration(args.config)
         report_dir = REPO_ROOT / configuration["paths"]["report_directory"]
         checkpoint_dir = REPO_ROOT / configuration["paths"]["checkpoint_directory"]
-        if report_dir.is_dir() and not args.resume and any(report_dir.iterdir()):
-            raise FileExistsError(f"Report directory is not empty: {report_dir}; use --resume")
-        if checkpoint_dir.is_dir() and not args.resume and any(checkpoint_dir.iterdir()):
-            raise FileExistsError(f"Checkpoint directory is not empty: {checkpoint_dir}; use --resume")
         summary = run_final_real_baseline(
             configuration, report_dir=report_dir, checkpoint_dir=checkpoint_dir, resume=args.resume
         )
@@ -671,7 +840,7 @@ def main() -> int:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
     print(
-        f"E1 PASS: best_epoch={summary['best_epoch']}, "
+        f"E1.2 BF16 PASS: best_epoch={summary['best_epoch']}, "
         f"best_validation_loss={summary['best_validation_loss']:.6f}, "
         f"selected_threshold={summary['selected_validation_threshold']:.2f}",
         flush=True,

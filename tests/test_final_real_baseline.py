@@ -243,7 +243,16 @@ def test_synthetic_epoch_emits_required_telemetry_and_one_update_per_attempt():
         "has_defect": torch.tensor([False, True]),
     }
     batch["mask"][1, :, 1:3, 1:3] = 1
-    losses, fraction, events, anomalies, maximum_gradient, maximum_logit = _train_epoch(
+    (
+        losses,
+        fraction,
+        events,
+        anomalies,
+        maximum_gradient,
+        maximum_post_gradient,
+        most_recent_gradient,
+        maximum_logit,
+    ) = _train_epoch(
         model, [batch], CombinedBCEDiceLoss(pos_weight=5), controller, torch.device("cpu")
     )
     assert set(losses) == {"bce", "dice", "total"}
@@ -253,7 +262,8 @@ def test_synthetic_epoch_emits_required_telemetry_and_one_update_per_attempt():
     assert events["optimizer_step_skipped"] == 0
     assert events["fp32_retry_attempted"] == events["fp32_retry_executed"] == 0
     assert anomalies == []
-    assert maximum_gradient >= 0 and maximum_logit >= 0
+    assert maximum_gradient >= 0 and maximum_post_gradient >= 0
+    assert most_recent_gradient >= 0 and maximum_logit >= 0
     assert {
         "train_bce",
         "validation_total_loss",

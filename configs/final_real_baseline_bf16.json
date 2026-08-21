@@ -1,0 +1,107 @@
+{
+  "phase": "E1.2 stabilized final real-only baseline",
+  "experiment_identity": "final_real_baseline_bf16_seed42",
+  "seed": 42,
+  "model": {
+    "architecture": "groupnorm_unet",
+    "input_channels": 3,
+    "output_channels": 1,
+    "base_channels": 32,
+    "downsampling": "learned_stride_2_convolution",
+    "decoder": "bilinear_resize_then_convolution",
+    "output": "logits_without_sigmoid"
+  },
+  "data": {
+    "manifest": "data/metadata/ksdd2_split_seed42.csv",
+    "training_split": "train",
+    "validation_split": "validation",
+    "official_test_evaluation": false,
+    "canvas_width": 256,
+    "canvas_height": 672,
+    "resize_or_distort": false,
+    "image_padding_mode": "reflect_with_edge_fallback_for_degenerate_axes",
+    "mask_padding_mode": "zero",
+    "loss_and_metrics_region": "valid_original_pixels_only",
+    "detector_normalization": {
+      "input_range": [0.0, 1.0],
+      "mean": [0.17536929644393365, 0.1709092379799471, 0.17704063222181007],
+      "standard_deviation": [0.04440419892392204, 0.03818317039850739, 0.03754433462546375],
+      "source": "development_train original pixels only"
+    }
+  },
+  "augmentation": {
+    "training_only": true,
+    "horizontal_flip_probability": 0.5,
+    "vertical_flip_probability": 0.5,
+    "synchronized_fields": ["image", "mask", "valid_region"],
+    "mask_interpolation": "none",
+    "additional_transforms": []
+  },
+  "loss": {
+    "type": "valid_region_bce_with_logits_plus_soft_dice",
+    "bce_weight": 1.0,
+    "dice_weight": 1.0,
+    "pos_weight": 5.0,
+    "compute_dtype": "float32"
+  },
+  "optimizer": {
+    "type": "AdamW",
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001
+  },
+  "sampler": {
+    "type": "deterministic_weighted",
+    "target_defective_fraction": 0.5,
+    "replacement": true
+  },
+  "precision": {
+    "mode": "bf16",
+    "grad_scaler": false,
+    "automatic_fp32_retry": false,
+    "gradient_clip_max_norm": 1.0
+  },
+  "training": {
+    "batch_size": 4,
+    "maximum_epochs": 12,
+    "num_workers": 0,
+    "pin_memory": true,
+    "maximum_optimizer_updates_per_attempt": 1
+  },
+  "scheduler": {
+    "type": "ReduceLROnPlateau",
+    "monitor": "validation_total_loss",
+    "mode": "min",
+    "factor": 0.5,
+    "patience": 2,
+    "minimum_learning_rate": 0.00001
+  },
+  "early_stopping": {
+    "monitor": "validation_total_loss",
+    "mode": "min",
+    "patience": 4,
+    "minimum_delta": 0.0
+  },
+  "checkpoint_selection": {
+    "monitor": "validation_total_loss",
+    "mode": "min"
+  },
+  "threshold_sweep": {
+    "run": "once_after_training_after_best_checkpoint_reload",
+    "data_source": "validation_only",
+    "minimum": 0.05,
+    "maximum": 0.95,
+    "increment": 0.05,
+    "training_metric_threshold": 0.5
+  },
+  "reproducibility": {
+    "deterministic_algorithms": true,
+    "warn_only": true,
+    "cudnn_benchmark": false,
+    "worker_seeded": true
+  },
+  "paths": {
+    "checkpoint_directory": "checkpoints/final_real_baseline_bf16_seed42",
+    "report_directory": "reports/final_real_baseline_bf16_seed42",
+    "fixed_validation_ids": "reports/loss_pilot/fixed_validation_ids.json"
+  }
+}

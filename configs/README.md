@@ -4,3 +4,12 @@
 experiment configuration. It failed numerical-stability requirements during epoch
 4 validation and must not be resumed or used as the final reference. See
 `docs/failed-fp16-baseline.md` for its disposition and preserved evidence.
+
+`final_real_baseline_bf16.json` is the stabilized final reference configuration.
+It uses the isolated identity `final_real_baseline_bf16_seed42`, BF16 autocast,
+learning rate 0.0003, maximum gradient norm 1.0, and no GradScaler. Start it only
+as a fresh seed-42 run:
+
+```powershell
+.\.venv\Scripts\python.exe .\scripts\train_final_real_baseline.py --config .\configs\final_real_baseline_bf16.json
+```

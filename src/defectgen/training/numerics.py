@@ -34,6 +34,8 @@ class BatchNumericalTelemetry:
     loss_dtype: str
     maximum_absolute_logit: float
     unscaled_gradient_norm: float | None
+    pre_clipping_gradient_norm: float | None
+    post_clipping_gradient_norm: float | None
     scale_before: float | None
     scale_after: float | None
     optimizer_step_executed: bool
@@ -171,6 +173,8 @@ class NumericalStepController:
                 loss_dtype=str(components["total"].dtype),
                 maximum_absolute_logit=maximum_logit,
                 unscaled_gradient_norm=None,
+                pre_clipping_gradient_norm=None,
+                post_clipping_gradient_norm=None,
                 scale_before=float(self.scaler.get_scale()) if self.scaler is not None else None,
                 scale_after=float(self.scaler.get_scale()) if self.scaler is not None else None,
                 optimizer_step_executed=False,
@@ -198,6 +202,7 @@ class NumericalStepController:
             self.counters.nonfinite_gradient += 1
         elif self.gradient_clip_max_norm is not None:
             torch.nn.utils.clip_grad_norm_(parameters, self.gradient_clip_max_norm)
+        post_clipping_gradient_norm = _gradient_norm(parameters)
 
         if self.precision_mode == "fp16":
             # Exactly one scaler.step call. The return value is intentionally ignored:
@@ -235,6 +240,8 @@ class NumericalStepController:
             loss_dtype=str(components["total"].dtype),
             maximum_absolute_logit=maximum_logit,
             unscaled_gradient_norm=gradient_norm,
+            pre_clipping_gradient_norm=gradient_norm,
+            post_clipping_gradient_norm=post_clipping_gradient_norm,
             scale_before=scale_before,
             scale_after=scale_after,
             optimizer_step_executed=updates == 1,

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -12,97 +12,33 @@ from typing import Any
 import torch
 
 
-def _get(configuration: dict[str, Any], path: str) -> Any:
-    value: Any = configuration
-    for key in path.split("."):
-        if not isinstance(value, dict) or key not in value:
-            raise ValueError(f"Final baseline configuration is missing {path}")
-        value = value[key]
-    return value
-
-
-FROZEN_VALUES: dict[str, Any] = {
-    "seed": 42,
-    "model.architecture": "groupnorm_unet",
-    "model.input_channels": 3,
-    "model.output_channels": 1,
-    "model.base_channels": 32,
-    "model.downsampling": "learned_stride_2_convolution",
-    "model.decoder": "bilinear_resize_then_convolution",
-    "model.output": "logits_without_sigmoid",
-    "data.training_split": "train",
-    "data.validation_split": "validation",
-    "data.manifest": "data/metadata/ksdd2_split_seed42.csv",
-    "data.official_test_evaluation": False,
-    "data.canvas_width": 256,
-    "data.canvas_height": 672,
-    "data.resize_or_distort": False,
-    "data.image_padding_mode": "reflect_with_edge_fallback_for_degenerate_axes",
-    "data.mask_padding_mode": "zero",
-    "data.loss_and_metrics_region": "valid_original_pixels_only",
-    "augmentation.training_only": True,
-    "augmentation.horizontal_flip_probability": 0.5,
-    "augmentation.vertical_flip_probability": 0.5,
-    "augmentation.synchronized_fields": ["image", "mask", "valid_region"],
-    "augmentation.mask_interpolation": "none",
-    "augmentation.additional_transforms": [],
-    "loss.bce_weight": 1.0,
-    "loss.dice_weight": 1.0,
-    "loss.pos_weight": 5.0,
-    "loss.compute_dtype": "float32",
-    "optimizer.type": "AdamW",
-    "optimizer.learning_rate": 0.001,
-    "optimizer.weight_decay": 0.0001,
-    "sampler.type": "deterministic_weighted",
-    "sampler.target_defective_fraction": 0.5,
-    "sampler.replacement": True,
-    "precision.mode": "fp16",
-    "precision.grad_scaler": True,
-    "precision.automatic_fp32_retry": False,
-    "precision.gradient_clip_max_norm": None,
-    "training.batch_size": 4,
-    "training.maximum_epochs": 12,
-    "training.num_workers": 0,
-    "training.pin_memory": True,
-    "training.maximum_optimizer_updates_per_attempt": 1,
-    "scheduler.type": "ReduceLROnPlateau",
-    "scheduler.monitor": "validation_total_loss",
-    "scheduler.mode": "min",
-    "scheduler.factor": 0.5,
-    "scheduler.patience": 2,
-    "scheduler.minimum_learning_rate": 0.00001,
-    "early_stopping.monitor": "validation_total_loss",
-    "early_stopping.mode": "min",
-    "early_stopping.patience": 4,
-    "early_stopping.minimum_delta": 0.0,
-    "checkpoint_selection.monitor": "validation_total_loss",
-    "checkpoint_selection.mode": "min",
-    "threshold_sweep.run": "once_after_training_after_best_checkpoint_reload",
-    "threshold_sweep.data_source": "validation_only",
-    "threshold_sweep.minimum": 0.05,
-    "threshold_sweep.maximum": 0.95,
-    "threshold_sweep.increment": 0.05,
-    "threshold_sweep.training_metric_threshold": 0.5,
+HISTORICAL_FP16_IDENTITY = "historical_final_real_baseline_fp16_seed42"
+STABILIZED_BF16_IDENTITY = "final_real_baseline_bf16_seed42"
+FROZEN_CONFIGURATION_SHA256 = {
+    HISTORICAL_FP16_IDENTITY: "1915c823cda5432537d29c6af1c4405260c2f57cd98414b4fa491ed7ab97ee96",
+    STABILIZED_BF16_IDENTITY: "53cfed97ef97abba4f9e083b3023571ff520ef71582638c253f9710d7516c76e",
 }
 
-FROZEN_CONFIGURATION_SHA256 = "1915c823cda5432537d29c6af1c4405260c2f57cd98414b4fa491ed7ab97ee96"
+
+def configuration_identity(configuration: dict[str, Any]) -> str:
+    return str(configuration.get("experiment_identity", HISTORICAL_FP16_IDENTITY))
+
+
+def configuration_fingerprint(configuration: dict[str, Any]) -> str:
+    canonical = json.dumps(configuration, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def validate_final_baseline_configuration(configuration: dict[str, Any]) -> None:
-    mismatches = [
-        f"{path}: expected {expected!r}, got {_get(configuration, path)!r}"
-        for path, expected in FROZEN_VALUES.items()
-        if _get(configuration, path) != expected
-    ]
-    means = _get(configuration, "data.detector_normalization.mean")
-    deviations = _get(configuration, "data.detector_normalization.standard_deviation")
-    if len(means) != 3 or len(deviations) != 3 or any(float(value) <= 0 for value in deviations):
-        mismatches.append("data.detector_normalization must contain three means and positive deviations")
-    canonical = json.dumps(configuration, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    if hashlib.sha256(canonical).hexdigest() != FROZEN_CONFIGURATION_SHA256:
-        mismatches.append("canonical configuration fingerprint differs from frozen E1")
-    if mismatches:
-        raise ValueError("Frozen final real baseline was modified: " + "; ".join(mismatches))
+    identity = configuration_identity(configuration)
+    expected = FROZEN_CONFIGURATION_SHA256.get(identity)
+    if expected is None:
+        raise ValueError(f"Unknown final baseline experiment identity: {identity}")
+    actual = configuration_fingerprint(configuration)
+    if actual != expected:
+        raise ValueError(
+            f"Frozen final real baseline was modified: {identity} fingerprint {actual} != {expected}"
+        )
 
 
 def load_final_baseline_configuration(path: Path) -> dict[str, Any]:

@@ -61,3 +61,11 @@ not resume it or use it as the final real-only comparator. See
 
 The controlled future real-versus-synthetic protocol is documented in
 `docs/fair-synthetic-comparison.md`.
+
+## Stabilized BF16 final baseline (E1.2)
+
+The replacement final real-only reference is frozen in
+`configs/final_real_baseline_bf16.json`. It uses BF16, AdamW learning rate 0.0003,
+maximum gradient norm 1.0, and no GradScaler under the isolated identity
+`final_real_baseline_bf16_seed42`. Its implementation and evidence are described
+in `docs/stabilized-bf16-baseline.md`.
