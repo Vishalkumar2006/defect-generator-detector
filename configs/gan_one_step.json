@@ -1,0 +1,37 @@
+{
+  "trainer_version": "g1_4_gan_one_step_v1",
+  "training_pair_config_path": "configs/gan_training_pairs.json",
+  "architecture_config_path": "configs/gan_architecture.json",
+  "loss_config_path": "configs/gan_losses.json",
+  "report_directory": "reports/gan_training/one_step",
+  "seed": 42,
+  "batch_size": 2,
+  "generator_optimizer": {
+    "name": "Adam",
+    "learning_rate": 0.0001,
+    "betas": [0.0, 0.9],
+    "weight_decay": 0.0
+  },
+  "discriminator_optimizer": {
+    "name": "Adam",
+    "learning_rate": 0.0001,
+    "betas": [0.0, 0.9],
+    "weight_decay": 0.0
+  },
+  "generator_gradient_clip_max_norm": 5.0,
+  "discriminator_gradient_clip_max_norm": 5.0,
+  "cuda_precision": "bf16",
+  "cpu_precision": "fp32",
+  "r1_gamma": 10.0,
+  "r1_interval": 16,
+  "deterministic_audit_batches": 8,
+  "loss_coefficients_provisional": true,
+  "one_step_generator_loss_weights": {
+    "adversarial": 1.0,
+    "change": 1.0,
+    "boundary": 1.0,
+    "total_variation": 1.0
+  },
+  "suggestion_coefficient_minimum": 0.001,
+  "suggestion_coefficient_maximum": 1000.0
+}

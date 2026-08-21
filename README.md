@@ -137,3 +137,10 @@ inside it their original pixels and fake-branch gradients are preserved. Strict
 canonical-mask containment is separated from informational feather-and-halo
 support containment, with the correction and audit policy documented in
 `docs/gan-training-pairs.md`.
+
+G1.4 adds a bounded, precision-aware GAN mechanics harness. It calibrates raw loss
+and unit-gradient scales over eight deterministic internal-training batches, then
+executes exactly one isolated discriminator update and one isolated generator
+update using the G1.3b aligned views. Its provisional settings, lazy-R1 convention,
+numerical guards, and audit command are documented in
+`docs/gan-training-mechanics.md`.

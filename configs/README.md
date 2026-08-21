@@ -30,3 +30,12 @@ measures component scales.
 ```powershell
 .\.venv\Scripts\python.exe .\scripts\audit_gan_losses.py --architecture-config .\configs\gan_architecture.json --loss-config .\configs\gan_losses.json
 ```
+
+`gan_one_step.json` defines the explicitly provisional G1.4 mechanics audit. It
+does not define final GAN hyperparameters or a training run. The command performs
+eight no-update calibration batches followed by exactly one optimizer step per
+model and writes no checkpoint:
+
+```powershell
+.\.venv\Scripts\python.exe .\scripts\audit_gan_one_step.py --config .\configs\gan_one_step.json
+```
