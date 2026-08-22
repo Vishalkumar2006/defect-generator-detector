@@ -44,3 +44,10 @@ reports/g2_2/**/*_progress.json
 # diagnostics; the compact G2.3A audits and diagnostic summary remain tracked.
 reports/g2_3/diagnostic/threshold_curves/
 reports/g2_3/diagnostic/synthetic_mask_records.json
+
+# G2.3B expanded per-slot schedules and detector checkpoints are reproducible
+# local artifacts; the compact precommitted plan, arm reports, and confirmation
+# summary remain tracked.
+reports/g2_3b/plan/seed*/
+reports/g2_3b/**/*_schedule.json
+reports/g2_3b/**/*_epochs.json

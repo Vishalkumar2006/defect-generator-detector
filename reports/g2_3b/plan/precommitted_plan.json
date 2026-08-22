@@ -1,0 +1,1241 @@
+{
+  "budget": {
+    "batch_size": 4,
+    "historical_baseline_total_updates": 5952,
+    "matches_historical_mature_budget": true,
+    "maximum_epochs": 12,
+    "optimizer_updates_per_epoch": 496,
+    "sample_slots_per_epoch": 1984,
+    "total_optimizer_updates": 5952,
+    "total_sample_slots": 23808
+  },
+  "comparisons": {
+    "primary": {
+      "candidate": "gan_1500",
+      "control": "prevalence_matched_real",
+      "gated": true,
+      "question": "utility of frozen checkpoint-1500 synthetic content at matched effective defect prevalence"
+    },
+    "secondary": {
+      "candidate": "standard_real",
+      "control": "prevalence_matched_real",
+      "gated": false,
+      "question": "effect of raising effective defect prevalence from 0.500 to 0.625 with real defective samples only"
+    }
+  },
+  "confirmation_gate": {
+    "evaluated_at": "precommitted_selected_operating_threshold",
+    "frozen_before_training": true,
+    "justification": {
+      "dice_iou_fpr_precision_recall": "Carried over unchanged from the frozen G2.2 selection rules in configs/g2_2_detector_utility.json so the multimetric safeguard is not weakened.",
+      "no_value_was_chosen_from_any_g2_3b_result": true,
+      "pixel_pr_auc": "Added, not substituted. G2.3A showed threshold-0.5 comparisons are calibration-sensitive, so a threshold-independent criterion is required in addition to every G2.2 criterion. The 0.01 magnitude mirrors the G2.2 minimum Dice gain because both are bounded [0,1] aggregate quality measures; G2.3A observed per-seed PR-AUC deltas of +0.104/-0.029/+0.050 at the immature budget, so 0.01 is well inside the measurable range.",
+      "positive_dice_seeds": "Carried over unchanged from the G2.2 three-seed confirmation rule."
+    },
+    "maximum_mean_normal_fpr_regression": 0.02,
+    "maximum_mean_precision_regression": 0.01,
+    "maximum_mean_recall_regression": 0.01,
+    "minimum_mean_global_dice_gain": 0.01,
+    "minimum_mean_global_iou_gain": 0.005,
+    "minimum_mean_pixel_pr_auc_gain": 0.01,
+    "minimum_positive_dice_seeds": 2,
+    "minimum_positive_pr_auc_seeds": 2,
+    "primary_candidate": "gan_1500",
+    "primary_control": "prevalence_matched_real",
+    "required_seed_count": 3,
+    "seeds": [
+      45,
+      46,
+      47
+    ]
+  },
+  "detector_optimizer_updates_executed": 0,
+  "expanded_schedules_written": true,
+  "experiment_version": "g2_3b_mature_budget_prevalence_controlled_utility_v1",
+  "frozen_synthetic_identity": {
+    "detector_validation_source_count": 0,
+    "frozen_gan_checkpoint_sha256": "5af1c6aafabcc0444117aa43209dcab168e57f4489259728e8f9066a4fdf1c81",
+    "manifest_content_sha256": "9eba21b4347dcdafafd9d0f90dd06b297cb58b2f7ee58f1887fed7a4cd62ca91",
+    "official_test_source_count": 0,
+    "pairing_report_content_sha256": "540a4637936c25ae9fd3678732bbc9d81e75f066e584e6d3ee078768f491ed33",
+    "regenerated": false,
+    "row_count": 512,
+    "row_files_verified": 1536,
+    "rows_verified_defective": 512,
+    "train_only_provenance": true,
+    "variant": "checkpoint_1500"
+  },
+  "g2_2_terminal_decision_unchanged": "stop_not_confirmed",
+  "gan_optimizer_updates": 0,
+  "official_test_samples_loaded": 0,
+  "plan_content_sha256": "d6918353e1515ee84bbac3cbab40743603042f5e70239e9545ff36cff3d6e7ac",
+  "pools": {
+    "class_stream_lengths_per_epoch": {
+      "defective_real": 1240,
+      "normal_real": 992,
+      "synthetic": 496
+    },
+    "development_training_defective": 209,
+    "development_training_normal": 1772,
+    "development_training_rows": 1981,
+    "development_validation_rows": 350,
+    "synthetic_rows": 512
+  },
+  "seeds": {
+    "45": {
+      "arms": {
+        "gan_1500": {
+          "observed_composition": {
+            "defective_real_fraction": 0.375,
+            "defective_real_samples": 8928,
+            "distinct_identities": {
+              "defective_real": 209,
+              "normal_real": 1754,
+              "synthetic": 512
+            },
+            "effective_defective_fraction": 0.625,
+            "effective_normal_fraction": 0.375,
+            "normal_real_fraction": 0.375,
+            "normal_real_samples": 8928,
+            "synthetic_fraction": 0.25,
+            "synthetic_samples": 5952,
+            "total_effective_defective_samples": 14880,
+            "total_effective_normal_samples": 8928,
+            "total_sample_slots": 23808
+          },
+          "observed_matches_precommitted_composition": true,
+          "optimizer_updates": 5952,
+          "per_epoch_composition": [
+            {
+              "defective_real": 744,
+              "epoch": 1,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 2,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 3,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 4,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 5,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 6,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 7,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 8,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 9,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 10,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 11,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 12,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            }
+          ],
+          "per_epoch_slot_counts": {
+            "defective_real": 744,
+            "normal_real": 744,
+            "synthetic": 496
+          },
+          "per_epoch_target_fractions": {
+            "defective_real_fraction": 0.375,
+            "normal_real_fraction": 0.375,
+            "synthetic_fraction": 0.25
+          },
+          "schedule_sha256": "a36da04b34a14dde228e215d649a8b43b4f3c6417c810471d720ad72425d92fe",
+          "slot_count": 23808
+        },
+        "prevalence_matched_real": {
+          "observed_composition": {
+            "defective_real_fraction": 0.625,
+            "defective_real_samples": 14880,
+            "distinct_identities": {
+              "defective_real": 209,
+              "normal_real": 1754,
+              "synthetic": 0
+            },
+            "effective_defective_fraction": 0.625,
+            "effective_normal_fraction": 0.375,
+            "normal_real_fraction": 0.375,
+            "normal_real_samples": 8928,
+            "synthetic_fraction": 0.0,
+            "synthetic_samples": 0,
+            "total_effective_defective_samples": 14880,
+            "total_effective_normal_samples": 8928,
+            "total_sample_slots": 23808
+          },
+          "observed_matches_precommitted_composition": true,
+          "optimizer_updates": 5952,
+          "per_epoch_composition": [
+            {
+              "defective_real": 1240,
+              "epoch": 1,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 2,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 3,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 4,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 5,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 6,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 7,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 8,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 9,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 10,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 11,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 12,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            }
+          ],
+          "per_epoch_slot_counts": {
+            "defective_real": 1240,
+            "normal_real": 744,
+            "synthetic": 0
+          },
+          "per_epoch_target_fractions": {
+            "defective_real_fraction": 0.625,
+            "normal_real_fraction": 0.375,
+            "synthetic_fraction": 0.0
+          },
+          "schedule_sha256": "46f4a39b4fecf2aa2a40985f2ee4cec11951d2832d9ef25d244858428279ccb5",
+          "slot_count": 23808
+        },
+        "standard_real": {
+          "observed_composition": {
+            "defective_real_fraction": 0.5,
+            "defective_real_samples": 11904,
+            "distinct_identities": {
+              "defective_real": 209,
+              "normal_real": 1770,
+              "synthetic": 0
+            },
+            "effective_defective_fraction": 0.5,
+            "effective_normal_fraction": 0.5,
+            "normal_real_fraction": 0.5,
+            "normal_real_samples": 11904,
+            "synthetic_fraction": 0.0,
+            "synthetic_samples": 0,
+            "total_effective_defective_samples": 11904,
+            "total_effective_normal_samples": 11904,
+            "total_sample_slots": 23808
+          },
+          "observed_matches_precommitted_composition": true,
+          "optimizer_updates": 5952,
+          "per_epoch_composition": [
+            {
+              "defective_real": 992,
+              "epoch": 1,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 2,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 3,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 4,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 5,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 6,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 7,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 8,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 9,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 10,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 11,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 12,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            }
+          ],
+          "per_epoch_slot_counts": {
+            "defective_real": 992,
+            "normal_real": 992,
+            "synthetic": 0
+          },
+          "per_epoch_target_fractions": {
+            "defective_real_fraction": 0.5,
+            "normal_real_fraction": 0.5,
+            "synthetic_fraction": 0.0
+          },
+          "schedule_sha256": "9e85a4374ce6de9cf39487b595d4b7818f4772a7dab2e7f6c80c240814329c25",
+          "slot_count": 23808
+        }
+      },
+      "class_stream_prefixes_shared_across_arms": {
+        "defective_real": true,
+        "normal_real": true,
+        "synthetic": true
+      },
+      "effective_defective_fraction_by_arm": {
+        "gan_1500": 0.625,
+        "prevalence_matched_real": 0.625,
+        "standard_real": 0.5
+      }
+    },
+    "46": {
+      "arms": {
+        "gan_1500": {
+          "observed_composition": {
+            "defective_real_fraction": 0.375,
+            "defective_real_samples": 8928,
+            "distinct_identities": {
+              "defective_real": 209,
+              "normal_real": 1761,
+              "synthetic": 512
+            },
+            "effective_defective_fraction": 0.625,
+            "effective_normal_fraction": 0.375,
+            "normal_real_fraction": 0.375,
+            "normal_real_samples": 8928,
+            "synthetic_fraction": 0.25,
+            "synthetic_samples": 5952,
+            "total_effective_defective_samples": 14880,
+            "total_effective_normal_samples": 8928,
+            "total_sample_slots": 23808
+          },
+          "observed_matches_precommitted_composition": true,
+          "optimizer_updates": 5952,
+          "per_epoch_composition": [
+            {
+              "defective_real": 744,
+              "epoch": 1,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 2,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 3,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 4,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 5,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 6,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 7,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 8,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 9,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 10,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 11,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 12,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            }
+          ],
+          "per_epoch_slot_counts": {
+            "defective_real": 744,
+            "normal_real": 744,
+            "synthetic": 496
+          },
+          "per_epoch_target_fractions": {
+            "defective_real_fraction": 0.375,
+            "normal_real_fraction": 0.375,
+            "synthetic_fraction": 0.25
+          },
+          "schedule_sha256": "5ccf0a639ca85618d0d4e8f47d7ab963dee21734cafc3f6172ed99685a55f2dc",
+          "slot_count": 23808
+        },
+        "prevalence_matched_real": {
+          "observed_composition": {
+            "defective_real_fraction": 0.625,
+            "defective_real_samples": 14880,
+            "distinct_identities": {
+              "defective_real": 209,
+              "normal_real": 1761,
+              "synthetic": 0
+            },
+            "effective_defective_fraction": 0.625,
+            "effective_normal_fraction": 0.375,
+            "normal_real_fraction": 0.375,
+            "normal_real_samples": 8928,
+            "synthetic_fraction": 0.0,
+            "synthetic_samples": 0,
+            "total_effective_defective_samples": 14880,
+            "total_effective_normal_samples": 8928,
+            "total_sample_slots": 23808
+          },
+          "observed_matches_precommitted_composition": true,
+          "optimizer_updates": 5952,
+          "per_epoch_composition": [
+            {
+              "defective_real": 1240,
+              "epoch": 1,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 2,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 3,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 4,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 5,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 6,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 7,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 8,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 9,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 10,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 11,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 12,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            }
+          ],
+          "per_epoch_slot_counts": {
+            "defective_real": 1240,
+            "normal_real": 744,
+            "synthetic": 0
+          },
+          "per_epoch_target_fractions": {
+            "defective_real_fraction": 0.625,
+            "normal_real_fraction": 0.375,
+            "synthetic_fraction": 0.0
+          },
+          "schedule_sha256": "78ad5ba7354f5778cdf0e19761e57241e7e9a712d46f0207ae5905d62ce326fe",
+          "slot_count": 23808
+        },
+        "standard_real": {
+          "observed_composition": {
+            "defective_real_fraction": 0.5,
+            "defective_real_samples": 11904,
+            "distinct_identities": {
+              "defective_real": 209,
+              "normal_real": 1769,
+              "synthetic": 0
+            },
+            "effective_defective_fraction": 0.5,
+            "effective_normal_fraction": 0.5,
+            "normal_real_fraction": 0.5,
+            "normal_real_samples": 11904,
+            "synthetic_fraction": 0.0,
+            "synthetic_samples": 0,
+            "total_effective_defective_samples": 11904,
+            "total_effective_normal_samples": 11904,
+            "total_sample_slots": 23808
+          },
+          "observed_matches_precommitted_composition": true,
+          "optimizer_updates": 5952,
+          "per_epoch_composition": [
+            {
+              "defective_real": 992,
+              "epoch": 1,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 2,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 3,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 4,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 5,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 6,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 7,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 8,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 9,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 10,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 11,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 12,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            }
+          ],
+          "per_epoch_slot_counts": {
+            "defective_real": 992,
+            "normal_real": 992,
+            "synthetic": 0
+          },
+          "per_epoch_target_fractions": {
+            "defective_real_fraction": 0.5,
+            "normal_real_fraction": 0.5,
+            "synthetic_fraction": 0.0
+          },
+          "schedule_sha256": "cf225b312ee5a0dfdccb4e2d6a1762e424f2be9351e78f64e4f3e53d325e7b68",
+          "slot_count": 23808
+        }
+      },
+      "class_stream_prefixes_shared_across_arms": {
+        "defective_real": true,
+        "normal_real": true,
+        "synthetic": true
+      },
+      "effective_defective_fraction_by_arm": {
+        "gan_1500": 0.625,
+        "prevalence_matched_real": 0.625,
+        "standard_real": 0.5
+      }
+    },
+    "47": {
+      "arms": {
+        "gan_1500": {
+          "observed_composition": {
+            "defective_real_fraction": 0.375,
+            "defective_real_samples": 8928,
+            "distinct_identities": {
+              "defective_real": 209,
+              "normal_real": 1761,
+              "synthetic": 512
+            },
+            "effective_defective_fraction": 0.625,
+            "effective_normal_fraction": 0.375,
+            "normal_real_fraction": 0.375,
+            "normal_real_samples": 8928,
+            "synthetic_fraction": 0.25,
+            "synthetic_samples": 5952,
+            "total_effective_defective_samples": 14880,
+            "total_effective_normal_samples": 8928,
+            "total_sample_slots": 23808
+          },
+          "observed_matches_precommitted_composition": true,
+          "optimizer_updates": 5952,
+          "per_epoch_composition": [
+            {
+              "defective_real": 744,
+              "epoch": 1,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 2,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 3,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 4,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 5,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 6,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 7,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 8,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 9,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 10,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 11,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            },
+            {
+              "defective_real": 744,
+              "epoch": 12,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 496
+            }
+          ],
+          "per_epoch_slot_counts": {
+            "defective_real": 744,
+            "normal_real": 744,
+            "synthetic": 496
+          },
+          "per_epoch_target_fractions": {
+            "defective_real_fraction": 0.375,
+            "normal_real_fraction": 0.375,
+            "synthetic_fraction": 0.25
+          },
+          "schedule_sha256": "1775e521afc9ccd3625c15b610b0c85a8e1aca03ff4b27395b758794087837f1",
+          "slot_count": 23808
+        },
+        "prevalence_matched_real": {
+          "observed_composition": {
+            "defective_real_fraction": 0.625,
+            "defective_real_samples": 14880,
+            "distinct_identities": {
+              "defective_real": 209,
+              "normal_real": 1761,
+              "synthetic": 0
+            },
+            "effective_defective_fraction": 0.625,
+            "effective_normal_fraction": 0.375,
+            "normal_real_fraction": 0.375,
+            "normal_real_samples": 8928,
+            "synthetic_fraction": 0.0,
+            "synthetic_samples": 0,
+            "total_effective_defective_samples": 14880,
+            "total_effective_normal_samples": 8928,
+            "total_sample_slots": 23808
+          },
+          "observed_matches_precommitted_composition": true,
+          "optimizer_updates": 5952,
+          "per_epoch_composition": [
+            {
+              "defective_real": 1240,
+              "epoch": 1,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 2,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 3,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 4,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 5,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 6,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 7,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 8,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 9,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 10,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 11,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 1240,
+              "epoch": 12,
+              "normal_real": 744,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            }
+          ],
+          "per_epoch_slot_counts": {
+            "defective_real": 1240,
+            "normal_real": 744,
+            "synthetic": 0
+          },
+          "per_epoch_target_fractions": {
+            "defective_real_fraction": 0.625,
+            "normal_real_fraction": 0.375,
+            "synthetic_fraction": 0.0
+          },
+          "schedule_sha256": "cdaa3cb71f0627877c3fa722f78af21f6132d642e70752929a2bd425f1faf387",
+          "slot_count": 23808
+        },
+        "standard_real": {
+          "observed_composition": {
+            "defective_real_fraction": 0.5,
+            "defective_real_samples": 11904,
+            "distinct_identities": {
+              "defective_real": 209,
+              "normal_real": 1769,
+              "synthetic": 0
+            },
+            "effective_defective_fraction": 0.5,
+            "effective_normal_fraction": 0.5,
+            "normal_real_fraction": 0.5,
+            "normal_real_samples": 11904,
+            "synthetic_fraction": 0.0,
+            "synthetic_samples": 0,
+            "total_effective_defective_samples": 11904,
+            "total_effective_normal_samples": 11904,
+            "total_sample_slots": 23808
+          },
+          "observed_matches_precommitted_composition": true,
+          "optimizer_updates": 5952,
+          "per_epoch_composition": [
+            {
+              "defective_real": 992,
+              "epoch": 1,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 2,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 3,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 4,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 5,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 6,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 7,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 8,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 9,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 10,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 11,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            },
+            {
+              "defective_real": 992,
+              "epoch": 12,
+              "normal_real": 992,
+              "optimizer_updates": 496,
+              "synthetic": 0
+            }
+          ],
+          "per_epoch_slot_counts": {
+            "defective_real": 992,
+            "normal_real": 992,
+            "synthetic": 0
+          },
+          "per_epoch_target_fractions": {
+            "defective_real_fraction": 0.5,
+            "normal_real_fraction": 0.5,
+            "synthetic_fraction": 0.0
+          },
+          "schedule_sha256": "6669e30ffb6a878944cee77206d5d7ba99718ddd8b0a76398662cff1a966eb64",
+          "slot_count": 23808
+        }
+      },
+      "class_stream_prefixes_shared_across_arms": {
+        "defective_real": true,
+        "normal_real": true,
+        "synthetic": true
+      },
+      "effective_defective_fraction_by_arm": {
+        "gan_1500": 0.625,
+        "prevalence_matched_real": 0.625,
+        "standard_real": 0.5
+      }
+    }
+  },
+  "stage": "precommitted_plan_no_training_executed",
+  "synthetic_samples_regenerated": 0,
+  "threshold_selection": {
+    "contains_secondary_fixed_threshold": true,
+    "data_source": "validation",
+    "executed": "once_per_arm_after_training_completes_and_best_checkpoint_reloads",
+    "grid": {
+      "construction": "integer_hundredths_range_inclusive",
+      "increment": 0.01,
+      "maximum": 0.99,
+      "minimum": 0.01,
+      "point_count": 99
+    },
+    "grid_point_count": 99,
+    "grid_values_sha256": "153306a0dc70f0371eaf1b171b811f8cb193d39614179dab3c824f726ecb9b01",
+    "objective": "maximum_validation_global_dice",
+    "policy": "precommitted_identical_rule_for_every_arm_and_seed",
+    "pr_auc_grid": {
+      "estimator": "step_rule_average_precision",
+      "logit_limit": 20.0,
+      "logit_step": 0.02,
+      "probability_step": 0.0005
+    },
+    "secondary_fixed_threshold": 0.5,
+    "secondary_fixed_threshold_role": "continuity_evidence_only_never_a_gate_input",
+    "threshold_independent_metric": "pixel_pr_auc",
+    "tie_breaking": [
+      "maximum global_dice",
+      "then maximum mean_defective_image_dice",
+      "then maximum pixel_precision",
+      "then smallest threshold"
+    ]
+  }
+}
