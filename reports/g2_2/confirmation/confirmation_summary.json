@@ -1,0 +1,580 @@
+{
+  "aggregate": {
+    "confirmed": false,
+    "mean_deltas": {
+      "global_dice_gain": 0.08425638617072267,
+      "global_iou_gain": 0.07691652055498317,
+      "normal_fpr_delta": -0.21192758253461128,
+      "pixel_precision_delta": 0.18965419800071548,
+      "pixel_recall_delta": -0.05721347331583552
+    },
+    "positive_dice_seeds": 3,
+    "required_seed_count": 3
+  },
+  "confirmed": false,
+  "decision": "stop_not_confirmed",
+  "experiment_version": "g2_2_equal_budget_detector_utility_v1",
+  "gan_optimizer_updates": 0,
+  "official_test_access_count": 0,
+  "seed_results": {
+    "42": {
+      "arms": {
+        "checkpoint_1500": {
+          "attempted_batches": 2000,
+          "checkpoint_path": "checkpoints/g2_2/pilot_seed42/checkpoint_1500.pt",
+          "constant_learning_rate": 0.0003,
+          "final_100_mean_training_loss": 0.6421847048401833,
+          "final_model_sha256": "fdb303d0d976a3b1898bcea5c16400bbb3133462dea9aa1c62f8155833440887",
+          "initialization_sha256": "885218a1ca87cd383bf5eb890ba1702512e0f1253bc96bdfcfdc2eca847d1fb8",
+          "mean_training_loss": 0.7925074498951435,
+          "observed_synthetic_fraction": 0.25,
+          "official_test_samples_loaded": 0,
+          "optimizer_updates": 2000,
+          "overall": {
+            "defective_images_zero_detected_pixels": 0,
+            "global_dice": 0.572083253771243,
+            "global_iou": 0.4006418828563787,
+            "image_f1": 0.24262295081967214,
+            "image_precision": 0.13805970149253732,
+            "image_recall": 1.0,
+            "mean_defective_image_dice": 0.7150291457422266,
+            "mean_predicted_defect_fraction_normal_images": 0.0010902203613375719,
+            "median_defective_image_dice": 0.8212290502793296,
+            "normal_false_positive_images": 231,
+            "normal_image_count": 313,
+            "normal_image_false_positive_rate": 0.7380191693290735,
+            "pixel_precision": 0.564441861504761,
+            "pixel_recall": 0.5799343832020998,
+            "threshold": 0.5
+          },
+          "runtime_seconds": 1741.5374885000056,
+          "seed": 42,
+          "skipped_updates": 0,
+          "source_counts": {
+            "real": 6000,
+            "synthetic": 2000
+          },
+          "stratification_thresholds": {
+            "medium_max_mask_pixels": 3671,
+            "small_max_mask_pixels": 1261,
+            "source": "development-training defective mask-pixel tertiles"
+          },
+          "stratified": {
+            "contact:border": {
+              "dice": 0.624323462143618,
+              "images": 21,
+              "iou": 0.4538301300947215,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.8608534876092208,
+              "recall": 0.4897567927521356
+            },
+            "contact:non_border": {
+              "dice": 0.8259914565618726,
+              "images": 16,
+              "iou": 0.7035651155850416,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.772145520507911,
+              "recall": 0.8879103050670684
+            },
+            "size:large": {
+              "dice": 0.631669328593902,
+              "images": 13,
+              "iou": 0.4616349993417877,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.9081350782086254,
+              "recall": 0.48424841655619383
+            },
+            "size:medium": {
+              "dice": 0.7946958102161852,
+              "images": 17,
+              "iou": 0.6593321561080138,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.7572291215677338,
+              "recall": 0.836063099101819
+            },
+            "size:small": {
+              "dice": 0.5679287305122495,
+              "images": 7,
+              "iou": 0.3965785381026439,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.5150474651585538,
+              "recall": 0.6329113924050633
+            }
+          },
+          "validation_sample_count": 350,
+          "validation_sample_ids_sha256": "c0cf3d0f14ff89606fc8d835ed8fdba964e234aa3e4c4474109e3a4a8ee74672",
+          "variant": "checkpoint_1500"
+        },
+        "real_only": {
+          "attempted_batches": 2000,
+          "checkpoint_path": "checkpoints/g2_2/pilot_seed42/real_only.pt",
+          "constant_learning_rate": 0.0003,
+          "final_100_mean_training_loss": 0.7668988406658173,
+          "final_model_sha256": "932c8523220fb2457892b709e2ff036e380e41af71f4683b8ddae56bf2bc689b",
+          "initialization_sha256": "885218a1ca87cd383bf5eb890ba1702512e0f1253bc96bdfcfdc2eca847d1fb8",
+          "mean_training_loss": 0.8656350643038749,
+          "observed_synthetic_fraction": 0.0,
+          "official_test_samples_loaded": 0,
+          "optimizer_updates": 2000,
+          "overall": {
+            "defective_images_zero_detected_pixels": 0,
+            "global_dice": 0.406362848132021,
+            "global_iou": 0.2549908225066813,
+            "image_f1": 0.2032967032967033,
+            "image_precision": 0.11314984709480122,
+            "image_recall": 1.0,
+            "mean_defective_image_dice": 0.691274972787542,
+            "mean_predicted_defect_fraction_normal_images": 0.0034953772292919266,
+            "median_defective_image_dice": 0.7973176865046102,
+            "normal_false_positive_images": 290,
+            "normal_image_count": 313,
+            "normal_image_false_positive_rate": 0.9265175718849841,
+            "pixel_precision": 0.318975962185691,
+            "pixel_recall": 0.5596981627296588,
+            "threshold": 0.5
+          },
+          "runtime_seconds": 1763.7183352000138,
+          "seed": 42,
+          "skipped_updates": 0,
+          "source_counts": {
+            "real": 8000,
+            "synthetic": 0
+          },
+          "stratification_thresholds": {
+            "medium_max_mask_pixels": 3671,
+            "small_max_mask_pixels": 1261,
+            "source": "development-training defective mask-pixel tertiles"
+          },
+          "stratified": {
+            "contact:border": {
+              "dice": 0.5890837744310647,
+              "images": 21,
+              "iou": 0.4175186051131588,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.8078771123168587,
+              "recall": 0.4635443617824453
+            },
+            "contact:non_border": {
+              "dice": 0.8162428438290508,
+              "images": 16,
+              "iou": 0.6895357207126147,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.7551548296504323,
+              "recall": 0.8880841324564708
+            },
+            "size:large": {
+              "dice": 0.6015885216500129,
+              "images": 13,
+              "iou": 0.43019421033345545,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.8916133232071173,
+              "recall": 0.45393283252319927
+            },
+            "size:medium": {
+              "dice": 0.7858880778588808,
+              "images": 17,
+              "iou": 0.6472945891783567,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.7406442707985484,
+              "recall": 0.8370191460990767
+            },
+            "size:small": {
+              "dice": 0.4519933554817276,
+              "images": 7,
+              "iou": 0.29198411846764677,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.3396579702908501,
+              "recall": 0.6753536857781087
+            }
+          },
+          "validation_sample_count": 350,
+          "validation_sample_ids_sha256": "c0cf3d0f14ff89606fc8d835ed8fdba964e234aa3e4c4474109e3a4a8ee74672",
+          "variant": "real_only"
+        }
+      },
+      "comparison": {
+        "global_dice_gain": 0.16572040563922202,
+        "global_iou_gain": 0.14565106034969738,
+        "normal_fpr_delta": -0.18849840255591055,
+        "passes": true,
+        "pixel_precision_delta": 0.24546589931907004,
+        "pixel_recall_delta": 0.020236220472441002
+      }
+    },
+    "43": {
+      "arms": {
+        "checkpoint_1500": {
+          "attempted_batches": 2000,
+          "checkpoint_path": "checkpoints/g2_2/confirmation/seed43/checkpoint_1500.pt",
+          "constant_learning_rate": 0.0003,
+          "final_100_mean_training_loss": 0.7045855259895325,
+          "final_model_sha256": "9f8b51a01f688a18092327f2641537f92cbe97a916809cf0add19fb4823c6442",
+          "initialization_sha256": "3320b8d360d62bbeeda257bfb89718a595769870f484867c53cceca497777fc7",
+          "mean_training_loss": 0.802704750329256,
+          "observed_synthetic_fraction": 0.25,
+          "official_test_samples_loaded": 0,
+          "optimizer_updates": 2000,
+          "overall": {
+            "defective_images_zero_detected_pixels": 1,
+            "global_dice": 0.640538421230624,
+            "global_iou": 0.4711706687661287,
+            "image_f1": 0.4285714285714286,
+            "image_precision": 0.2748091603053435,
+            "image_recall": 0.972972972972973,
+            "mean_defective_image_dice": 0.720888948066023,
+            "mean_predicted_defect_fraction_normal_images": 0.0003387792709578049,
+            "median_defective_image_dice": 0.7976190476190477,
+            "normal_false_positive_images": 95,
+            "normal_image_count": 313,
+            "normal_image_false_positive_rate": 0.3035143769968051,
+            "pixel_precision": 0.7385737425331882,
+            "pixel_recall": 0.5654790026246719,
+            "threshold": 0.5
+          },
+          "runtime_seconds": 1574.8196516000025,
+          "seed": 43,
+          "skipped_updates": 0,
+          "source_counts": {
+            "real": 6000,
+            "synthetic": 2000
+          },
+          "stratification_thresholds": {
+            "medium_max_mask_pixels": 3671,
+            "small_max_mask_pixels": 1261,
+            "source": "development-training defective mask-pixel tertiles"
+          },
+          "stratified": {
+            "contact:border": {
+              "dice": 0.6255011501807427,
+              "images": 21,
+              "iou": 0.455075790178358,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.8826066123622425,
+              "recall": 0.4843955447350339
+            },
+            "contact:non_border": {
+              "dice": 0.8189320114910156,
+              "images": 16,
+              "iou": 0.693382615953261,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.7967392793533361,
+              "recall": 0.8423965002752267
+            },
+            "size:large": {
+              "dice": 0.6404191904624555,
+              "images": 13,
+              "iou": 0.47104165193409236,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.9220653377630121,
+              "recall": 0.4905729857121815
+            },
+            "size:medium": {
+              "dice": 0.7666409150945748,
+              "images": 17,
+              "iou": 0.621587763431735,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.7594489841262004,
+              "recall": 0.773970362543085
+            },
+            "size:small": {
+              "dice": 0.6148511990754117,
+              "images": 7,
+              "iou": 0.44388819357530246,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.7355686138956101,
+              "recall": 0.5281707619756764
+            }
+          },
+          "validation_sample_count": 350,
+          "validation_sample_ids_sha256": "c0cf3d0f14ff89606fc8d835ed8fdba964e234aa3e4c4474109e3a4a8ee74672",
+          "variant": "checkpoint_1500"
+        },
+        "real_only": {
+          "attempted_batches": 2000,
+          "checkpoint_path": "checkpoints/g2_2/confirmation/seed43/real_only.pt",
+          "constant_learning_rate": 0.0003,
+          "final_100_mean_training_loss": 0.7895406886935235,
+          "final_model_sha256": "e65858eeac5cf6a077bf9b2b446a5bb35d341b143c16c645d9d90ffb85265e1d",
+          "initialization_sha256": "3320b8d360d62bbeeda257bfb89718a595769870f484867c53cceca497777fc7",
+          "mean_training_loss": 0.8708274113088846,
+          "observed_synthetic_fraction": 0.0,
+          "official_test_samples_loaded": 0,
+          "optimizer_updates": 2000,
+          "overall": {
+            "defective_images_zero_detected_pixels": 1,
+            "global_dice": 0.6234500070168377,
+            "global_iou": 0.45290763880339774,
+            "image_f1": 0.27692307692307694,
+            "image_precision": 0.16143497757847533,
+            "image_recall": 0.972972972972973,
+            "mean_defective_image_dice": 0.7033012375541245,
+            "mean_predicted_defect_fraction_normal_images": 0.001536160082823306,
+            "median_defective_image_dice": 0.7770612620912022,
+            "normal_false_positive_images": 187,
+            "normal_image_count": 313,
+            "normal_image_false_positive_rate": 0.597444089456869,
+            "pixel_precision": 0.5226202261356725,
+            "pixel_recall": 0.7724868766404199,
+            "threshold": 0.5
+          },
+          "runtime_seconds": 1637.786267699994,
+          "seed": 43,
+          "skipped_updates": 0,
+          "source_counts": {
+            "real": 8000,
+            "synthetic": 0
+          },
+          "stratification_thresholds": {
+            "medium_max_mask_pixels": 3671,
+            "small_max_mask_pixels": 1261,
+            "source": "development-training defective mask-pixel tertiles"
+          },
+          "stratified": {
+            "contact:border": {
+              "dice": 0.7656517886168,
+              "images": 21,
+              "iou": 0.6202883283306396,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.8058701113652555,
+              "recall": 0.729256975136364
+            },
+            "contact:non_border": {
+              "dice": 0.7664462570587384,
+              "images": 16,
+              "iou": 0.6213318726034901,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.6567546888893484,
+              "recall": 0.9201263145696323
+            },
+            "size:large": {
+              "dice": 0.7938102972544568,
+              "images": 13,
+              "iou": 0.6581139728249847,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.8470348715807058,
+              "recall": 0.7468791427308882
+            },
+            "size:medium": {
+              "dice": 0.7223506457701525,
+              "images": 17,
+              "iou": 0.5653747198937671,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.6242966330028044,
+              "recall": 0.8569451782524468
+            },
+            "size:small": {
+              "dice": 0.5815472779369627,
+              "images": 7,
+              "iou": 0.4099870717517776,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.5402470187393527,
+              "recall": 0.6296847853065277
+            }
+          },
+          "validation_sample_count": 350,
+          "validation_sample_ids_sha256": "c0cf3d0f14ff89606fc8d835ed8fdba964e234aa3e4c4474109e3a4a8ee74672",
+          "variant": "real_only"
+        }
+      },
+      "comparison": {
+        "global_dice_gain": 0.017088414213786263,
+        "global_iou_gain": 0.018263029962730937,
+        "normal_fpr_delta": -0.2939297124600639,
+        "passes": false,
+        "pixel_precision_delta": 0.2159535163975157,
+        "pixel_recall_delta": -0.20700787401574805
+      }
+    },
+    "44": {
+      "arms": {
+        "checkpoint_1500": {
+          "attempted_batches": 2000,
+          "checkpoint_path": "checkpoints/g2_2/confirmation/seed44/checkpoint_1500.pt",
+          "constant_learning_rate": 0.0003,
+          "final_100_mean_training_loss": 0.6301537156105042,
+          "final_model_sha256": "18609e326b47a3e3f2ea5b8414a8b7c16f807b81b67d06575f3cbdd7c14b7102",
+          "initialization_sha256": "93566488a7dfdea7a75d3e358b11597139aedf213e9a17cbb7a157a4219fb158",
+          "mean_training_loss": 0.7866937744021416,
+          "observed_synthetic_fraction": 0.25,
+          "official_test_samples_loaded": 0,
+          "optimizer_updates": 2000,
+          "overall": {
+            "defective_images_zero_detected_pixels": 0,
+            "global_dice": 0.5876609718271832,
+            "global_iou": 0.4160905845584803,
+            "image_f1": 0.32456140350877194,
+            "image_precision": 0.193717277486911,
+            "image_recall": 1.0,
+            "mean_defective_image_dice": 0.7304961921812936,
+            "mean_predicted_defect_fraction_normal_images": 0.0010220061539091402,
+            "median_defective_image_dice": 0.8018675226145316,
+            "normal_false_positive_images": 154,
+            "normal_image_count": 313,
+            "normal_image_false_positive_rate": 0.49201277955271566,
+            "pixel_precision": 0.5633705322209782,
+            "pixel_recall": 0.6141404199475066,
+            "threshold": 0.5
+          },
+          "runtime_seconds": 1540.6368332999991,
+          "seed": 44,
+          "skipped_updates": 0,
+          "source_counts": {
+            "real": 6000,
+            "synthetic": 2000
+          },
+          "stratification_thresholds": {
+            "medium_max_mask_pixels": 3671,
+            "small_max_mask_pixels": 1261,
+            "source": "development-training defective mask-pixel tertiles"
+          },
+          "stratified": {
+            "contact:border": {
+              "dice": 0.6413835044486578,
+              "images": 21,
+              "iou": 0.47208576264810986,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.8066431858498084,
+              "recall": 0.5323244233689336
+            },
+            "contact:non_border": {
+              "dice": 0.8085089650833596,
+              "images": 16,
+              "iou": 0.6785690713484258,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.7382417003757868,
+              "recall": 0.8935596952226439
+            },
+            "size:large": {
+              "dice": 0.6409638834589966,
+              "images": 13,
+              "iou": 0.4716312360339381,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.8707479767324229,
+              "recall": 0.507134703196347
+            },
+            "size:medium": {
+              "dice": 0.786350926249563,
+              "images": 17,
+              "iou": 0.6479228166174671,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.6948364057523405,
+              "recall": 0.9056280977180667
+            },
+            "size:small": {
+              "dice": 0.5887729989452714,
+              "images": 7,
+              "iou": 0.4172064441122737,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.5577264653641207,
+              "recall": 0.6234797716554976
+            }
+          },
+          "validation_sample_count": 350,
+          "validation_sample_ids_sha256": "c0cf3d0f14ff89606fc8d835ed8fdba964e234aa3e4c4474109e3a4a8ee74672",
+          "variant": "checkpoint_1500"
+        },
+        "real_only": {
+          "attempted_batches": 2000,
+          "checkpoint_path": "checkpoints/g2_2/confirmation/seed44/real_only.pt",
+          "constant_learning_rate": 0.0003,
+          "final_100_mean_training_loss": 0.7789031553268433,
+          "final_model_sha256": "62346e9e314f4fe6101e1d48eda5227d7de87b988ac666730503b84c5f9e6a45",
+          "initialization_sha256": "93566488a7dfdea7a75d3e358b11597139aedf213e9a17cbb7a157a4219fb158",
+          "mean_training_loss": 0.8681267179101706,
+          "observed_synthetic_fraction": 0.0,
+          "official_test_samples_loaded": 0,
+          "optimizer_updates": 2000,
+          "overall": {
+            "defective_images_zero_detected_pixels": 1,
+            "global_dice": 0.5177006331680235,
+            "global_iou": 0.3492551132059591,
+            "image_f1": 0.26181818181818184,
+            "image_precision": 0.15126050420168066,
+            "image_recall": 0.972972972972973,
+            "mean_defective_image_dice": 0.728334119157734,
+            "mean_predicted_defect_fraction_normal_images": 0.0019311314763631137,
+            "median_defective_image_dice": 0.806268183020365,
+            "normal_false_positive_images": 202,
+            "normal_image_count": 313,
+            "normal_image_false_positive_rate": 0.645367412140575,
+            "pixel_precision": 0.4558273539354175,
+            "pixel_recall": 0.5990091863517061,
+            "threshold": 0.5
+          },
+          "runtime_seconds": 1539.6527280999871,
+          "seed": 44,
+          "skipped_updates": 0,
+          "source_counts": {
+            "real": 8000,
+            "synthetic": 0
+          },
+          "stratification_thresholds": {
+            "medium_max_mask_pixels": 3671,
+            "small_max_mask_pixels": 1261,
+            "source": "development-training defective mask-pixel tertiles"
+          },
+          "stratified": {
+            "contact:border": {
+              "dice": 0.6407418674667198,
+              "images": 21,
+              "iou": 0.4713908654514023,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.8393453436121532,
+              "recall": 0.5181408684882468
+            },
+            "contact:non_border": {
+              "dice": 0.8146320416363293,
+              "images": 16,
+              "iou": 0.6872398025342948,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.7619107669802517,
+              "recall": 0.8751919344091317
+            },
+            "size:large": {
+              "dice": 0.6346528228423102,
+              "images": 13,
+              "iou": 0.46482889733840305,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.9136391945194104,
+              "recall": 0.48619089703932833
+            },
+            "size:medium": {
+              "dice": 0.8137765499750917,
+              "images": 17,
+              "iou": 0.6860229832397969,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.7398151388517199,
+              "recall": 0.9041688680906735
+            },
+            "size:small": {
+              "dice": 0.5043702820818434,
+              "images": 7,
+              "iou": 0.3372293797317041,
+              "normal_image_false_positive_rate": 0.0,
+              "precision": 0.42043384666335487,
+              "recall": 0.6301811863986101
+            }
+          },
+          "validation_sample_count": 350,
+          "validation_sample_ids_sha256": "c0cf3d0f14ff89606fc8d835ed8fdba964e234aa3e4c4474109e3a4a8ee74672",
+          "variant": "real_only"
+        }
+      },
+      "comparison": {
+        "global_dice_gain": 0.06996033865915974,
+        "global_iou_gain": 0.06683547135252121,
+        "normal_fpr_delta": -0.15335463258785936,
+        "passes": true,
+        "pixel_precision_delta": 0.1075431782855607,
+        "pixel_recall_delta": 0.015131233595800486
+      }
+    }
+  },
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "stage": "three_seed_confirmation",
+  "winner_configuration": "checkpoint_1500"
+}

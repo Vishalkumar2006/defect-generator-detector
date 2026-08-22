@@ -33,3 +33,9 @@ reports/numerical_stability/*/batch_telemetry.csv
 
 # Raw precision diagnostics contain local absolute checkpoint paths; sanitized findings are tracked.
 reports/final_real_baseline/precision_diagnostic/
+
+# G2.2 materialized rows and expanded schedules are reproducible local artifacts;
+# compact pairing, arm, pilot, and confirmation audits remain tracked.
+reports/g2_2/synthetic_manifests/checkpoint_*.json
+reports/g2_2/**/*_schedule.json
+reports/g2_2/**/*_progress.json

@@ -1,0 +1,56 @@
+{
+  "experiment_version": "g2_2_equal_budget_detector_utility_v1",
+  "seed": 42,
+  "gan": {
+    "architecture_config_path": "configs/gan_architecture.json",
+    "training_pair_config_path": "configs/gan_training_pairs.json",
+    "checkpoints": {
+      "checkpoint_1000": "checkpoints/gan_training_2000/joint_1000.pt",
+      "checkpoint_1500": "checkpoints/gan_training_2000/joint_1500.pt"
+    },
+    "expected_steps": {
+      "checkpoint_1000": 1000,
+      "checkpoint_1500": 1500
+    },
+    "synthetic_sample_count": 512,
+    "synthetic_root": "data/synthetic/g2_2",
+    "manifest_directory": "reports/g2_2/synthetic_manifests"
+  },
+  "detector": {
+    "base_config_path": "configs/final_real_baseline_bf16.json",
+    "variants": ["real_only", "checkpoint_1000", "checkpoint_1500"],
+    "synthetic_fraction": 0.25,
+    "optimizer_updates": 2000,
+    "batch_size": 4,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "gradient_clip_max_norm": 1.0,
+    "precision": "bf16",
+    "threshold": 0.5,
+    "num_workers": 0,
+    "pin_memory": true,
+    "constant_learning_rate": true,
+    "pilot_seed": 42,
+    "confirmation_seeds": [42, 43, 44],
+    "pilot_report_directory": "reports/g2_2/pilot_seed42",
+    "pilot_checkpoint_directory": "checkpoints/g2_2/pilot_seed42",
+    "confirmation_report_directory": "reports/g2_2/confirmation",
+    "confirmation_checkpoint_directory": "checkpoints/g2_2/confirmation"
+  },
+  "selection": {
+    "minimum_global_dice_gain": 0.01,
+    "minimum_global_iou_gain": 0.005,
+    "maximum_normal_fpr_regression": 0.02,
+    "maximum_precision_regression": 0.01,
+    "maximum_recall_regression": 0.01,
+    "pilot_policy": "stop_if_neither_synthetic_arm_passes_all_precommitted_rules",
+    "confirmation_policy": "winner_must_retain_positive_mean_dice_gain_over_control_across_three_seeds",
+    "checkpoint_selection_metric": "not_detector_confidence"
+  },
+  "official_test": {
+    "enabled_during_pilot": false,
+    "enabled_during_confirmation": false,
+    "single_evaluation_only_after_confirmed_win": true,
+    "precommitted_evaluation_seed": 42
+  }
+}

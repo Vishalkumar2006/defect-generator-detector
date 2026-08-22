@@ -1,0 +1,26 @@
+{
+  "checkpoint_hashes_after": {
+    "checkpoint_1000": "801f60860f5f4d011c87f415090d96acbd93a13372feb8e0d8cac9881c50ae38",
+    "checkpoint_1500": "5af1c6aafabcc0444117aa43209dcab168e57f4489259728e8f9066a4fdf1c81"
+  },
+  "checkpoint_hashes_before": {
+    "checkpoint_1000": "801f60860f5f4d011c87f415090d96acbd93a13372feb8e0d8cac9881c50ae38",
+    "checkpoint_1500": "5af1c6aafabcc0444117aa43209dcab168e57f4489259728e8f9066a4fdf1c81"
+  },
+  "content_sha256": "540a4637936c25ae9fd3678732bbc9d81e75f066e584e6d3ee078768f491ed33",
+  "detector_validation_source_count": 0,
+  "experiment_version": "g2_2_equal_budget_detector_utility_v1",
+  "manifests": {
+    "checkpoint_1000": {
+      "content_sha256": "72e7e2862c47351c7f236136e5d829a2b456a440cf962c299f57780aa6974de3",
+      "path": "reports/g2_2/synthetic_manifests/checkpoint_1000.json"
+    },
+    "checkpoint_1500": {
+      "content_sha256": "9eba21b4347dcdafafd9d0f90dd06b297cb58b2f7ee58f1887fed7a4cd62ca91",
+      "path": "reports/g2_2/synthetic_manifests/checkpoint_1500.json"
+    }
+  },
+  "official_test_source_count": 0,
+  "only_intended_difference": "frozen_generator_checkpoint_and_rendered_image",
+  "paired_rows": 512
+}

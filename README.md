@@ -162,3 +162,10 @@ initialization, exactly replaying the selected G1.6 optimization settings. It
 uses numbered recovery checkpoints rather than confidence-selected “best” state,
 and adds fixed and 128-pair internal-monitor auditing without validation or
 official-test access. See `docs/gan-sustained-training.md`.
+
+G2.2 freezes every G2.1 checkpoint and compares steps 1,000 and 1,500 through an
+equal-budget downstream detector pilot. Paired train-only synthetic manifests hold
+template, background, mask, placement and seed fixed; three identically initialized
+detectors receive the same 2,000-update budget. Validation metrics include size and
+border-contact strata, while official test remains hard-gated behind a meaningful
+pilot win and three-seed confirmation. See `docs/g2-2-detector-utility.md`.
