@@ -1,0 +1,178 @@
+{
+  "classification": "POST_HOC_DIAGNOSTIC",
+  "constraints_honoured": {
+    "checkpoint_1000_not_selected": true,
+    "checkpoint_2000_not_evaluated": true,
+    "no_g2_2_rerun": true,
+    "no_gan_update": true,
+    "no_synthetic_regeneration": true,
+    "no_threshold_or_gate_change_in_g2_2": true,
+    "no_training": true,
+    "official_test_not_constructed": true
+  },
+  "detector_optimizer_updates": 0,
+  "diagnostic_config_sha256": "2754ebe2b63e0685e21cf9ee6a514e1041d21b54eee865e23d1a4918e5daee5e",
+  "experiment_version": "g2_3a_post_hoc_validation_only_diagnostic_v1",
+  "g2_2_decision": "stop_not_confirmed",
+  "g2_2_decision_changed_by_this_phase": false,
+  "gan_optimizer_updates": 0,
+  "official_test_access_count": 0,
+  "q1_convergence": {
+    "arm_recall_standard_deviation": 0.024989812968932875,
+    "control_dice_dispersion": {
+      "count": 3,
+      "maximum": 0.6234500070168377,
+      "mean": 0.5158378294389608,
+      "minimum": 0.406362848132021,
+      "range": 0.21708715888481672,
+      "standard_deviation": 0.10855556718321807
+    },
+    "control_recall_standard_deviation": 0.11322463098778157,
+    "controls_underconverged_indicators": {
+      "accepted_baseline_normal_fpr": 0.04153354632587859,
+      "all_arms_training_loss_still_decreasing_at_2000": true,
+      "control_normal_fpr_minimum": 0.597444089456869,
+      "every_control_dice_below_accepted_baseline": true,
+      "every_control_dice_below_baseline_equivalent_epoch": true
+    },
+    "equivalent_baseline_epochs": 4.032258064516129,
+    "fraction_of_baseline_budget": 0.33602150537634407,
+    "g2_2_updates": 2000
+  },
+  "q2_threshold_calibration": {
+    "calibration_of_the_fixed_0_5_threshold": {
+      "accepted_baseline_dice_at_0_5": 0.777700283628586,
+      "accepted_baseline_dice_at_selected_threshold": 0.7982508941396036,
+      "accepted_baseline_selected_threshold": 0.05,
+      "best_g2_2_dice_at_any_threshold": 0.6729314123893319,
+      "best_validation_dice_by_checkpoint": {
+        "seed42:checkpoint_1500": 0.6005357020214739,
+        "seed42:real_only": 0.5483586020814596,
+        "seed43:checkpoint_1500": 0.6414773435935037,
+        "seed43:real_only": 0.6729314123893319,
+        "seed44:checkpoint_1500": 0.6349645327761458,
+        "seed44:real_only": 0.5854653756830862
+      },
+      "best_validation_dice_threshold_by_checkpoint": {
+        "seed42:checkpoint_1500": 0.9724999999999999,
+        "seed42:real_only": 0.9974775525392304,
+        "seed43:checkpoint_1500": 0.586,
+        "seed43:real_only": 0.955,
+        "seed44:checkpoint_1500": 0.9744999999999999,
+        "seed44:real_only": 0.9843267119339514
+      },
+      "every_g2_2_checkpoint_prefers_a_threshold_above_0_5": true,
+      "no_g2_2_checkpoint_reaches_accepted_baseline_at_any_threshold": true,
+      "note": "DIAGNOSTIC INFORMATION ONLY. These best-Dice thresholds select nothing and do not reopen the frozen G2.2 threshold."
+    },
+    "dice_delta_at_matched_recall_by_seed": {
+      "42": 0.181160528746309,
+      "43": -0.0887059614371879,
+      "44": 0.08595342789169391
+    },
+    "frontier_verdict_by_seed": {
+      "42": "operating_point_shift_not_frontier_degradation",
+      "43": "frontier_not_uniformly_better",
+      "44": "operating_point_shift_not_frontier_degradation"
+    },
+    "matched_normal_fpr_feasible_by_seed": {
+      "42": true,
+      "43": true,
+      "44": true
+    },
+    "matched_recall_feasible_all_seeds": true,
+    "pixel_pr_auc_by_seed": {
+      "checkpoint_1500": {
+        "42": 0.606493520995332,
+        "43": 0.6925473026466927,
+        "44": 0.6296765153638697
+      },
+      "real_only": {
+        "42": 0.5028740252962269,
+        "43": 0.7212019081042937,
+        "44": 0.5799234725105021
+      }
+    },
+    "pixel_pr_auc_delta_by_seed": {
+      "42": 0.10361949569910511,
+      "43": -0.028654605457601012,
+      "44": 0.04975304285336757
+    },
+    "pixel_pr_auc_dispersion": {
+      "checkpoint_1500": {
+        "count": 3,
+        "maximum": 0.6925473026466927,
+        "mean": 0.6429057796686315,
+        "minimum": 0.606493520995332,
+        "range": 0.08605378165136068,
+        "standard_deviation": 0.044526098073589926
+      },
+      "real_only": {
+        "count": 3,
+        "maximum": 0.7212019081042937,
+        "mean": 0.6013331353036743,
+        "minimum": 0.5028740252962269,
+        "range": 0.2183278828080668,
+        "standard_deviation": 0.11072735140222241
+      }
+    },
+    "reproduced_recorded_metrics_at_0_5_max_absolute_delta": 0.0,
+    "seed43_attribution": {
+      "dice_delta_after_matching_recall": -0.0887059614371879,
+      "pixel_pr_auc_delta": -0.028654605457601012,
+      "precision_delta_after_matching_recall": -0.11392234216526431,
+      "raw_recall_delta_at_0_5": -0.20700787401574805,
+      "recall_delta_after_matching_normal_fpr": -0.03913385826771654,
+      "recall_is_reachable_by_thresholding": true,
+      "seed43_arm_pr_auc_is_highest_arm": true,
+      "seed43_control_pr_auc_is_highest_control": true,
+      "statement": "Seed 43 combines a large operating-point shift with a modest genuine frontier deficit relative to its own control. The control's threshold-0.5 recall is fully reachable by rethresholding checkpoint_1500, so the -0.207 recall figure is not a capability ceiling; but after matching recall the arm is still behind that particular control on Dice and precision, and its pixel PR-AUC is lower. The seed-43 control is simultaneously the strongest of the three controls while the seed-43 arm is the strongest of the three arms, so the seed-43 gap is driven by control-side variance rather than by degraded seed-43 GAN behaviour."
+    },
+    "stratum_pixel_pr_auc_delta_by_seed": {
+      "contact:border": {
+        "42": 0.17307511699373057,
+        "43": -0.01783901091543072,
+        "44": 0.02073611049859636
+      },
+      "contact:non_border": {
+        "42": 0.002926861854343654,
+        "43": 0.000868845063995094,
+        "44": 0.0024295094523919536
+      },
+      "size:large": {
+        "42": 0.16632639020440143,
+        "43": -0.02989527321136165,
+        "44": 0.00888797919490969
+      },
+      "size:medium": {
+        "42": 0.026035852102074042,
+        "43": 0.011457245976024266,
+        "44": -0.008017533377869701
+      },
+      "size:small": {
+        "42": 0.04292227417754635,
+        "43": 0.03556812619054317,
+        "44": 0.09963459439153977
+      }
+    },
+    "stratum_pr_auc_improved_in_all_three_seeds": {
+      "contact:border": false,
+      "contact:non_border": true,
+      "size:large": false,
+      "size:medium": false,
+      "size:small": true
+    }
+  },
+  "q3_composition": {
+    "all_support_inside_valid_region": true,
+    "arm_effective_defective_fraction": 0.625,
+    "control_effective_defective_fraction": 0.5,
+    "detector_validation_overlap": 0,
+    "every_synthetic_sample_is_defective": true,
+    "is_class_prevalence_confound": true,
+    "masks_checked": 512,
+    "official_test_rows_read": 0
+  },
+  "stage": "g2_3a_post_hoc_validation_only_diagnostic",
+  "synthetic_samples_regenerated": 0
+}

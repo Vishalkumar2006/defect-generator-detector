@@ -1,0 +1,95 @@
+{
+  "experiment_version": "g2_3a_post_hoc_validation_only_diagnostic_v1",
+  "classification": "POST_HOC_DIAGNOSTIC",
+  "purpose": "Explain why the precommitted G2.2 confirmation failed and inform a clean future experiment design. This phase does not train, does not touch the official test split, and cannot change the terminal G2.2 decision.",
+  "immutable_inputs": {
+    "g2_2_config_path": "configs/g2_2_detector_utility.json",
+    "g2_2_terminal_decision": "stop_not_confirmed",
+    "historical_baseline_config_path": "configs/final_real_baseline_bf16.json",
+    "historical_baseline_report_directory": "reports/final_real_baseline_bf16_seed42",
+    "historical_baseline_updates_per_epoch": 496,
+    "historical_baseline_total_updates": 5952,
+    "bbox_statistics_path": "reports/preprocessing/bbox_statistics.csv"
+  },
+  "access_policy": {
+    "training_allowed": false,
+    "gan_updates_allowed": false,
+    "detector_updates_allowed": false,
+    "regenerate_synthetic_allowed": false,
+    "evaluation_splits_allowed": ["validation"],
+    "official_test_allowed": false,
+    "modifies_g2_2_artifacts": false,
+    "checkpoint_2000_evaluated": false,
+    "checkpoint_1000_selected": false
+  },
+  "checkpoints": {
+    "42": {
+      "real_only": "checkpoints/g2_2/pilot_seed42/real_only.pt",
+      "checkpoint_1500": "checkpoints/g2_2/pilot_seed42/checkpoint_1500.pt"
+    },
+    "43": {
+      "real_only": "checkpoints/g2_2/confirmation/seed43/real_only.pt",
+      "checkpoint_1500": "checkpoints/g2_2/confirmation/seed43/checkpoint_1500.pt"
+    },
+    "44": {
+      "real_only": "checkpoints/g2_2/confirmation/seed44/real_only.pt",
+      "checkpoint_1500": "checkpoints/g2_2/confirmation/seed44/checkpoint_1500.pt"
+    }
+  },
+  "recorded_g2_2_reports": {
+    "42": {
+      "real_only": "reports/g2_2/pilot_seed42/real_only.json",
+      "checkpoint_1500": "reports/g2_2/pilot_seed42/checkpoint_1500.json"
+    },
+    "43": {
+      "real_only": "reports/g2_2/confirmation/seed43/real_only.json",
+      "checkpoint_1500": "reports/g2_2/confirmation/seed43/checkpoint_1500.json"
+    },
+    "44": {
+      "real_only": "reports/g2_2/confirmation/seed44/real_only.json",
+      "checkpoint_1500": "reports/g2_2/confirmation/seed44/checkpoint_1500.json"
+    }
+  },
+  "schedules": {
+    "42": {
+      "real_only": "reports/g2_2/pilot_seed42/real_only_schedule.json",
+      "checkpoint_1000": "reports/g2_2/pilot_seed42/checkpoint_1000_schedule.json",
+      "checkpoint_1500": "reports/g2_2/pilot_seed42/checkpoint_1500_schedule.json"
+    },
+    "43": {
+      "real_only": "reports/g2_2/confirmation/seed43/real_only_schedule.json",
+      "checkpoint_1500": "reports/g2_2/confirmation/seed43/checkpoint_1500_schedule.json"
+    },
+    "44": {
+      "real_only": "reports/g2_2/confirmation/seed44/real_only_schedule.json",
+      "checkpoint_1500": "reports/g2_2/confirmation/seed44/checkpoint_1500_schedule.json"
+    }
+  },
+  "synthetic": {
+    "manifest_directory": "reports/g2_2/synthetic_manifests",
+    "expected_sample_count": 512,
+    "variants": ["checkpoint_1000", "checkpoint_1500"]
+  },
+  "inference": {
+    "split": "validation",
+    "precision": "bf16",
+    "batch_size": 4,
+    "fixed_comparison_threshold": 0.5,
+    "shuffle": false,
+    "num_workers": 0,
+    "seed": 42,
+    "repeat_determinism_check_batches": 1
+  },
+  "threshold_grid": {
+    "probability_step": 0.0005,
+    "logit_limit": 20.0,
+    "logit_step": 0.02,
+    "logit_distribution_limit": 30.0,
+    "logit_distribution_step": 0.01
+  },
+  "matching": {
+    "recall_match_tolerance": 0.005,
+    "normal_fpr_match_tolerance": 0.0032
+  },
+  "output_directory": "reports/g2_3/diagnostic"
+}

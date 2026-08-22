@@ -39,3 +39,8 @@ reports/final_real_baseline/precision_diagnostic/
 reports/g2_2/synthetic_manifests/checkpoint_*.json
 reports/g2_2/**/*_schedule.json
 reports/g2_2/**/*_progress.json
+
+# G2.3A per-threshold curves and per-mask records are bulk reproducible local
+# diagnostics; the compact G2.3A audits and diagnostic summary remain tracked.
+reports/g2_3/diagnostic/threshold_curves/
+reports/g2_3/diagnostic/synthetic_mask_records.json

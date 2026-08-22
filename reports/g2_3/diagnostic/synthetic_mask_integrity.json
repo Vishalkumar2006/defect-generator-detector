@@ -1,0 +1,33 @@
+{
+  "classification": "POST_HOC_DIAGNOSTIC",
+  "experiment_version": "g2_3a_post_hoc_validation_only_diagnostic_v1",
+  "g2_2_terminal_decision_unchanged": "stop_not_confirmed",
+  "hard_check": {
+    "all_have_positive_valid_defect_pixel": true,
+    "all_support_inside_valid_region": true,
+    "empty_mask_sample_ids": [],
+    "every_synthetic_sample_is_defective": true,
+    "masks_checked": 512,
+    "maximum_positive_valid_defect_pixels": 32426,
+    "median_positive_valid_defect_pixels": 1615.5,
+    "minimum_positive_valid_defect_pixels": 23,
+    "support_outside_valid_sample_ids": []
+  },
+  "manifest_content_sha256": {
+    "checkpoint_1000": "72e7e2862c47351c7f236136e5d829a2b456a440cf962c299f57780aa6974de3",
+    "checkpoint_1500": "9eba21b4347dcdafafd9d0f90dd06b297cb58b2f7ee58f1887fed7a4cd62ca91"
+  },
+  "mask_and_valid_region_shared_between_checkpoints": true,
+  "masks_read_from_disk": 512,
+  "per_sample_records_path": "reports/g2_3/diagnostic/synthetic_mask_records.json",
+  "per_sample_records_sha256": "c7fd39a068128cfa40c9b20db123e8d2313fc4f61e0a770a2ffab99ce57007f2",
+  "provenance": {
+    "detector_validation_overlap": 0,
+    "official_test_overlap_proven_by": "development_train_membership_partition_argument",
+    "official_test_rows_read": 0,
+    "outside_development_train": 0,
+    "unique_source_identities": 617
+  },
+  "question": "Q3 synthetic-mask integrity",
+  "rows_declaring_train_only_split": 512
+}

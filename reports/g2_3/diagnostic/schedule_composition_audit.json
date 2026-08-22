@@ -1,0 +1,280 @@
+{
+  "arms": {
+    "seed42:checkpoint_1000": {
+      "content_hash_matches": true,
+      "expected_from_implementation": {
+        "defective_real_samples": 3000,
+        "effective_defective_fraction": 0.625,
+        "normal_real_samples": 3000,
+        "synthetic_samples": 2000,
+        "total_effective_defective_samples": 5000,
+        "total_effective_normal_samples": 3000,
+        "total_sample_slots": 8000
+      },
+      "observed": {
+        "defective_real_fraction": 0.375,
+        "defective_real_samples": 3000,
+        "distinct_real_identities_used": 1659,
+        "effective_defective_fraction": 0.625,
+        "effective_normal_fraction": 0.375,
+        "normal_real_fraction": 0.375,
+        "normal_real_samples": 3000,
+        "synthetic_assumed_defective": true,
+        "synthetic_fraction": 0.25,
+        "synthetic_samples": 2000,
+        "total_effective_defective_samples": 5000,
+        "total_effective_normal_samples": 3000,
+        "total_sample_slots": 8000
+      },
+      "observed_matches_expected": true,
+      "recomputed_content_sha256": "7a61dfed3e9f14b79afc570fd9e804f4289386364fc36c116a73ab4faa2852c5",
+      "recorded_content_sha256": "7a61dfed3e9f14b79afc570fd9e804f4289386364fc36c116a73ab4faa2852c5",
+      "schedule_path": "reports/g2_2/pilot_seed42/checkpoint_1000_schedule.json",
+      "seed": 42,
+      "variant": "checkpoint_1000"
+    },
+    "seed42:checkpoint_1500": {
+      "content_hash_matches": true,
+      "expected_from_implementation": {
+        "defective_real_samples": 3000,
+        "effective_defective_fraction": 0.625,
+        "normal_real_samples": 3000,
+        "synthetic_samples": 2000,
+        "total_effective_defective_samples": 5000,
+        "total_effective_normal_samples": 3000,
+        "total_sample_slots": 8000
+      },
+      "observed": {
+        "defective_real_fraction": 0.375,
+        "defective_real_samples": 3000,
+        "distinct_real_identities_used": 1659,
+        "effective_defective_fraction": 0.625,
+        "effective_normal_fraction": 0.375,
+        "normal_real_fraction": 0.375,
+        "normal_real_samples": 3000,
+        "synthetic_assumed_defective": true,
+        "synthetic_fraction": 0.25,
+        "synthetic_samples": 2000,
+        "total_effective_defective_samples": 5000,
+        "total_effective_normal_samples": 3000,
+        "total_sample_slots": 8000
+      },
+      "observed_matches_expected": true,
+      "recomputed_content_sha256": "7a61dfed3e9f14b79afc570fd9e804f4289386364fc36c116a73ab4faa2852c5",
+      "recorded_content_sha256": "7a61dfed3e9f14b79afc570fd9e804f4289386364fc36c116a73ab4faa2852c5",
+      "schedule_path": "reports/g2_2/pilot_seed42/checkpoint_1500_schedule.json",
+      "seed": 42,
+      "variant": "checkpoint_1500"
+    },
+    "seed42:real_only": {
+      "content_hash_matches": true,
+      "expected_from_implementation": {
+        "defective_real_samples": 4000,
+        "effective_defective_fraction": 0.5,
+        "normal_real_samples": 4000,
+        "synthetic_samples": 0,
+        "total_effective_defective_samples": 4000,
+        "total_effective_normal_samples": 4000,
+        "total_sample_slots": 8000
+      },
+      "observed": {
+        "defective_real_fraction": 0.5,
+        "defective_real_samples": 4000,
+        "distinct_real_identities_used": 1794,
+        "effective_defective_fraction": 0.5,
+        "effective_normal_fraction": 0.5,
+        "normal_real_fraction": 0.5,
+        "normal_real_samples": 4000,
+        "synthetic_assumed_defective": true,
+        "synthetic_fraction": 0.0,
+        "synthetic_samples": 0,
+        "total_effective_defective_samples": 4000,
+        "total_effective_normal_samples": 4000,
+        "total_sample_slots": 8000
+      },
+      "observed_matches_expected": true,
+      "recomputed_content_sha256": "900ccacad3c217a9a72e62b33ac26fcea9dec20861a019ab2dfce66506b928bc",
+      "recorded_content_sha256": "900ccacad3c217a9a72e62b33ac26fcea9dec20861a019ab2dfce66506b928bc",
+      "schedule_path": "reports/g2_2/pilot_seed42/real_only_schedule.json",
+      "seed": 42,
+      "variant": "real_only"
+    },
+    "seed43:checkpoint_1500": {
+      "content_hash_matches": true,
+      "expected_from_implementation": {
+        "defective_real_samples": 3000,
+        "effective_defective_fraction": 0.625,
+        "normal_real_samples": 3000,
+        "synthetic_samples": 2000,
+        "total_effective_defective_samples": 5000,
+        "total_effective_normal_samples": 3000,
+        "total_sample_slots": 8000
+      },
+      "observed": {
+        "defective_real_fraction": 0.375,
+        "defective_real_samples": 3000,
+        "distinct_real_identities_used": 1653,
+        "effective_defective_fraction": 0.625,
+        "effective_normal_fraction": 0.375,
+        "normal_real_fraction": 0.375,
+        "normal_real_samples": 3000,
+        "synthetic_assumed_defective": true,
+        "synthetic_fraction": 0.25,
+        "synthetic_samples": 2000,
+        "total_effective_defective_samples": 5000,
+        "total_effective_normal_samples": 3000,
+        "total_sample_slots": 8000
+      },
+      "observed_matches_expected": true,
+      "recomputed_content_sha256": "59b87bf18c052757ab4837d22aaafb0b4a7170457f23d5b9f80d9ab319c992e3",
+      "recorded_content_sha256": "59b87bf18c052757ab4837d22aaafb0b4a7170457f23d5b9f80d9ab319c992e3",
+      "schedule_path": "reports/g2_2/confirmation/seed43/checkpoint_1500_schedule.json",
+      "seed": 43,
+      "variant": "checkpoint_1500"
+    },
+    "seed43:real_only": {
+      "content_hash_matches": true,
+      "expected_from_implementation": {
+        "defective_real_samples": 4000,
+        "effective_defective_fraction": 0.5,
+        "normal_real_samples": 4000,
+        "synthetic_samples": 0,
+        "total_effective_defective_samples": 4000,
+        "total_effective_normal_samples": 4000,
+        "total_sample_slots": 8000
+      },
+      "observed": {
+        "defective_real_fraction": 0.5,
+        "defective_real_samples": 4000,
+        "distinct_real_identities_used": 1785,
+        "effective_defective_fraction": 0.5,
+        "effective_normal_fraction": 0.5,
+        "normal_real_fraction": 0.5,
+        "normal_real_samples": 4000,
+        "synthetic_assumed_defective": true,
+        "synthetic_fraction": 0.0,
+        "synthetic_samples": 0,
+        "total_effective_defective_samples": 4000,
+        "total_effective_normal_samples": 4000,
+        "total_sample_slots": 8000
+      },
+      "observed_matches_expected": true,
+      "recomputed_content_sha256": "9bf1b71095fec524f7ff0a4eaf4e89f97e3fc480112c3051b836a912dcb80652",
+      "recorded_content_sha256": "9bf1b71095fec524f7ff0a4eaf4e89f97e3fc480112c3051b836a912dcb80652",
+      "schedule_path": "reports/g2_2/confirmation/seed43/real_only_schedule.json",
+      "seed": 43,
+      "variant": "real_only"
+    },
+    "seed44:checkpoint_1500": {
+      "content_hash_matches": true,
+      "expected_from_implementation": {
+        "defective_real_samples": 3000,
+        "effective_defective_fraction": 0.625,
+        "normal_real_samples": 3000,
+        "synthetic_samples": 2000,
+        "total_effective_defective_samples": 5000,
+        "total_effective_normal_samples": 3000,
+        "total_sample_slots": 8000
+      },
+      "observed": {
+        "defective_real_fraction": 0.375,
+        "defective_real_samples": 3000,
+        "distinct_real_identities_used": 1661,
+        "effective_defective_fraction": 0.625,
+        "effective_normal_fraction": 0.375,
+        "normal_real_fraction": 0.375,
+        "normal_real_samples": 3000,
+        "synthetic_assumed_defective": true,
+        "synthetic_fraction": 0.25,
+        "synthetic_samples": 2000,
+        "total_effective_defective_samples": 5000,
+        "total_effective_normal_samples": 3000,
+        "total_sample_slots": 8000
+      },
+      "observed_matches_expected": true,
+      "recomputed_content_sha256": "d4754e031ad312e9f88ad10352aee559313728391db43d5cc6830a9ba113a332",
+      "recorded_content_sha256": "d4754e031ad312e9f88ad10352aee559313728391db43d5cc6830a9ba113a332",
+      "schedule_path": "reports/g2_2/confirmation/seed44/checkpoint_1500_schedule.json",
+      "seed": 44,
+      "variant": "checkpoint_1500"
+    },
+    "seed44:real_only": {
+      "content_hash_matches": true,
+      "expected_from_implementation": {
+        "defective_real_samples": 4000,
+        "effective_defective_fraction": 0.5,
+        "normal_real_samples": 4000,
+        "synthetic_samples": 0,
+        "total_effective_defective_samples": 4000,
+        "total_effective_normal_samples": 4000,
+        "total_sample_slots": 8000
+      },
+      "observed": {
+        "defective_real_fraction": 0.5,
+        "defective_real_samples": 4000,
+        "distinct_real_identities_used": 1810,
+        "effective_defective_fraction": 0.5,
+        "effective_normal_fraction": 0.5,
+        "normal_real_fraction": 0.5,
+        "normal_real_samples": 4000,
+        "synthetic_assumed_defective": true,
+        "synthetic_fraction": 0.0,
+        "synthetic_samples": 0,
+        "total_effective_defective_samples": 4000,
+        "total_effective_normal_samples": 4000,
+        "total_sample_slots": 8000
+      },
+      "observed_matches_expected": true,
+      "recomputed_content_sha256": "fe1dc5c8c4bf227f2a7605b47e1213e0dc162a41e30d5ce17618188d120c1a15",
+      "recorded_content_sha256": "fe1dc5c8c4bf227f2a7605b47e1213e0dc162a41e30d5ce17618188d120c1a15",
+      "schedule_path": "reports/g2_2/confirmation/seed44/real_only_schedule.json",
+      "seed": 44,
+      "variant": "real_only"
+    }
+  },
+  "class_prevalence": {
+    "42": {
+      "arm_effective_defective_fraction": 0.625,
+      "control_effective_defective_fraction": 0.5,
+      "effective_defective_fraction_delta": 0.125,
+      "interpretation": "G2.2 changed synthetic image content and effective defect prevalence inside the same comparison",
+      "is_class_prevalence_confound": true
+    },
+    "42_checkpoint_1000": {
+      "arm_effective_defective_fraction": 0.625,
+      "control_effective_defective_fraction": 0.5,
+      "effective_defective_fraction_delta": 0.125,
+      "interpretation": "G2.2 changed synthetic image content and effective defect prevalence inside the same comparison",
+      "is_class_prevalence_confound": true
+    },
+    "43": {
+      "arm_effective_defective_fraction": 0.625,
+      "control_effective_defective_fraction": 0.5,
+      "effective_defective_fraction_delta": 0.125,
+      "interpretation": "G2.2 changed synthetic image content and effective defect prevalence inside the same comparison",
+      "is_class_prevalence_confound": true
+    },
+    "44": {
+      "arm_effective_defective_fraction": 0.625,
+      "control_effective_defective_fraction": 0.5,
+      "effective_defective_fraction_delta": 0.125,
+      "interpretation": "G2.2 changed synthetic image content and effective defect prevalence inside the same comparison",
+      "is_class_prevalence_confound": true
+    }
+  },
+  "classification": "POST_HOC_DIAGNOSTIC",
+  "classification_result": {
+    "is_class_prevalence_confound": true,
+    "statement": "CONFIRMED: G2.2 simultaneously changed synthetic image content and effective defect prevalence. The real-only control trained on 50.0% effective defective samples; every synthetic arm trained on 62.5%. The arms therefore differ in two variables at once, so no G2.2 comparison can attribute its effect to synthetic content alone."
+  },
+  "development_training_pool": {
+    "defective": 209,
+    "normal": 1772,
+    "rows": 1981,
+    "sample_id_order_sha256": "7201521deac3eb502b62a8c27f7fa1799e052f40cb28c2660ae1c88f10880eae"
+  },
+  "experiment_version": "g2_3a_post_hoc_validation_only_diagnostic_v1",
+  "g2_2_terminal_decision_unchanged": "stop_not_confirmed",
+  "question": "Q3 G2.2 training-composition confound",
+  "synthetic_samples_are_all_defective": true
+}
