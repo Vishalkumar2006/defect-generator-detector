@@ -1,0 +1,31 @@
+{
+  "phase": "G1.6",
+  "status": "selected_for_controlled_continuation",
+  "selected_configuration": "configs/gan_smoke_dclip10.json",
+  "selected_values": {
+    "generator_learning_rate": 0.0001,
+    "discriminator_learning_rate": 0.000025,
+    "generator_gradient_clip_max_norm": 5.0,
+    "discriminator_gradient_clip_max_norm": 10.0
+  },
+  "all_other_settings": "unchanged_from_g1_5b",
+  "completed_smoke": {
+    "report_directory": "reports/gan_training/smoke_dclip10",
+    "checkpoint_directory": "checkpoints/gan_smoke_dclip10",
+    "joint_discriminator_steps": 200,
+    "joint_generator_steps": 200,
+    "status": "PASS"
+  },
+  "baseline_preserved": {
+    "report_directory": "reports/gan_training/smoke",
+    "checkpoint_directory": "checkpoints/gan_smoke"
+  },
+  "selection_basis": [
+    "completed safety contract after canonical pixel-gradient gate correction",
+    "lower discriminator clipping than baseline",
+    "explicit controlled-continuation decision"
+  ],
+  "visual_panel_role": "qualitative safety evidence only",
+  "best_checkpoint_created": false,
+  "fresh_initialization_required_for_sustained_training": true
+}

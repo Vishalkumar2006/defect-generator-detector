@@ -329,6 +329,53 @@ def _weighted_sign_accuracy(
     return float(correct[active].float().mean())
 
 
+def canonical_adversarial_gradient_telemetry(
+    adversarial_image_gradient: torch.Tensor,
+    canonical_mask: torch.Tensor,
+) -> dict[str, int | float]:
+    """Measure canonical gradient coverage using finite RGB vectors per pixel."""
+    if adversarial_image_gradient.ndim != 4 or adversarial_image_gradient.shape[1] != 3:
+        raise ValueError("adversarial_image_gradient must have shape [B, 3, H, W]")
+    if canonical_mask.ndim != 4 or canonical_mask.shape[1] != 1:
+        raise ValueError("canonical_mask must have shape [B, 1, H, W]")
+    if (
+        adversarial_image_gradient.shape[0] != canonical_mask.shape[0]
+        or adversarial_image_gradient.shape[2:] != canonical_mask.shape[2:]
+    ):
+        raise ValueError("adversarial_image_gradient and canonical_mask must align")
+
+    canonical_vectors = adversarial_image_gradient.permute(0, 2, 3, 1)[
+        canonical_mask[:, 0].bool()
+    ]
+    finite_components = torch.isfinite(canonical_vectors)
+    active_components = finite_components & (canonical_vectors != 0)
+    finite_vectors = finite_components.all(dim=1)
+    active_vectors = finite_vectors & active_components.any(dim=1)
+
+    active_pixel_count = int(active_vectors.sum().item())
+    total_pixel_count = int(canonical_vectors.shape[0])
+    active_channel_count = int(active_components.sum().item())
+    total_channel_count = int(canonical_vectors.numel())
+    nonfinite_channel_count = int((~finite_components).sum().item())
+    coverage = (
+        active_pixel_count / total_pixel_count if total_pixel_count else 0.0
+    )
+    return {
+        # The unqualified counts retain their established API names, but now
+        # intentionally count RGB vectors (pixels), not scalar components.
+        "canonical_defect_gradient_active_count": active_pixel_count,
+        "canonical_defect_gradient_total_count": total_pixel_count,
+        "canonical_defect_gradient_active_pixel_count": active_pixel_count,
+        "canonical_defect_gradient_total_pixel_count": total_pixel_count,
+        "canonical_defect_gradient_active_channel_count": active_channel_count,
+        "canonical_defect_gradient_total_channel_count": total_channel_count,
+        "canonical_defect_gradient_nonfinite_channel_count": (
+            nonfinite_channel_count
+        ),
+        "canonical_defect_gradient_coverage": coverage,
+    }
+
+
 @contextmanager
 def _temporarily_disable_parameter_gradients(module: nn.Module) -> Iterator[None]:
     parameters = list(module.parameters())
@@ -728,25 +775,16 @@ class GANOneStepTrainer:
                 total_image_gradient = generated.refined_image.grad
                 if total_image_gradient is None:
                     raise RuntimeError("Generator adversarial image gradient was not retained")
-                canonical = aligned.discriminator_mask.bool().expand_as(
-                    adversarial_image_gradient
-                )
+                canonical_mask = aligned.discriminator_mask.bool()
+                canonical = canonical_mask.expand_as(adversarial_image_gradient)
                 invalid = (~aligned.joint_valid_mask.bool()).expand_as(
                     adversarial_image_gradient
                 )
-                canonical_gradients = adversarial_image_gradient[canonical]
-                canonical_gradient_active = (
-                    torch.isfinite(canonical_gradients)
-                    & (canonical_gradients != 0)
-                )
-                canonical_gradient_active_count = int(
-                    canonical_gradient_active.sum().item()
-                )
-                canonical_gradient_total_count = int(canonical_gradients.numel())
-                canonical_gradient_coverage = (
-                    canonical_gradient_active_count / canonical_gradient_total_count
-                    if canonical_gradient_total_count
-                    else 0.0
+                canonical_gradient_telemetry = (
+                    canonical_adversarial_gradient_telemetry(
+                        adversarial_image_gradient,
+                        canonical_mask,
+                    )
                 )
                 maximum_invalid_gradient = float(
                     adversarial_image_gradient[invalid].detach().float().abs().max()
@@ -858,13 +896,7 @@ class GANOneStepTrainer:
             "tanh_raw_residual_saturation_fraction": tanh_saturation,
             "tanh_residual_saturation_fraction": tanh_saturation,
             "exact_outside_support_change": exact_outside_support_change,
-            "canonical_defect_gradient_active_count": (
-                canonical_gradient_active_count
-            ),
-            "canonical_defect_gradient_total_count": (
-                canonical_gradient_total_count
-            ),
-            "canonical_defect_gradient_coverage": canonical_gradient_coverage,
+            **canonical_gradient_telemetry,
             "maximum_invalid_fake_pixel_gradient": maximum_invalid_gradient,
             "generator_locality_before_step": locality_before,
             "generator_locality_after_step": locality_after,

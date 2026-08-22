@@ -150,3 +150,9 @@ runner with frozen-detector semantic monitoring. The preserved run accepted its
 10-step warmup but stopped after the first joint update when genuine clamp
 saturation exceeded the mandatory 5% gate; it did not reach the 20- or 200-step
 targets. The mechanics and evidence are documented in `docs/gan-smoke.md`.
+
+G1.6 selects the completed D-clip-10 smoke configuration for controlled sustained
+training: generator/discriminator learning rates `1e-4`/`2.5e-5` and gradient
+clips `5`/`10`, with all other G1.5b settings unchanged. Both smoke runs are
+preserved, and visual panels are not used to manufacture a `best` checkpoint.
+The decision is recorded in `docs/gan-g1-6-selection.md`.

@@ -45,3 +45,10 @@ including discriminator warmup, the 20-to-200 stage gate, frozen-detector warnin
 and hard numerical/semantic stops. The preserved run stopped correctly after its
 first joint update; do not resume it without a new authorized phase. Checkpoint
 binaries under `checkpoints/gan_smoke/` remain ignored by git.
+
+`gan_smoke_dclip10.json` is the G1.6 configuration selected for controlled
+continuation. It keeps the generator learning rate and clip at `1e-4` and `5`,
+uses discriminator learning rate `2.5e-5` and clip `10`, and otherwise preserves
+the G1.5b settings exactly. Both smoke runs remain historical evidence; the
+selection does not create a visually chosen `best` checkpoint. See
+`docs/gan-g1-6-selection.md`.

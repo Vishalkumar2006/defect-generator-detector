@@ -201,8 +201,10 @@ def _training_gate(
         return "outside_support_change"
     if generator["maximum_invalid_fake_pixel_gradient"] != 0:
         return "invalid_fake_pixel_adversarial_gradient"
-    canonical_active = generator["canonical_defect_gradient_active_count"]
-    canonical_total = generator["canonical_defect_gradient_total_count"]
+    if generator["canonical_defect_gradient_nonfinite_channel_count"] != 0:
+        return "nonfinite_canonical_adversarial_gradient"
+    canonical_active = generator["canonical_defect_gradient_active_pixel_count"]
+    canonical_total = generator["canonical_defect_gradient_total_pixel_count"]
     if canonical_total <= 0 or canonical_active != canonical_total:
         return "incomplete_canonical_adversarial_gradient"
     if (
@@ -1123,8 +1125,14 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             f"- Mean/max support change: "
             f"{terminal['generator']['mean_absolute_residual_inside_support']} / "
             f"{terminal['generator']['maximum_absolute_residual']}",
-            f"- Canonical gradient coverage: "
-            f"{terminal['generator']['canonical_defect_gradient_coverage']}",
+            f"- Canonical gradient pixel coverage: "
+            f"{terminal['generator']['canonical_defect_gradient_active_pixel_count']} / "
+            f"{terminal['generator']['canonical_defect_gradient_total_pixel_count']} "
+            f"({terminal['generator']['canonical_defect_gradient_coverage']})",
+            f"- Canonical gradient active/total/non-finite RGB components: "
+            f"{terminal['generator']['canonical_defect_gradient_active_channel_count']} / "
+            f"{terminal['generator']['canonical_defect_gradient_total_channel_count']} / "
+            f"{terminal['generator']['canonical_defect_gradient_nonfinite_channel_count']}",
             f"- Invalid adversarial gradient / outside-support change: "
             f"{terminal['generator']['maximum_invalid_fake_pixel_gradient']} / "
             f"{terminal['generator']['exact_outside_support_change']}",

@@ -13,6 +13,7 @@ from defectgen.training.gan_trainer import (
     GANOneStepTrainer,
     GANTrainingNumericalError,
     calibrate_gan_loss_scales,
+    canonical_adversarial_gradient_telemetry,
     collate_gan_training_samples,
     load_gan_trainer_config,
     parameter_hash,
@@ -144,10 +145,20 @@ def test_generator_step_changes_only_generator_and_preserves_locality_and_gradie
     assert result["generator_locality_before_step"]
     assert result["generator_locality_after_step"]
     assert result["canonical_defect_gradient_coverage"] == 1.0
-    assert result["canonical_defect_gradient_total_count"] > 0
-    assert result["canonical_defect_gradient_active_count"] == result[
-        "canonical_defect_gradient_total_count"
+    assert result["canonical_defect_gradient_total_pixel_count"] > 0
+    assert result["canonical_defect_gradient_active_pixel_count"] == result[
+        "canonical_defect_gradient_total_pixel_count"
     ]
+    assert result["canonical_defect_gradient_active_count"] == result[
+        "canonical_defect_gradient_active_pixel_count"
+    ]
+    assert result["canonical_defect_gradient_total_count"] == result[
+        "canonical_defect_gradient_total_pixel_count"
+    ]
+    assert result["canonical_defect_gradient_total_channel_count"] == (
+        result["canonical_defect_gradient_total_pixel_count"] * 3
+    )
+    assert result["canonical_defect_gradient_nonfinite_channel_count"] == 0
     assert result["maximum_invalid_fake_pixel_gradient"] == 0.0
     assert result["output_range_violation_count"] == 0
     assert result["clamp_saturation_fraction"] == 0.0
@@ -157,6 +168,51 @@ def test_generator_step_changes_only_generator_and_preserves_locality_and_gradie
     ]
     assert result["optimizer_state_finite"]
     assert all(torch.isfinite(torch.tensor(value)) for value in result["losses"].values())
+
+
+def test_canonical_gradient_pixel_allows_one_zero_rgb_component() -> None:
+    gradient = torch.tensor([[[[0.0]], [[2.0]], [[-3.0]]]])
+    telemetry = canonical_adversarial_gradient_telemetry(
+        gradient, torch.ones(1, 1, 1, 1)
+    )
+
+    assert telemetry["canonical_defect_gradient_active_pixel_count"] == 1
+    assert telemetry["canonical_defect_gradient_total_pixel_count"] == 1
+    assert telemetry["canonical_defect_gradient_active_channel_count"] == 2
+    assert telemetry["canonical_defect_gradient_total_channel_count"] == 3
+    assert telemetry["canonical_defect_gradient_nonfinite_channel_count"] == 0
+    assert telemetry["canonical_defect_gradient_coverage"] == 1.0
+    assert isinstance(telemetry["canonical_defect_gradient_active_pixel_count"], int)
+    assert isinstance(telemetry["canonical_defect_gradient_total_pixel_count"], int)
+
+
+def test_canonical_gradient_pixel_rejects_an_all_zero_rgb_vector() -> None:
+    gradient = torch.tensor(
+        [[[[1.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]]]]
+    )
+    telemetry = canonical_adversarial_gradient_telemetry(
+        gradient, torch.ones(1, 1, 1, 2)
+    )
+
+    assert telemetry["canonical_defect_gradient_active_pixel_count"] == 1
+    assert telemetry["canonical_defect_gradient_total_pixel_count"] == 2
+    assert telemetry["canonical_defect_gradient_active_channel_count"] == 1
+    assert telemetry["canonical_defect_gradient_coverage"] == 0.5
+
+
+@pytest.mark.parametrize("nonfinite", [float("nan"), float("inf"), -float("inf")])
+def test_canonical_gradient_pixel_rejects_any_nonfinite_component(
+    nonfinite: float,
+) -> None:
+    gradient = torch.tensor([[[[1.0]], [[nonfinite]], [[2.0]]]])
+    telemetry = canonical_adversarial_gradient_telemetry(
+        gradient, torch.ones(1, 1, 1, 1)
+    )
+
+    assert telemetry["canonical_defect_gradient_active_pixel_count"] == 0
+    assert telemetry["canonical_defect_gradient_total_pixel_count"] == 1
+    assert telemetry["canonical_defect_gradient_nonfinite_channel_count"] == 1
+    assert telemetry["canonical_defect_gradient_coverage"] == 0.0
 
 
 def test_generator_graph_is_detached_then_recomputed_for_the_two_steps() -> None:

@@ -29,6 +29,7 @@ from defectgen.training.gan_smoke import (
 )
 from defectgen.training.gan_trainer import (
     GANOneStepTrainer,
+    canonical_adversarial_gradient_telemetry,
     collate_gan_training_samples,
     load_gan_trainer_config,
     parameter_hash,
@@ -238,6 +239,11 @@ def test_finite_and_locality_stop_gates() -> None:
         "canonical_defect_gradient_coverage": 1.0,
         "canonical_defect_gradient_active_count": 12,
         "canonical_defect_gradient_total_count": 12,
+        "canonical_defect_gradient_active_pixel_count": 12,
+        "canonical_defect_gradient_total_pixel_count": 12,
+        "canonical_defect_gradient_active_channel_count": 30,
+        "canonical_defect_gradient_total_channel_count": 36,
+        "canonical_defect_gradient_nonfinite_channel_count": 0,
         "clamp_saturation_fraction": 0.0,
         "output_range_violation_count": 0,
         "mean_absolute_residual_inside_support": 0.1,
@@ -246,6 +252,10 @@ def test_finite_and_locality_stop_gates() -> None:
     assert _training_gate(trainer, config, discriminator, generator) is None
     changed = dict(generator, exact_outside_support_change=1e-7)
     assert _training_gate(trainer, config, discriminator, changed) == "outside_support_change"
+    invalid_gradient = dict(generator, maximum_invalid_fake_pixel_gradient=1e-30)
+    assert _training_gate(
+        trainer, config, discriminator, invalid_gradient
+    ) == "invalid_fake_pixel_adversarial_gradient"
     nonfinite = dict(generator, mean_absolute_residual_inside_support=float("nan"))
     assert _training_gate(trainer, config, discriminator, nonfinite) == "nonfinite_training_metric"
     out_of_range = dict(generator, output_range_violation_count=1)
@@ -264,6 +274,11 @@ def test_gradient_gate_uses_exact_counts_not_rounded_fraction() -> None:
         "maximum_invalid_fake_pixel_gradient": 0.0,
         "canonical_defect_gradient_active_count": 16_777_217,
         "canonical_defect_gradient_total_count": 16_777_217,
+        "canonical_defect_gradient_active_pixel_count": 16_777_217,
+        "canonical_defect_gradient_total_pixel_count": 16_777_217,
+        "canonical_defect_gradient_active_channel_count": 33_554_434,
+        "canonical_defect_gradient_total_channel_count": 50_331_651,
+        "canonical_defect_gradient_nonfinite_channel_count": 0,
         "canonical_defect_gradient_coverage": 0.9999999403953552,
         "output_range_violation_count": 0,
         "mean_absolute_residual_inside_support": 0.1,
@@ -274,11 +289,64 @@ def test_gradient_gate_uses_exact_counts_not_rounded_fraction() -> None:
     one_inactive = dict(
         generator,
         canonical_defect_gradient_active_count=16_777_216,
+        canonical_defect_gradient_active_pixel_count=16_777_216,
         canonical_defect_gradient_coverage=1.0,
     )
     assert _training_gate(
         trainer, config, discriminator, one_inactive
     ) == "incomplete_canonical_adversarial_gradient"
+
+    nonfinite = dict(
+        generator,
+        canonical_defect_gradient_active_count=16_777_216,
+        canonical_defect_gradient_active_pixel_count=16_777_216,
+        canonical_defect_gradient_nonfinite_channel_count=1,
+    )
+    assert _training_gate(
+        trainer, config, discriminator, nonfinite
+    ) == "nonfinite_canonical_adversarial_gradient"
+
+
+def test_gradient_gate_uses_finite_nonzero_rgb_vectors_per_pixel() -> None:
+    trainer = _trainer()
+    config = load_gan_smoke_config(REPO_ROOT / "configs" / "gan_smoke.json")
+    discriminator = {
+        "real_logits": {"minimum": -1.0, "maximum": 1.0},
+        "fake_logits": {"minimum": -1.0, "maximum": 1.0},
+    }
+    common = {
+        "exact_outside_support_change": 0.0,
+        "maximum_invalid_fake_pixel_gradient": 0.0,
+        "output_range_violation_count": 0,
+        "mean_absolute_residual_inside_support": 0.1,
+        "fake_logits": {"minimum": -1.0, "maximum": 1.0},
+    }
+    mask = torch.ones(1, 1, 1, 1)
+
+    one_zero_component = torch.tensor([[[[0.0]], [[1.0]], [[-1.0]]]])
+    generator = dict(
+        common,
+        **canonical_adversarial_gradient_telemetry(one_zero_component, mask),
+    )
+    assert _training_gate(trainer, config, discriminator, generator) is None
+
+    all_zero_components = torch.zeros(1, 3, 1, 1)
+    generator = dict(
+        common,
+        **canonical_adversarial_gradient_telemetry(all_zero_components, mask),
+    )
+    assert _training_gate(
+        trainer, config, discriminator, generator
+    ) == "incomplete_canonical_adversarial_gradient"
+
+    nonfinite_component = torch.tensor([[[[1.0]], [[float("nan")]], [[0.0]]]])
+    generator = dict(
+        common,
+        **canonical_adversarial_gradient_telemetry(nonfinite_component, mask),
+    )
+    assert _training_gate(
+        trainer, config, discriminator, generator
+    ) == "nonfinite_canonical_adversarial_gradient"
 
 
 def test_fixed_monitor_categories_and_identities_are_deterministic() -> None:
