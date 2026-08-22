@@ -1,0 +1,24 @@
+{
+  "phase": "G2.1",
+  "run_identity": "g2_1_sustained_gan_training_v1_seed42",
+  "fresh_initialization": true,
+  "joint_updates_completed": 2000,
+  "resume_events": [
+    {
+      "failed_after_joint_step": 566,
+      "last_durable_checkpoint_step": 500,
+      "reason": "transient Windows sharing violation replacing the atomic metrics JSONL",
+      "gan_safety_gate_failure": false,
+      "configuration_change": false,
+      "resolution": "bounded retry for PermissionError during os.replace",
+      "resumed_from_joint_step": 500,
+      "stale_metric_rows_trimmed_to_checkpoint": true,
+      "updates_replayed_deterministically_from_step": 501
+    }
+  ],
+  "step_200_selected_smoke_hashes_match": true,
+  "additional_hyperparameter_sweeps": 0,
+  "best_checkpoint_created": false,
+  "validation_rows_loaded": 0,
+  "official_test_rows_loaded": 0
+}

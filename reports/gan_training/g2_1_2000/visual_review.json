@@ -1,0 +1,19 @@
+{
+  "phase": "G2.1",
+  "reviewed_steps": [0, 1000, 2000],
+  "review_role": "qualitative safety review only",
+  "checkpoint_selection_performed": false,
+  "observations": [
+    "identity initialization produces exact-zero difference panels",
+    "changes remain spatially localized to the configured support",
+    "no rectangular crop boundary is visible in the reviewed fixed panels",
+    "boundary-emphasized and ring-like residual structure becomes visible by steps 1000 and 2000, especially for larger masks"
+  ],
+  "quantitative_context": {
+    "outside_support_change_violations": 0,
+    "stratified_step_1000_boundary_residual_enrichment": 0.5208401841302639,
+    "stratified_step_2000_boundary_residual_enrichment": 0.712356165287851,
+    "terminal_batch_boundary_residual_enrichment": 1.1627641605917336
+  },
+  "disposition": "retain numbered recovery checkpoints and report the boundary emphasis; do not label a visual best checkpoint"
+}

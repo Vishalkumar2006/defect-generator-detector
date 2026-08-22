@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict
 from pathlib import Path
 
@@ -19,10 +20,12 @@ from defectgen.training.gan_smoke import (
     SmokeCheckpointIdentity,
     SmokeProgress,
     canonical_configuration_hash,
+    optimizer_state_hash,
     load_gan_smoke_config,
     load_smoke_checkpoint,
     save_smoke_checkpoint,
     select_fixed_monitor_samples,
+    select_stratified_monitor_count,
     select_stratified_monitor_samples,
     stage_one_allows_continuation,
     warmup_gate_decision,
@@ -403,6 +406,40 @@ def test_stratified_monitor_selection_is_deterministic_unique_and_larger() -> No
     assert len(set(first_ids)) == len(first_ids)
 
 
+def test_exact_128_pair_stratified_monitor_selection_is_deterministic() -> None:
+    contact_patterns = [
+        {"top": False, "bottom": False, "left": False, "right": False},
+        {"top": True, "bottom": False, "left": False, "right": False},
+        {"top": False, "bottom": False, "left": True, "right": False},
+        {"top": True, "bottom": False, "left": True, "right": False},
+        {"top": False, "bottom": False, "left": True, "right": True},
+    ]
+    samples = [
+        _sample(
+            index,
+            split="monitor",
+            contacts=contact_patterns[index % len(contact_patterns)],
+            size=2 + index % 12,
+        )
+        for index in range(220)
+    ]
+    first = select_stratified_monitor_count(samples, total_count=128)
+    second = select_stratified_monitor_count(samples, total_count=128)
+    first_ids = [
+        sample.metadata["sample_index"]
+        for category in MONITOR_CATEGORIES
+        for sample in first[category]
+    ]
+    second_ids = [
+        sample.metadata["sample_index"]
+        for category in MONITOR_CATEGORIES
+        for sample in second[category]
+    ]
+    assert first_ids == second_ids
+    assert len(first_ids) == len(set(first_ids)) == 128
+    assert all(first[category] for category in MONITOR_CATEGORIES)
+
+
 def test_atomic_jsonl_metric_logging(tmp_path: Path) -> None:
     path = tmp_path / "metrics.jsonl"
     log = AtomicJSONLLog(path)
@@ -410,6 +447,26 @@ def test_atomic_jsonl_metric_logging(tmp_path: Path) -> None:
     log.append({"kind": "joint", "step": 1})
     assert [json.loads(line) for line in path.read_text().splitlines()] == log.records
     assert not path.with_suffix(".jsonl.tmp").exists()
+
+
+def test_atomic_jsonl_retries_transient_windows_sharing_violation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "metrics.jsonl"
+    original_replace = os.replace
+    attempts = 0
+
+    def flaky_replace(source, destination):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise PermissionError("transient sharing violation")
+        return original_replace(source, destination)
+
+    monkeypatch.setattr("defectgen.training.gan_smoke.os.replace", flaky_replace)
+    AtomicJSONLLog(path).append({"kind": "joint", "step": 1})
+    assert attempts == 2
+    assert json.loads(path.read_text(encoding="utf-8"))["step"] == 1
 
 
 def _identity(configuration: dict) -> SmokeCheckpointIdentity:
@@ -539,6 +596,12 @@ def test_uninterrupted_and_resumed_cpu_training_are_identical(tmp_path: Path) ->
     assert parameter_hash(resumed.discriminator) == parameter_hash(
         uninterrupted.discriminator
     )
+    assert optimizer_state_hash(resumed.generator_optimizer) == optimizer_state_hash(
+        uninterrupted.generator_optimizer
+    )
+    assert optimizer_state_hash(
+        resumed.discriminator_optimizer
+    ) == optimizer_state_hash(uninterrupted.discriminator_optimizer)
 
 
 def test_monitor_data_cannot_be_optimized() -> None:

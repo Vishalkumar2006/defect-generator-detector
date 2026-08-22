@@ -156,3 +156,9 @@ training: generator/discriminator learning rates `1e-4`/`2.5e-5` and gradient
 clips `5`/`10`, with all other G1.5b settings unchanged. Both smoke runs are
 preserved, and visual panels are not used to manufacture a `best` checkpoint.
 The decision is recorded in `docs/gan-g1-6-selection.md`.
+
+G2.1 performs the one authorized 2,000-update sustained run from fresh identity
+initialization, exactly replaying the selected G1.6 optimization settings. It
+uses numbered recovery checkpoints rather than confidence-selected “best” state,
+and adds fixed and 128-pair internal-monitor auditing without validation or
+official-test access. See `docs/gan-sustained-training.md`.

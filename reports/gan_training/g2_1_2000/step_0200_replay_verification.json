@@ -1,0 +1,18 @@
+{
+  "kind": "replay_verification",
+  "joint_step": 200,
+  "reference_checkpoint": "checkpoints/gan_smoke_dclip10/joint_200.pt",
+  "reference_hashes": {
+    "generator_parameters": "92ab734f5af71a39761b6132622c4dcb15454dc4735ab19c18b3774bc753f23f",
+    "discriminator_parameters": "c11977b5be2cfdbd354d93a0caae1ca9eeb8c32cf0069c6f43d2b8c24b0cece5",
+    "generator_optimizer": "6ca5d78398cd2cb122a5202f7f231ed4a477977066770f45258cfd85823895ef",
+    "discriminator_optimizer": "add5d3206d99f77dbde78b5582a9ba3ed6640dbd445a9ccc990a719f06003fcd"
+  },
+  "actual_hashes": {
+    "generator_parameters": "92ab734f5af71a39761b6132622c4dcb15454dc4735ab19c18b3774bc753f23f",
+    "discriminator_parameters": "c11977b5be2cfdbd354d93a0caae1ca9eeb8c32cf0069c6f43d2b8c24b0cece5",
+    "generator_optimizer": "6ca5d78398cd2cb122a5202f7f231ed4a477977066770f45258cfd85823895ef",
+    "discriminator_optimizer": "add5d3206d99f77dbde78b5582a9ba3ed6640dbd445a9ccc990a719f06003fcd"
+  },
+  "all_match": true
+}

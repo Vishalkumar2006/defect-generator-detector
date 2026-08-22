@@ -52,3 +52,9 @@ uses discriminator learning rate `2.5e-5` and clip `10`, and otherwise preserves
 the G1.5b settings exactly. Both smoke runs remain historical evidence; the
 selection does not create a visually chosen `best` checkpoint. See
 `docs/gan-g1-6-selection.md`.
+
+`gan_training_2000.json` defines the single G2.1 sustained run. It replays the
+selected learning rates, clips, losses, precision, seed, data bridge, warmup, and
+safety gates from fresh initialization for 2,000 joint updates. It adds only the
+longer recovery, fixed-monitor, visual, stratified-audit, and rolling-report
+schedules described in `docs/gan-sustained-training.md`.

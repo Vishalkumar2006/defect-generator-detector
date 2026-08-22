@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import os
+import time
 from dataclasses import asdict, dataclass, fields, replace
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
@@ -146,9 +147,9 @@ class GANSmokeConfig:
             self.initial_discriminator_warmup_steps == 10
             and self.maximum_discriminator_warmup_steps == 20
             and self.micro_smoke_joint_steps == 20
-            and self.full_smoke_joint_steps == 200
+            and self.full_smoke_joint_steps in {200, 2000}
         ):
-            raise ValueError("Unexpected G1.5 bounded step counts")
+            raise ValueError("Unexpected G1.5/G2.1 step counts")
         for name in (
             "monitor_interval",
             "visual_interval",
@@ -158,8 +159,13 @@ class GANSmokeConfig:
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"{name} must be positive")
-        if not {0, 20, 50, 100, 150, 200}.issubset(self.visual_steps):
-            raise ValueError("G1.5 visual steps omit a required fixed milestone")
+        required_visual_steps = (
+            {0, 20, 50, 100, 150, 200}
+            if self.full_smoke_joint_steps == 200
+            else {0, 100, 250, 500, 1000, 1500, 2000}
+        )
+        if not required_visual_steps.issubset(self.visual_steps):
+            raise ValueError("GAN visual steps omit a required fixed milestone")
         if not 0 < self.detector_threshold < 1:
             raise ValueError("Detector threshold must be in (0,1)")
         if not (
@@ -233,6 +239,55 @@ class SmokeCheckpointIdentity:
     gan_manifest_content_sha256: str
     split_sha256: str
     fixed_monitor_sample_ids: tuple[str, ...]
+    stratified_monitor_sample_ids: tuple[str, ...] = ()
+
+
+def canonical_state_hash(value: Any) -> str:
+    """Hash a nested tensor state independent of device and mapping insertion order."""
+    digest = hashlib.sha256()
+
+    def update(item: Any) -> None:
+        if torch.is_tensor(item):
+            tensor = item.detach().cpu().contiguous()
+            digest.update(b"tensor:")
+            digest.update(str(tensor.dtype).encode("utf-8"))
+            digest.update(np.asarray(tensor.shape, dtype=np.int64).tobytes())
+            digest.update(tensor.numpy().tobytes())
+        elif isinstance(item, Mapping):
+            digest.update(b"mapping{")
+            for key in sorted(item, key=lambda selected: (type(selected).__name__, repr(selected))):
+                update(key)
+                update(item[key])
+            digest.update(b"}")
+        elif isinstance(item, (tuple, list)):
+            digest.update(type(item).__name__.encode("utf-8") + b"[")
+            for child in item:
+                update(child)
+            digest.update(b"]")
+        elif item is None:
+            digest.update(b"none")
+        elif isinstance(item, (bool, int, float, str)):
+            digest.update(type(item).__name__.encode("utf-8") + b":")
+            digest.update(repr(item).encode("utf-8"))
+        else:
+            raise TypeError(f"Unsupported state value for hashing: {type(item).__name__}")
+
+    update(value)
+    return digest.hexdigest()
+
+
+def optimizer_state_hash(optimizer: torch.optim.Optimizer) -> str:
+    return canonical_state_hash(optimizer.state_dict())
+
+
+def parameter_state_hash(
+    state: Mapping[str, torch.Tensor], parameter_names: Iterable[str]
+) -> str:
+    names = tuple(sorted(parameter_names))
+    missing = [name for name in names if name not in state]
+    if missing:
+        raise ValueError(f"Parameter state is missing {len(missing)} named tensors")
+    return canonical_state_hash({name: state[name] for name in names})
 
 
 def save_smoke_checkpoint(
@@ -578,6 +633,95 @@ def select_stratified_monitor_samples(
     return {category: selected[category] for category in MONITOR_CATEGORIES}
 
 
+def select_stratified_monitor_count(
+    samples: Sequence[GANTrainingSample], *, total_count: int
+) -> dict[str, tuple[GANTrainingSample, ...]]:
+    """Select an exact-size panel while retaining only lightweight scan metadata."""
+    if total_count < len(MONITOR_CATEGORIES):
+        raise ValueError("total_count must provide at least one sample per category")
+    contact_candidates: dict[str, list[tuple[int, str]]] = {
+        category: [] for category in MONITOR_CATEGORIES[:5]
+    }
+    morphology: list[tuple[float, int, int, str]] = []
+
+    def identity(sample: GANTrainingSample) -> str:
+        return (
+            f"{sample.metadata['sample_index']}:"
+            f"{sample.metadata['template_id']}:"
+            f"{sample.metadata['normal_background_sample_id']}"
+        )
+
+    for index in range(len(samples)):
+        sample = samples[index]
+        sample_id = identity(sample)
+        contacts = sample.metadata["target_contact_sides"]
+        horizontal = contacts["top"] or contacts["bottom"]
+        vertical = contacts["left"] or contacts["right"]
+        if not any(contacts.values()):
+            category = "non-border"
+        elif contacts["left"] and contacts["right"]:
+            category = "left+right"
+        elif horizontal and vertical:
+            category = "corner"
+        elif horizontal:
+            category = "single-horizontal-border"
+        else:
+            category = "single-vertical-border"
+        contact_candidates[category].append((index, sample_id))
+        coordinates = torch.nonzero(sample.fake_discriminator_mask[0].bool())
+        if len(coordinates):
+            height = int(coordinates[:, 0].max() - coordinates[:, 0].min() + 1)
+            width = int(coordinates[:, 1].max() - coordinates[:, 1].min() + 1)
+            positive = int(len(coordinates))
+            morphology.append(
+                (min(height, width) + positive / 1_000_000, positive, index, sample_id)
+            )
+        del sample
+    candidates: dict[str, list[tuple[int, str]]] = {
+        **contact_candidates,
+        "small-thin": [
+            (item[2], item[3])
+            for item in sorted(morphology, key=lambda item: (item[0], item[2]))
+        ],
+        "large": [
+            (item[2], item[3])
+            for item in sorted(morphology, key=lambda item: (-item[1], item[2]))
+        ],
+    }
+    selected_indices: dict[str, list[int]] = {
+        category: [] for category in MONITOR_CATEGORIES
+    }
+    positions = {category: 0 for category in MONITOR_CATEGORIES}
+    used: set[str] = set()
+
+    while sum(len(values) for values in selected_indices.values()) < total_count:
+        made_progress = False
+        for category in MONITOR_CATEGORIES:
+            values = candidates[category]
+            while positions[category] < len(values):
+                sample_index, sample_id = values[positions[category]]
+                positions[category] += 1
+                if sample_id in used:
+                    continue
+                selected_indices[category].append(sample_index)
+                used.add(sample_id)
+                made_progress = True
+                break
+            if sum(len(values) for values in selected_indices.values()) == total_count:
+                break
+        if not made_progress:
+            raise RuntimeError("Insufficient unique samples for requested monitor count")
+    missing = [
+        category for category, values in selected_indices.items() if not values
+    ]
+    if missing:
+        raise RuntimeError(f"Insufficient monitor samples for {', '.join(missing)}")
+    return {
+        category: tuple(samples[index] for index in selected_indices[category])
+        for category in MONITOR_CATEGORIES
+    }
+
+
 class AtomicJSONLLog:
     def __init__(self, path: Path, records: Sequence[dict[str, Any]] | None = None) -> None:
         self.path = Path(path)
@@ -591,4 +735,11 @@ class AtomicJSONLLog:
             "".join(json.dumps(item, sort_keys=True) + "\n" for item in self.records),
             encoding="utf-8",
         )
-        os.replace(temporary, self.path)
+        for attempt in range(40):
+            try:
+                os.replace(temporary, self.path)
+                break
+            except PermissionError:
+                if attempt == 39:
+                    raise
+                time.sleep(0.05)

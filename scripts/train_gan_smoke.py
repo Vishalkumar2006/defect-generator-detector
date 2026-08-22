@@ -1,4 +1,4 @@
-"""Run the gated G1.5 discriminator warmup and at most 200 joint GAN steps."""
+"""Run deterministic gated GAN warmup and joint-update schedules."""
 
 from __future__ import annotations
 
@@ -39,11 +39,15 @@ from defectgen.training.gan_smoke import (  # noqa: E402
     SmokeCheckpointIdentity,
     SmokeProgress,
     canonical_configuration_hash,
+    canonical_state_hash,
+    optimizer_state_hash,
+    parameter_state_hash,
     load_gan_smoke_config,
     load_smoke_checkpoint,
     module_parameters_are_finite,
     save_smoke_checkpoint,
     select_fixed_monitor_samples,
+    select_stratified_monitor_count,
     stage_one_allows_continuation,
     warmup_gate_decision,
 )
@@ -51,6 +55,7 @@ from defectgen.training.gan_trainer import (  # noqa: E402
     GANOneStepTrainer,
     GANTrainingBatch,
     GANTrainingNumericalError,
+    boundary_residual_telemetry,
     collate_gan_training_samples,
     load_gan_trainer_config,
     optimizer_state_is_finite,
@@ -518,13 +523,267 @@ def _monitor_record(
     return record, gate["stop"], warnings
 
 
+DETECTOR_METRIC_NAMES = (
+    "mean_probability_inside_mask",
+    "mean_probability_outside_mask",
+    "inside_outside_probability_contrast",
+    "dice_at_0_5",
+    "iou_at_0_5",
+    "samples_with_any_predicted_positive_fraction",
+)
+
+
+def _mean_metric_records(records: list[dict[str, float]]) -> dict[str, float]:
+    return {
+        name: float(np.mean([record[name] for record in records]))
+        for name in DETECTOR_METRIC_NAMES
+    }
+
+
+def _detector_distance_from_genuine_real(
+    refined: dict[str, float], genuine_real: dict[str, float]
+) -> dict[str, float]:
+    differences = np.asarray(
+        [refined[name] - genuine_real[name] for name in DETECTOR_METRIC_NAMES],
+        dtype=np.float64,
+    )
+    return {
+        "l2": float(np.sqrt(np.square(differences).sum())),
+        "mean_absolute": float(np.abs(differences).mean()),
+    }
+
+
+def _stratified_monitor_record(
+    *,
+    trainer: GANOneStepTrainer,
+    evaluator: FrozenDetectorEvaluator,
+    panel: dict[str, tuple[Any, ...]],
+    joint_step: int,
+    batch_size: int,
+    boundary_width: int,
+) -> dict[str, Any]:
+    before_steps = (
+        trainer.generator_optimizer_steps,
+        trainer.discriminator_optimizer_steps,
+    )
+    flattened = [
+        (category, sample)
+        for category, samples in panel.items()
+        for sample in samples
+    ]
+    detector_values = {
+        branch: [] for branch in ("composite", "refined", "genuine_real")
+    }
+    margins: list[float] = []
+    boundary_values: list[dict[str, float]] = []
+    tanh_saturation: list[float] = []
+    locality_maxima: list[float] = []
+    output_range_violations = 0
+    generator_training = trainer.generator.training
+    trainer.generator.eval()
+    try:
+        for start in range(0, len(flattened), batch_size):
+            selected = flattened[start : start + batch_size]
+            batch = collate_gan_training_samples(
+                [sample for _, sample in selected]
+            ).to(trainer.device)
+            logits = trainer.monitor_forward(batch)
+            margins.append(logits["real_minus_fake_logit_margin"])
+            with torch.no_grad(), precision_autocast(trainer.device, trainer.precision):
+                generated = trainer.generator(
+                    batch.composite_image, batch.generator_mask
+                )
+            for branch, image, valid in (
+                ("composite", batch.composite_image, batch.fake_valid_mask),
+                ("refined", generated.refined_image, batch.fake_valid_mask),
+                ("genuine_real", batch.real_image, batch.real_valid_mask),
+            ):
+                metrics, _ = evaluator.metrics(
+                    image, batch.fake_discriminator_mask, valid
+                )
+                detector_values[branch].append(metrics)
+            boundary_values.append(
+                boundary_residual_telemetry(
+                    generated.applied_residual,
+                    generated.support_mask,
+                    boundary_width=boundary_width,
+                )
+            )
+            support = generated.support_mask.expand_as(generated.raw_residual)
+            raw_direction = torch.tanh(generated.raw_residual.detach().float())
+            tanh_saturation.append(
+                float((raw_direction.abs() >= 0.99)[support].float().mean())
+            )
+            outside_support = ~support
+            change = (
+                generated.refined_image.detach().float()
+                - batch.composite_image.detach().float()
+            ).abs()
+            locality_maxima.append(
+                float(change[outside_support].max())
+                if bool(outside_support.any())
+                else 0.0
+            )
+            output_range_violations += int(
+                ((generated.refined_image < -1) | (generated.refined_image > 1)).sum()
+            )
+    finally:
+        trainer.generator.train(generator_training)
+    if before_steps != (
+        trainer.generator_optimizer_steps,
+        trainer.discriminator_optimizer_steps,
+    ):
+        raise RuntimeError("Stratified monitor audit mutated optimizer-step counts")
+    aggregate = {
+        branch: _mean_metric_records(values)
+        for branch, values in detector_values.items()
+    }
+    return {
+        "kind": "stratified_monitor",
+        "joint_step": joint_step,
+        "sample_count": len(flattened),
+        "category_counts": {
+            category: len(samples) for category, samples in panel.items()
+        },
+        "detector_statistics": aggregate,
+        "detector_statistic_distance_from_genuine_real": (
+            _detector_distance_from_genuine_real(
+                aggregate["refined"], aggregate["genuine_real"]
+            )
+        ),
+        "real_minus_fake_margin": {
+            "mean": float(np.mean(margins)),
+            "minimum": float(np.min(margins)),
+            "maximum": float(np.max(margins)),
+        },
+        "boundary_residual": {
+            name: float(np.mean([value[name] for value in boundary_values]))
+            for name in boundary_values[0]
+        },
+        "tanh_raw_residual_saturation_fraction": float(np.mean(tanh_saturation)),
+        "maximum_outside_support_change": max(locality_maxima, default=0.0),
+        "output_range_violation_count": output_range_violations,
+        "optimizer_steps": {
+            "generator": trainer.generator_optimizer_steps,
+            "discriminator": trainer.discriminator_optimizer_steps,
+        },
+        "validation_rows_loaded": 0,
+        "official_test_rows_loaded": 0,
+    }
+
+
+def _state_hashes(
+    trainer: GANOneStepTrainer,
+    *,
+    generator_state: dict[str, torch.Tensor] | None = None,
+    discriminator_state: dict[str, torch.Tensor] | None = None,
+    generator_optimizer_state: dict[str, Any] | None = None,
+    discriminator_optimizer_state: dict[str, Any] | None = None,
+) -> dict[str, str]:
+    generator_names = dict(trainer.generator.named_parameters()).keys()
+    discriminator_names = dict(trainer.discriminator.named_parameters()).keys()
+    return {
+        "generator_parameters": parameter_state_hash(
+            generator_state or trainer.generator.state_dict(), generator_names
+        ),
+        "discriminator_parameters": parameter_state_hash(
+            discriminator_state or trainer.discriminator.state_dict(),
+            discriminator_names,
+        ),
+        "generator_optimizer": (
+            optimizer_state_hash(trainer.generator_optimizer)
+            if generator_optimizer_state is None
+            else canonical_state_hash(generator_optimizer_state)
+        ),
+        "discriminator_optimizer": (
+            optimizer_state_hash(trainer.discriminator_optimizer)
+            if discriminator_optimizer_state is None
+            else canonical_state_hash(discriminator_optimizer_state)
+        ),
+    }
+
+
+def _rolling_training_statistics(
+    records: list[dict[str, Any]], *, window_size: int
+) -> list[dict[str, Any]]:
+    if window_size <= 0:
+        raise ValueError("window_size must be positive")
+    joint = [record for record in records if record["kind"] == "joint"]
+    windows: list[dict[str, Any]] = []
+    for end in range(window_size, len(joint) + 1, window_size):
+        selected = joint[end - window_size : end]
+        windows.append(
+            {
+                "start_step": selected[0]["joint_step"],
+                "end_step": selected[-1]["joint_step"],
+                "discriminator_clipped_fraction": float(
+                    np.mean(
+                        [
+                            record["discriminator"]["gradient_clipping_applied"]
+                            for record in selected
+                        ]
+                    )
+                ),
+                "generator_clipped_fraction": float(
+                    np.mean(
+                        [
+                            record["generator"]["gradient_clipping_applied"]
+                            for record in selected
+                        ]
+                    )
+                ),
+                "mean_real_minus_fake_margin": float(
+                    np.mean(
+                        [
+                            record["discriminator"][
+                                "real_minus_fake_logit_margin"
+                            ]
+                            for record in selected
+                        ]
+                    )
+                ),
+                "mean_boundary_residual_mass_fraction": float(
+                    np.mean(
+                        [
+                            record["generator"][
+                                "boundary_residual_mass_fraction"
+                            ]
+                            for record in selected
+                        ]
+                    )
+                ),
+                "mean_boundary_residual_enrichment": float(
+                    np.mean(
+                        [
+                            record["generator"]["boundary_residual_enrichment"]
+                            for record in selected
+                        ]
+                    )
+                ),
+                "maximum_tanh_saturation_fraction": max(
+                    record["generator"][
+                        "tanh_raw_residual_saturation_fraction"
+                    ]
+                    for record in selected
+                ),
+            }
+        )
+    return windows
+
+
 def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
     started = perf_counter()
     raw_config = _configuration_dict(config_path)
     config = load_gan_smoke_config(config_path)
+    sustained = raw_config.get("run_kind") == "g2_1_sustained"
+    stratified_count = int(raw_config.get("stratified_monitor_pair_count", 0))
+    stratified_steps = {
+        int(step) for step in raw_config.get("stratified_monitor_steps", [])
+    }
+    rolling_window_size = int(raw_config.get("rolling_window_size", 100))
     configure_reproducibility(config.seed, deterministic=True, warn_only=False)
     if not torch.cuda.is_available() or not torch.cuda.is_bf16_supported():
-        raise RuntimeError("G1.5 requires explicitly supported CUDA BF16")
+        raise RuntimeError("GAN training requires explicitly supported CUDA BF16")
     device = torch.device("cuda")
     torch.cuda.reset_peak_memory_stats(device)
     report_dir = REPO_ROOT / config.report_directory
@@ -583,11 +842,25 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
         for category, sample in panel.items()
     )
     monitor_batch = collate_gan_training_samples(list(panel.values())[: config.batch_size])
+    stratified_panel: dict[str, tuple[Any, ...]] = {}
+    stratified_ids: tuple[str, ...] = ()
+    if stratified_count:
+        stratified_panel = select_stratified_monitor_count(
+            monitor_dataset,
+            total_count=stratified_count,
+        )
+        stratified_ids = tuple(
+            f"{category}:{sample.metadata['template_id']}:"
+            f"{sample.metadata['normal_background_sample_id']}"
+            for category, samples in stratified_panel.items()
+            for sample in samples
+        )
     identity = SmokeCheckpointIdentity(
         configuration_sha256=canonical_configuration_hash(raw_config),
         gan_manifest_content_sha256=metadata["gan_manifest_content_sha256"],
         split_sha256=metadata["split_sha256"],
         fixed_monitor_sample_ids=monitor_ids,
+        stratified_monitor_sample_ids=stratified_ids,
     )
     progress = SmokeProgress()
     metrics_path = report_dir / "metrics.jsonl"
@@ -615,6 +888,11 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
                     if monitor_count >= progress.monitor_evaluations:
                         continue
                     monitor_count += 1
+                if (
+                    record["kind"] in {"stratified_monitor", "replay_verification"}
+                    and record["joint_step"] > progress.joint_generator_steps
+                ):
+                    continue
                 existing_records.append(record)
     stream = DeterministicBatchStream(train_dataset, config, progress)
     metric_log = AtomicJSONLLog(metrics_path, existing_records)
@@ -697,15 +975,63 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             trainer=trainer,
             panel=panel,
             evaluator=detector,
-            title=f"G1.5 {phase}",
+            title=f"{'G2.1' if sustained else 'G1.5'} {phase}",
         )
         relative = path.relative_to(REPO_ROOT).as_posix()
         if relative not in visual_paths:
             visual_paths.append(relative)
 
+    def record_stratified_monitor() -> dict[str, Any]:
+        if not stratified_panel:
+            raise RuntimeError("Stratified monitor panel is not configured")
+        record = _stratified_monitor_record(
+            trainer=trainer,
+            evaluator=detector,
+            panel=stratified_panel,
+            joint_step=progress.joint_generator_steps,
+            batch_size=config.batch_size,
+            boundary_width=loss_config.boundary_ring_width,
+        )
+        metric_log.append(record)
+        if record["maximum_outside_support_change"] != 0:
+            raise RuntimeError("Stratified monitor violated exact generator locality")
+        if record["output_range_violation_count"] != 0:
+            raise RuntimeError("Stratified monitor found output-range violations")
+        return record
+
+    def verify_selected_smoke_replay() -> dict[str, Any]:
+        reference_path = REPO_ROOT / raw_config["selected_smoke_step_200_checkpoint"]
+        payload = torch.load(reference_path, map_location="cpu", weights_only=False)
+        reference = _state_hashes(
+            trainer,
+            generator_state=payload["generator_state"],
+            discriminator_state=payload["discriminator_state"],
+            generator_optimizer_state=payload["generator_optimizer_state"],
+            discriminator_optimizer_state=payload["discriminator_optimizer_state"],
+        )
+        actual = _state_hashes(trainer)
+        record = {
+            "kind": "replay_verification",
+            "joint_step": progress.joint_generator_steps,
+            "reference_checkpoint": raw_config[
+                "selected_smoke_step_200_checkpoint"
+            ],
+            "reference_hashes": reference,
+            "actual_hashes": actual,
+            "all_match": reference == actual,
+        }
+        metric_log.append(record)
+        _atomic_write(
+            report_dir / "step_0200_replay_verification.json",
+            json.dumps(record, indent=2) + "\n",
+        )
+        return record
+
     if not resume:
         record_monitor("step_0")
         write_visual("step_0", "step_000")
+        if 0 in stratified_steps:
+            record_stratified_monitor()
 
     while progress.warmup_gate_status == "pending" and early_stop_reason is None:
         batch, sampling_time = stream.next()
@@ -773,10 +1099,11 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             )
             if decision == "accepted":
                 progress.warmup_gate_status = "accepted"
-                write_visual(
-                    f"accepted_warmup_{progress.warmup_steps}",
-                    f"after_warmup_{progress.warmup_steps:03d}",
-                )
+                if raw_config.get("visualize_after_warmup", True):
+                    write_visual(
+                        f"accepted_warmup_{progress.warmup_steps}",
+                        f"after_warmup_{progress.warmup_steps:03d}",
+                    )
                 _checkpoint(
                     f"warmup_{progress.warmup_steps:03d}.pt",
                     checkpoint_dir=checkpoint_dir,
@@ -879,7 +1206,17 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             break
         if joint_step % config.monitor_interval == 0:
             record_monitor(f"joint_{joint_step}")
-        visual_due = joint_step in config.visual_steps or joint_step % config.visual_interval == 0
+        if joint_step in stratified_steps:
+            record_stratified_monitor()
+        if joint_step == int(raw_config.get("verify_selected_smoke_at_step", -1)):
+            replay = verify_selected_smoke_replay()
+            if not replay["all_match"]:
+                early_stop_reason = "selected_smoke_step_200_hash_mismatch"
+                break
+        visual_due = joint_step in config.visual_steps or (
+            not raw_config.get("visual_steps_only", False)
+            and joint_step % config.visual_interval == 0
+        )
         if visual_due:
             write_visual(f"visual_joint_{joint_step}", f"joint_{joint_step:03d}")
         if joint_step == config.micro_smoke_joint_steps:
@@ -919,9 +1256,11 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             )
 
     if progress.joint_generator_steps == config.full_smoke_joint_steps:
-        progress.last_completed_operation = "joint_200_complete"
+        progress.last_completed_operation = (
+            f"joint_{config.full_smoke_joint_steps}_complete"
+        )
         _checkpoint(
-            "joint_200.pt",
+            f"joint_{config.full_smoke_joint_steps:0{4 if sustained else 3}d}.pt",
             checkpoint_dir=checkpoint_dir,
             trainer=trainer,
             progress=progress,
@@ -999,7 +1338,7 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             if train_growth > 0.5 and monitor_growth < train_growth / 2:
                 warnings.append("monitor_margin_growth_much_slower_than_training")
     final_monitor = monitor_records[-1] if monitor_records else None
-    best_monitor = (
+    best_monitor = None if sustained else (
         max(
             monitor_records,
             key=lambda item: item["semantic"]["refined"]["dice_at_0_5"],
@@ -1007,11 +1346,27 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
         if monitor_records
         else None
     )
+    rolling_statistics = _rolling_training_statistics(
+        records, window_size=rolling_window_size
+    )
+    stratified_records = [
+        record for record in records if record["kind"] == "stratified_monitor"
+    ]
+    replay_records = [
+        record for record in records if record["kind"] == "replay_verification"
+    ]
     runtime = perf_counter() - started
     summary = {
         "status": "PASS" if early_stop_reason is None and progress.joint_generator_steps == config.full_smoke_joint_steps else "STOPPED",
         "smoke_version": config.smoke_version,
+        "training_version": raw_config.get("training_version"),
         "configuration_provisional": True,
+        "selected_optimizer_and_clipping": {
+            "generator_learning_rate": config.generator_learning_rate,
+            "discriminator_learning_rate": config.discriminator_learning_rate,
+            "generator_gradient_clip_max_norm": config.generator_gradient_clip_max_norm,
+            "discriminator_gradient_clip_max_norm": config.discriminator_gradient_clip_max_norm,
+        },
         "warmup_steps": progress.warmup_steps,
         "warmup_gate_status": progress.warmup_gate_status,
         "micro_smoke_gate_passed": progress.stage_one_passed,
@@ -1024,6 +1379,11 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
         "early_stop_reason": early_stop_reason,
         "final_monitor": final_monitor,
         "best_monitor": best_monitor,
+        "checkpoint_selection_policy": (
+            "numbered recovery checkpoints only; no best checkpoint selection"
+            if sustained
+            else "no best GAN checkpoint"
+        ),
         "gradient_clipping_fractions": {
             "discriminator": d_clip_fraction,
             "generator": g_clip_fraction,
@@ -1059,11 +1419,88 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             record["generator"]["maximum_invalid_fake_pixel_gradient"] != 0
             for record in joint_records
         ),
+        "nonfinite_canonical_gradient_violations": sum(
+            record["generator"][
+                "canonical_defect_gradient_nonfinite_channel_count"
+            ]
+            != 0
+            for record in joint_records
+        ),
+        "output_range_violations": sum(
+            record["generator"]["output_range_violation_count"]
+            for record in joint_records
+        ),
+        "rolling_training_statistics": rolling_statistics,
+        "overall_training_diagnostics": {
+            "mean_real_minus_fake_margin": (
+                float(
+                    np.mean(
+                        [
+                            record["discriminator"][
+                                "real_minus_fake_logit_margin"
+                            ]
+                            for record in joint_records
+                        ]
+                    )
+                )
+                if joint_records
+                else None
+            ),
+            "mean_boundary_residual_mass_fraction": (
+                float(
+                    np.mean(
+                        [
+                            record["generator"][
+                                "boundary_residual_mass_fraction"
+                            ]
+                            for record in joint_records
+                        ]
+                    )
+                )
+                if joint_records
+                else None
+            ),
+            "mean_boundary_residual_enrichment": (
+                float(
+                    np.mean(
+                        [
+                            record["generator"]["boundary_residual_enrichment"]
+                            for record in joint_records
+                        ]
+                    )
+                )
+                if joint_records
+                else None
+            ),
+            "maximum_directional_cap_saturation_fraction": max(
+                (
+                    record["generator"][
+                        "directional_cap_saturation_fraction"
+                    ]
+                    for record in joint_records
+                ),
+                default=0.0,
+            ),
+            "maximum_tanh_raw_residual_saturation_fraction": max(
+                (
+                    record["generator"][
+                        "tanh_raw_residual_saturation_fraction"
+                    ]
+                    for record in joint_records
+                ),
+                default=0.0,
+            ),
+        },
+        "stratified_monitor_audits": stratified_records,
+        "selected_smoke_step_200_replay_verification": (
+            replay_records[-1] if replay_records else None
+        ),
         "template_utilization": dict(sorted(utilization_templates.items())),
         "background_utilization": dict(sorted(utilization_backgrounds.items())),
         "contact_side_counts": dict(sorted(utilization_contacts.items())),
         "fixed_monitor_support_containment": support_containment,
         "fixed_monitor_sample_ids": list(monitor_ids),
+        "stratified_monitor_sample_ids": list(stratified_ids),
         "monitor_source_usage": {
             category: {
                 "template_id": sample.metadata["template_id"],
@@ -1082,6 +1519,7 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
         ),
         "warnings": sorted(set(warnings)),
         "visual_artifacts": visual_paths,
+        "requested_visual_steps": list(config.visual_steps),
         "materialized_monitor_sheets": len(visual_paths),
         "validation_rows_loaded": 0,
         "official_test_rows_loaded": 0,
@@ -1125,6 +1563,9 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             f"- Mean/max support change: "
             f"{terminal['generator']['mean_absolute_residual_inside_support']} / "
             f"{terminal['generator']['maximum_absolute_residual']}",
+            f"- Boundary residual mass/enrichment: "
+            f"{terminal['generator']['boundary_residual_mass_fraction']} / "
+            f"{terminal['generator']['boundary_residual_enrichment']}",
             f"- Canonical gradient pixel coverage: "
             f"{terminal['generator']['canonical_defect_gradient_active_pixel_count']} / "
             f"{terminal['generator']['canonical_defect_gradient_total_pixel_count']} "
@@ -1153,7 +1594,11 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
         ]
     markdown = "\n".join(
         [
-            "# G1.5 gated 200-step GAN smoke",
+            (
+                "# G2.1 sustained 2,000-update GAN training"
+                if sustained
+                else "# G1.5 gated 200-step GAN smoke"
+            ),
             "",
             f"- Status: **{summary['status']}**",
             f"- Warmup steps/status: {summary['warmup_steps']} / {summary['warmup_gate_status']}",
@@ -1169,6 +1614,12 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             f"- Validation rows: {summary['validation_rows_loaded']}",
             f"- Official-test rows: {summary['official_test_rows_loaded']}",
             f"- Materialized training images: {summary['materialized_training_images']}",
+            f"- Stratified monitor audits/pairs: "
+            f"{len(summary['stratified_monitor_audits'])} / "
+            f"{stratified_count if stratified_count else 0}",
+            f"- Step-200 selected-smoke replay match: "
+            f"{(summary['selected_smoke_step_200_replay_verification'] or {}).get('all_match')}",
+            f"- Best checkpoint created: {summary['best_checkpoint_created']}",
             "",
             "## Terminal joint update",
             "",
@@ -1182,7 +1633,12 @@ def run(config_path: Path, *, resume: bool) -> dict[str, Any]:
             "",
             *(f"- `{warning}`" for warning in summary["warnings"]),
             "",
-            "All optimization settings remain provisional; this smoke is not final training.",
+            (
+                "Numbered checkpoints are recovery milestones; no visually or "
+                "detector-confidence-selected best checkpoint was created."
+                if sustained
+                else "All optimization settings remain provisional; this smoke is not final training."
+            ),
         ]
     )
     _atomic_write(report_dir / "summary.md", markdown + "\n")

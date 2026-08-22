@@ -25,6 +25,7 @@ from defectgen.training.gan_losses import (
     GeneratorLossWeights,
     aggregate_generator_losses,
     boundary_seam_loss,
+    inner_boundary_ring,
     localized_discriminator_hinge_loss,
     localized_generator_adversarial_loss,
     localized_r1_gradient_penalty,
@@ -373,6 +374,38 @@ def canonical_adversarial_gradient_telemetry(
             nonfinite_channel_count
         ),
         "canonical_defect_gradient_coverage": coverage,
+    }
+
+
+def boundary_residual_telemetry(
+    applied_residual: torch.Tensor,
+    support_mask: torch.Tensor,
+    *,
+    boundary_width: int,
+) -> dict[str, float]:
+    """Measure residual mass concentrated in the loss-defined inner support ring."""
+    if applied_residual.ndim != 4 or applied_residual.shape[1] != 3:
+        raise ValueError("applied_residual must have shape [B, 3, H, W]")
+    support = support_mask.bool()
+    if (
+        support.ndim != 4
+        or support.shape[1] != 1
+        or support.shape[0] != applied_residual.shape[0]
+        or support.shape[2:] != applied_residual.shape[2:]
+    ):
+        raise ValueError("support_mask must align and have shape [B, 1, H, W]")
+    boundary = inner_boundary_ring(support, width=boundary_width)
+    residual_mass = applied_residual.detach().float().abs().sum(dim=1, keepdim=True)
+    total_mass = residual_mass[support].sum()
+    boundary_mass = residual_mass[boundary].sum()
+    concentration = float(boundary_mass / total_mass) if float(total_mass) > 0 else 0.0
+    support_count = int(support.sum())
+    area_fraction = float(boundary.sum() / support_count) if support_count else 0.0
+    enrichment = concentration / area_fraction if area_fraction > 0 else 0.0
+    return {
+        "boundary_residual_mass_fraction": concentration,
+        "boundary_support_area_fraction": area_fraction,
+        "boundary_residual_enrichment": enrichment,
     }
 
 
@@ -802,6 +835,11 @@ class GANOneStepTrainer:
                 mean_canonical_change = float(absolute_change[canonical_pixels].mean())
                 mean_support_change = float(absolute_change[support_pixels].mean())
                 applied = generated.applied_residual.detach().float()
+                boundary_telemetry = boundary_residual_telemetry(
+                    applied,
+                    generated.support_mask,
+                    boundary_width=self.loss_config.boundary_ring_width,
+                )
                 raw_direction = torch.tanh(generated.raw_residual.detach().float())
                 composite_float = selected.composite_image.detach().float()
                 configured_cap = torch.full_like(
@@ -886,6 +924,7 @@ class GANOneStepTrainer:
             "maximum_absolute_residual": maximum_residual,
             "mean_absolute_applied_residual": mean_residual,
             "maximum_absolute_applied_residual": maximum_residual,
+            **boundary_telemetry,
             "mean_change_inside_canonical_defect": mean_canonical_change,
             "mean_change_inside_support_halo": mean_support_change,
             "output_range_violation_count": output_range_violation_count,

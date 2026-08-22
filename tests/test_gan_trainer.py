@@ -13,6 +13,7 @@ from defectgen.training.gan_trainer import (
     GANOneStepTrainer,
     GANTrainingNumericalError,
     calibrate_gan_loss_scales,
+    boundary_residual_telemetry,
     canonical_adversarial_gradient_telemetry,
     collate_gan_training_samples,
     load_gan_trainer_config,
@@ -213,6 +214,24 @@ def test_canonical_gradient_pixel_rejects_any_nonfinite_component(
     assert telemetry["canonical_defect_gradient_total_pixel_count"] == 1
     assert telemetry["canonical_defect_gradient_nonfinite_channel_count"] == 1
     assert telemetry["canonical_defect_gradient_coverage"] == 0.0
+
+
+def test_boundary_residual_telemetry_reports_mass_concentration() -> None:
+    support = torch.zeros(1, 1, 9, 9, dtype=torch.bool)
+    support[:, :, 1:8, 1:8] = True
+    residual = torch.zeros(1, 3, 9, 9)
+    residual[:, :, 1, 1:8] = 1
+    residual[:, :, 7, 1:8] = 1
+    residual[:, :, 1:8, 1] = 1
+    residual[:, :, 1:8, 7] = 1
+
+    telemetry = boundary_residual_telemetry(
+        residual, support, boundary_width=1
+    )
+
+    assert telemetry["boundary_residual_mass_fraction"] == 1.0
+    assert 0 < telemetry["boundary_support_area_fraction"] < 1
+    assert telemetry["boundary_residual_enrichment"] > 1
 
 
 def test_generator_graph_is_detached_then_recomputed_for_the_two_steps() -> None:
