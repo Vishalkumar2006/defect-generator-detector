@@ -1,3 +1,20 @@
+> **COMPLETED — THIS RUN IS NO LONGER ACTIVE. Retained as a historical
+> operations log.**
+>
+> The G2.3B run this document describes finished on 2026-08-23T05:33:07Z. All
+> nine arms completed; the frozen gate was applied once; the outcome is
+> `stop_not_confirmed_g2_3b`.
+>
+> Statements below such as "Completed arms: 2 of 9" and "Current arm: seed 45
+> `gan_1500`" were accurate when written mid-execution and are now superseded.
+> For current status see [`docs/V1_FINAL_STATE.md`](V1_FINAL_STATE.md); for the
+> result see [`docs/g2-3b-results.md`](g2-3b-results.md) and
+> `reports/g2_3b/confirmation_summary.json`.
+>
+> **Do not follow the resume procedure in section 6.** Training is complete and
+> must not be rerun. The document is kept because its durability design, resume
+> semantics, and process-independence analysis are genuine project history.
+
 # G2.3B active-run handoff state
 
 Factual handoff for a fresh conversation while the G2.3B experiment is executing.

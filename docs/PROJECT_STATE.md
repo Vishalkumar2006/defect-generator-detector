@@ -1,3 +1,15 @@
+> **SUPERSEDED AS THE CURRENT STATUS — see [`docs/V1_FINAL_STATE.md`](V1_FINAL_STATE.md).**
+>
+> This document remains the accurate, unmodified handoff **through G2.2**
+> (commit `a41be83`) and everything it records is still correct. It is not the
+> current project status: G2.3A (`e1171a1`), the precommitted G2.3B protocol
+> (`6e566a5`), and the terminal G2.3B result (`7c533d6`) all came afterwards.
+>
+> The Version 1 terminal status is `stop_not_confirmed_g2_3b`, recorded in
+> [`docs/V1_FINAL_STATE.md`](V1_FINAL_STATE.md),
+> [`docs/g2-3b-results.md`](g2-3b-results.md), and
+> `reports/g2_3b/confirmation_summary.json`. Read the final-state document first.
+
 # Project state through G2.2
 
 This is the factual handoff state of `defect-generator-detector` through commit

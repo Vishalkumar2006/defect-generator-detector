@@ -30,7 +30,7 @@ is not satisfied.
 | 4 | mean pixel precision delta | `>= -0.01` | `-0.026376` | **FAIL** |
 | 5 | mean normal-image FPR delta | `<= +0.02` | `+0.028754` | **FAIL** |
 | 6 | seeds with positive Dice gain | `>= 2 of 3` | `2` | PASS |
-| 7 | mean pixel PR-AUC gain | `>= +0.01` | `-0.002609` | **FAIL** |
+| 7 | mean pixel PR-AUC gain | `>= +0.01` | `-0.002608` | **FAIL** |
 | 8 | seeds with positive PR-AUC gain | `>= 2 of 3` | `2` | PASS |
 
 Criterion 3 — the pixel-recall tolerance that G2.2 actually failed — passed
@@ -126,7 +126,7 @@ G2.2 checkpoint achieved at any threshold was `0.6729`.
 | 45 | +0.017308 | +0.022460 | -0.032406 | +0.086529 | **+0.102236** | +0.018274 |
 | 46 | +0.019141 | +0.022429 | -0.042661 | +0.061332 | -0.009585 | +0.003292 |
 | 47 | **-0.037037** | **-0.046913** | -0.004060 | -0.078865 | -0.006390 | **-0.029391** |
-| **Mean** | **-0.000196** | **-0.000675** | **-0.026376** | **+0.022999** | **+0.028754** | **-0.002609** |
+| **Mean** | **-0.000196** | **-0.000675** | **-0.026376** | **+0.022999** | **+0.028754** | **-0.002608** |
 
 The result is not a uniform deficit. Seeds 45 and 46 show small positive Dice,
 IoU, and PR-AUC gains; seed 47 reverses all three by a larger margin, so the
