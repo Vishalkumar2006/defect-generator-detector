@@ -51,3 +51,42 @@ reports/g2_3/diagnostic/synthetic_mask_records.json
 reports/g2_3b/plan/seed*/
 reports/g2_3b/**/*_schedule.json
 reports/g2_3b/**/*_epochs.json
+
+# ---------------------------------------------------------------------------
+# Public-release policy (v1.0.0)
+# ---------------------------------------------------------------------------
+# KSDD2 is third-party data under CC BY-NC-SA 4.0 and is NOT redistributed by
+# this repository. Nothing that contains KSDD2 pixels may be tracked. Obtain the
+# dataset yourself (docs/dataset-setup.md) and regenerate these artifacts locally.
+
+# Raw / extracted / processed KSDD2 (belt-and-braces over the rules above).
+data/raw/**
+!data/raw/.gitkeep
+data/**/*.png
+data/**/*.jpg
+data/**/*.jpeg
+data/**/*.bmp
+data/**/*.tif
+data/**/*.tiff
+
+# Report figures that embed KSDD2 image or mask pixels. Regenerate locally with
+# the visualization/audit scripts listed in docs/README.md.
+reports/**/contact_sheet.png
+reports/**/contact_sheets/
+reports/**/blinded_sheets/
+reports/**/*_contact_sheet.png
+reports/**/*overlay*.png
+reports/**/*overlays*.png
+reports/**/fixed_validation_diagnostics.png
+reports/**/*patch_examples.png
+reports/**/*patch_comparison.png
+reports/demo/
+
+# Untracked local audit artifacts predating the release; keep on disk, never stage.
+reports/g2_2.zip
+reports/gan_inputs/manifest.json
+reports/gan_inputs/sampling_audit_f1_4.json
+reports/gan_inputs/sampling_audit_f1_4.md
+reports/gan_inputs/summary.json
+reports/gan_inputs/summary.md
+reports/gan_inputs/visualizations/
