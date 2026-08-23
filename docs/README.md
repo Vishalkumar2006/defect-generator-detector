@@ -20,7 +20,7 @@ Every document is labelled with a status:
 | If you are… | Read, in order |
 |---|---|
 | **A recruiter or reviewer** (5 min) | The root [`README.md`](../README.md), then [§A and §F of `V1_FINAL_STATE.md`](V1_FINAL_STATE.md) |
-| **An ML engineer evaluating the work** (30 min) | [`V1_FINAL_STATE.md`](V1_FINAL_STATE.md) → [`g2-3b-results.md`](g2-3b-results.md) → [`g2-3-diagnostic.md`](g2-3-diagnostic.md) |
+| **An ML engineer evaluating the work** (30 min) | [`TECHNICAL_PROJECT_REPORT.md`](TECHNICAL_PROJECT_REPORT.md) — it consolidates everything below |
 | **A researcher checking the method** | [`g2-3b-utility-protocol.md`](g2-3b-utility-protocol.md) → [`g2-3-diagnostic.md`](g2-3-diagnostic.md) → [`g2-2-detector-utility.md`](g2-2-detector-utility.md) |
 | **A developer who wants to run it** | [`dataset-setup.md`](dataset-setup.md) → [`design-decisions.md`](design-decisions.md) → root README "Quick start" |
 | **Someone resuming the project** | [`V1_FINAL_STATE.md`](V1_FINAL_STATE.md) §L "Resume boundary" — read it before touching anything |
@@ -33,6 +33,7 @@ Every document is labelled with a status:
 
 | Document | Status | What it covers |
 |---|---|---|
+| [`TECHNICAL_PROJECT_REPORT.md`](TECHNICAL_PROJECT_REPORT.md) | **AUTHORITATIVE** | Comprehensive verification-grade technical report: architecture, losses, every experiment, consolidated quantitative results, challenges, and a claim-by-claim verification appendix. Written for an engineer or reviewer who needs the whole project without reading the source. Start here for a technical evaluation. |
 | [`V1_FINAL_STATE.md`](V1_FINAL_STATE.md) | **AUTHORITATIVE** | The single source of truth for V1. Terminal status, complete commit ledger, frozen protocol, final results, scientific interpretation, limitations, reproducibility state, hashes, and the resume boundary. Supersedes `PROJECT_STATE.md` where they overlap. |
 | [`g2-3b-results.md`](g2-3b-results.md) | **FINAL** | The narrative of the terminal result: the eight-criterion gate, what passed, what failed, per-seed and stratified breakdowns, and why the project stopped. |
 | [`g2-3b-utility-protocol.md`](g2-3b-utility-protocol.md) | **FINAL** | The protocol as it was frozen *before* any G2.3B detector was trained — arms, seeds, budget, sampling law, threshold rule, and gate. Read this to confirm the gate was not chosen after seeing results. |
