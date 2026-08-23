@@ -19,36 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----------------------------------------------------------------------------
-SCOPE OF THIS LICENSE
----------------------------------------------------------------------------
-
-This MIT License covers ONLY the original content of this repository:
-source code, configuration files, documentation, tests, and the numeric
-experiment reports produced by this project.
-
-It does NOT cover either of the following, which remain licensed by the
-dataset's own authors under Creative Commons
-Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0):
-
-  1. The Kolektor Surface-Defect Dataset 2 (KSDD2) itself. It is NOT
-     distributed with this repository; you must obtain it from the official
-     source under its own terms.
-
-  2. Any KSDD2-derived figure -- contact sheets, patch grids, blinded
-     comparison sheets, prediction overlays, and fixed-validation panels that
-     reproduce KSDD2 image or mask pixels. These are Adapted Material under
-     CC BY-NC-SA 4.0. They are not tracked in the current tree, but 48 of them
-     remain reachable in this repository's Git history and are therefore
-     distributed with it. They are licensed CC BY-NC-SA 4.0, NOT MIT.
-
-Neither is relicensed by this file, and this file grants no rights in either.
-
-Attribution: Jakob Bozic, Domen Tabernik, and Danijel Skocaj, Visual Cognitive
-Systems Laboratory, University of Ljubljana.
-Source:  https://www.vicos.si/resources/kolektorsdd2/
-Licence: https://creativecommons.org/licenses/by-nc-sa/4.0/
-
-See THIRD_PARTY_NOTICES.md for the full attribution, the modification notice,
-and the ShareAlike terms.

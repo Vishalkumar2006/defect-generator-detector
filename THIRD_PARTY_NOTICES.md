@@ -6,6 +6,36 @@ repository's own MIT `LICENSE`.**
 
 ---
 
+## 0. Scope of the MIT licence — the authoritative carve-out
+
+[`LICENSE`](LICENSE) is the unmodified MIT licence text, so that automated
+licence detection identifies this repository correctly. Its scope is defined
+here rather than inside that file.
+
+**The MIT licence covers ONLY this repository's own original content:** source
+code under `src/` and `scripts/`, tests, configuration files, documentation,
+the generated figures in `assets/`, and the numeric experiment reports under
+`reports/`.
+
+**The MIT licence does NOT cover, and does not grant any rights in:**
+
+1. **The Kolektor Surface-Defect Dataset 2 (KSDD2) itself.** It is not
+   distributed with this repository. You must obtain it from the official
+   source under its own terms. Licensed **CC BY-NC-SA 4.0**.
+2. **Any KSDD2-derived figure** — contact sheets, patch grids, blinded
+   comparison sheets, prediction overlays, and fixed-validation panels that
+   reproduce KSDD2 image or mask pixels. These are **Adapted Material**. None is
+   tracked in the current tree, but 48 remain reachable in Git history and are
+   therefore distributed with this repository. Licensed **CC BY-NC-SA 4.0**,
+   not MIT. Full notice in [§2](#ksdd2-derived-figures-present-in-git-history--cc-by-nc-sa-40).
+
+Neither is relicensed by this repository. Attribution: Jakob Božič, Domen
+Tabernik, and Danijel Skočaj; Visual Cognitive Systems Laboratory, University
+of Ljubljana. Source: <https://www.vicos.si/resources/kolektorsdd2/>.
+Licence: <https://creativecommons.org/licenses/by-nc-sa/4.0/>.
+
+---
+
 ## 1. Licensing separation — read this first
 
 This repository contains two legally distinct categories of material:
