@@ -853,6 +853,27 @@ and no pretrained weights were used. Full attribution:
 
 ### Licence
 
-This repository's own code, configuration, documentation, and numeric reports are
-released under the [MIT Licence](LICENSE). **KSDD2 is a separate third-party work
-under CC BY-NC-SA 4.0 and is neither redistributed nor relicensed here.**
+This repository contains material under **two different licences**. The
+distinction is deliberate and binding.
+
+| Material | Licence |
+|---|---|
+| This project's code, configs, docs, `assets/`, and numeric reports | **[MIT](LICENSE)** |
+| **KSDD2 itself** — not distributed here; you obtain it yourself | **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)** |
+| **KSDD2-derived figures** — 48 files present in Git history only | **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)** |
+
+**The MIT licence does not cover KSDD2 or any KSDD2-derived figure**, does not
+relicense them, and grants no rights in them.
+
+The 48 figures — contact sheets, patch grids, blinded comparison sheets,
+prediction overlays, and fixed-validation panels — reproduce KSDD2 image or mask
+pixels and are therefore **Adapted Material**: cropped, composited, tiled,
+colour-overlaid, and/or annotated. **They are modifications of the original
+material, not unaltered copies.** None is tracked in the current tree, but they
+remain reachable in nine historical commits and are thus distributed with this
+repository, under CC BY-NC-SA 4.0 with attribution to the dataset's authors.
+
+Sharing them is permitted by that licence (§2(a)(1)(B), NonCommercial), subject
+to attribution, an indication of modification, and ShareAlike — all provided in
+**[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)**, which is the formal
+notice. If you reuse any of those figures, the same obligations pass to you.

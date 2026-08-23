@@ -12,13 +12,14 @@ This repository contains two legally distinct categories of material:
 
 | Category | What it is | Licence | Distributed here? |
 |---|---|---|---|
-| **This project's own work** | `src/`, `scripts/`, `tests/`, `configs/`, `docs/`, and the numeric report files under `reports/` | **MIT** (see [`LICENSE`](LICENSE)) | Yes |
-| **Kolektor Surface-Defect Dataset 2 (KSDD2)** | The industrial surface images and their ground-truth masks | **CC BY-NC-SA 4.0**, held by its own authors | **No — you must obtain it yourself** |
+| **This project's own work** | `src/`, `scripts/`, `tests/`, `configs/`, `docs/`, `assets/`, and the numeric report files under `reports/` | **MIT** (see [`LICENSE`](LICENSE)) | Yes |
+| **KSDD2 itself** | The industrial surface images and their ground-truth masks | **CC BY-NC-SA 4.0**, held by its own authors | **No — you must obtain it yourself** |
+| **KSDD2-derived figures** | 48 figures reproducing KSDD2 pixels, present in Git history only | **CC BY-NC-SA 4.0** — *not* MIT | Yes, as **Adapted Material** — see [§2 notice](#ksdd2-derived-figures-present-in-git-history--cc-by-nc-sa-40) |
 
-**The MIT licence of this repository does not apply to KSDD2, does not grant
-you any rights in KSDD2, and must not be read as relicensing it.** KSDD2
-remains under CC BY-NC-SA 4.0 and its terms are set by its authors, not by this
-project.
+**The MIT licence of this repository does not apply to KSDD2 or to any
+KSDD2-derived figure, does not grant you any rights in either, and must not be
+read as relicensing them.** Both remain under CC BY-NC-SA 4.0, and its terms are
+set by the dataset's authors, not by this project.
 
 ---
 
@@ -82,6 +83,45 @@ in Git**:
 **regenerable locally** once you have obtained KSDD2 yourself — see
 [`docs/dataset-setup.md`](docs/dataset-setup.md) for acquisition and
 [`docs/README.md`](docs/README.md) for the scripts that rebuild each one.
+
+> **"Not tracked" refers to the current tree.** 48 such figures were untracked
+> rather than purged and remain reachable in Git history. They *are* distributed
+> with this repository, under CC BY-NC-SA 4.0 — see the next section, which is
+> their formal licence notice.
+
+### KSDD2-derived figures present in Git history — CC BY-NC-SA 4.0
+
+**This section is the formal licence notice for adapted material distributed by
+this repository.**
+
+The current tree (`HEAD`) tracks **no** KSDD2 pixels. However, **48 figure files
+remain reachable in Git history**, in the nine commits that originally introduced
+them (`2d5f217`, `39f3eff`, `9750826`, `5c77b9a`, `7872293`, `5ed2f65`,
+`006156e`, `bdb9085`, `1b69785`). They were untracked at `HEAD` rather than
+purged, because rewriting history would have invalidated the frozen V1 commit
+ledger. They are therefore **distributed with this repository**, and the
+following applies to them:
+
+| Property | Statement |
+|---|---|
+| **What they are** | Contact sheets, patch-example grids, blinded comparison sheets, prediction overlays, and fixed-validation diagnostic panels that reproduce KSDD2 image and/or mask pixels |
+| **Status under the licence** | **Adapted Material** derived from KSDD2 — cropped, composited, tiled, downscaled, colour-overlaid, and/or annotated |
+| **Modified?** | **Yes.** Every one of these figures is a modification of the original KSDD2 material. None reproduces the dataset unaltered |
+| **Licence** | **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)** — the same licence as the source material, as ShareAlike requires |
+| **Covered by this repo's MIT `LICENSE`?** | **No. Explicitly excluded.** The MIT licence does not apply to them, does not relicense them, and grants no rights in them |
+| **Original creators** | Jakob Božič, Domen Tabernik, and Danijel Skočaj; Visual Cognitive Systems Laboratory, University of Ljubljana |
+| **Source** | <https://www.vicos.si/resources/kolektorsdd2/> |
+| **Licence text** | <https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode> |
+
+Redistribution of these adaptations is **permitted by the licence itself**:
+CC BY-NC-SA 4.0 §2(a)(1)(B) grants the right to produce, reproduce, and Share
+Adapted Material for NonCommercial purposes, subject to the §3 conditions —
+attribution, an indication of modification, and ShareAlike. Those three
+conditions are satisfied by this notice.
+
+**If you reuse any of these figures**, you take on the same obligations: credit
+the KSDD2 authors, link the licence, state that the material was modified, use it
+non-commercially only, and license your own adaptation under CC BY-NC-SA 4.0.
 
 ### What this repository does contain
 

@@ -108,10 +108,23 @@ recorded inside tracked report JSONs, and the frozen result commit `7c533d6`
 itself. **The scientific record was given priority**, and history was left
 intact.
 
-This is a considered trade-off, not an oversight. Note that CC BY-NC-SA 4.0 does
-permit redistributing adaptations under the same licence with attribution, which
-`THIRD_PARTY_NOTICES.md` provides; untracking them at HEAD is a conservative
-measure beyond what the licence strictly requires.
+This is a considered trade-off, not an oversight, and it was explicitly approved
+before the repository was pushed.
+
+Because those figures are therefore **distributed** with this repository, they
+carry a formal licence notice rather than being treated as an accident.
+CC BY-NC-SA 4.0 §2(a)(1)(B) permits producing, reproducing, and Sharing Adapted
+Material for NonCommercial purposes, subject to the §3 conditions. All three are
+satisfied:
+
+| Condition | Where it is satisfied |
+|---|---|
+| Attribution — creator, notice, licence link | `LICENSE` scope section, `THIRD_PARTY_NOTICES.md` §2, README "Licence" |
+| Indication that the material was modified | Stated explicitly: the figures are cropped, composited, tiled, colour-overlaid, and/or annotated adaptations |
+| ShareAlike — adaptation under the same licence | The figures are declared **CC BY-NC-SA 4.0**, explicitly excluded from the MIT `LICENSE` |
+
+Untracking them at `HEAD` is a conservative measure *beyond* what the licence
+requires; the notice is what makes the historical copies compliant.
 
 ## 5. What is intentionally absent from Git
 
