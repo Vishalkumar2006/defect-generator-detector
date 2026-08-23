@@ -1,9 +1,13 @@
 # G2.3B mature-budget, prevalence-controlled detector-utility protocol
 
-**Status: PRECOMMITTED PROTOCOL. No G2.3B training has been executed.** This
-document, `configs/g2_3b_utility_confirmation.json`, and
+**Status: EXECUTED. This protocol was PRECOMMITTED before any G2.3B training.**
+This document, `configs/g2_3b_utility_confirmation.json`, and
 `reports/g2_3b/plan/precommitted_plan.json` were written and frozen before any
-detector was trained.
+detector was trained, and none of them was modified afterwards. All nine arms
+have since completed and the frozen gate has been applied once; the outcome is
+`stop_not_confirmed_g2_3b`, recorded in `docs/g2-3b-results.md` and
+`reports/g2_3b/confirmation_summary.json`. Nothing below was changed by that
+result.
 
 G2.2 remains permanently `stop_not_confirmed`. G2.3A is post-hoc diagnostic
 evidence only. Neither a G2.3B PASS nor a G2.3B FAIL reopens, reinterprets, or
@@ -352,4 +356,6 @@ From the repository root in Windows PowerShell:
 .\.venv\Scripts\python.exe -m pytest .\tests\test_g2_3b_protocol.py
 ```
 
-Only `--mode plan` has been executed. **No G2.3B detector training has been run.**
+All three modes have now been executed: `plan`, `train` for seeds 45/46/47,
+and `confirm` once. Training is complete and must not be rerun. See
+`docs/g2-3b-results.md` for the result.
