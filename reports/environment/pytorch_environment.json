@@ -5,8 +5,8 @@
   "python": {
     "version": "3.14.2 (tags/v3.14.2:df79316, Dec  5 2025, 17:18:21) [MSC v.1944 64 bit (AMD64)]",
     "architecture": "64bit",
-    "executable": "C:\\Users\\vishk\\Projects\\defect-generator-detector\\.venv\\Scripts\\python.exe",
-    "pip_version": "pip 26.2.1 from C:\\Users\\vishk\\Projects\\defect-generator-detector\\.venv\\Lib\\site-packages\\pip (python 3.14)"
+    "executable": "<repo-root>\\.venv\\Scripts\\python.exe",
+    "pip_version": "pip 26.2.1 from <repo-root>\\.venv\\Lib\\site-packages\\pip (python 3.14)"
   },
   "system": {
     "platform": "Windows-11-10.0.26200-SP0",
