@@ -39,6 +39,7 @@ from defectgen.data.augmentation import SynchronizedRandomFlips  # noqa: E402
 from defectgen.data.full_image import KSDD2FullImageDataset  # noqa: E402
 from defectgen.models import UNet, count_parameters  # noqa: E402
 from defectgen.training.failure_diagnostics import model_state_sha256  # noqa: E402
+from defectgen.training.engine import capture_random_states, restore_random_states  # noqa: E402
 from defectgen.training.final_baseline import EarlyStopping  # noqa: E402
 from defectgen.training.g2_2_utility import stratified_validation_metrics  # noqa: E402
 from defectgen.training.g2_3_diagnostic import (  # noqa: E402
@@ -66,16 +67,23 @@ from defectgen.training.g2_3b_protocol import (  # noqa: E402
     ScheduledCompositionDataset,
     arm_comparison,
     arm_slot_counts,
+    assert_completed_arm_compatible,
+    assert_durable_counters,
     assert_equal_budgets,
+    assert_resume_compatible,
+    assert_restored_learning_rate,
     assert_evaluation_split,
     assert_permitted_split,
     batch_pattern,
+    atomic_torch_save,
     atomic_write_json,
     budget_plan,
     canonical_sha256,
     confirmation_decision,
     effective_class_balance,
     per_epoch_composition,
+    resume_start_epoch,
+    run_identity,
     schedule_composition,
     schedule_payload,
     select_operating_threshold,
@@ -524,6 +532,14 @@ def train_arm(
 ) -> dict[str, Any]:
     settings = config["training"]
     plan = budget_plan(settings)
+    # A finished arm is immutable evidence. Reuse goes through run_training, so
+    # reaching train_arm with a completed report means something is about to
+    # overwrite it. Checked first, before any device or model work.
+    completed_path = report_dir / f"{arm}.json"
+    if completed_path.is_file():
+        raise RuntimeError(
+            f"Refusing to overwrite the completed immutable arm report {completed_path}"
+        )
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA unavailable; G2.3B refuses a CPU fallback for mature training")
     if settings["precision"]["mode"] == "bf16" and not torch.cuda.is_bf16_supported():
@@ -574,22 +590,46 @@ def train_arm(
     best_path = checkpoint_dir / f"{arm}_best.pt"
     last_path = checkpoint_dir / f"{arm}_last.pt"
     schedule_hash = canonical_sha256(schedule_payload(schedule))
+    identity = run_identity(
+        arm=arm,
+        seed=seed,
+        schedule_sha256=schedule_hash,
+        initialization_sha256=initialization,
+        config_sha256=canonical_sha256(config),
+        plan=plan,
+    )
 
     start_epoch = 1
     records: list[dict[str, Any]] = []
     best = {"epoch": 0, "validation_total_loss": math.inf}
-    if resume and last_path.is_file():
+    # Resume is automatic, never opt-in: if durable state exists it is either
+    # compatible and resumed from, or incompatible and fatal. There is no path
+    # that silently discards completed epochs and starts over.
+    if last_path.is_file():
         payload = torch.load(last_path, map_location=device, weights_only=False)
-        if payload["schedule_sha256"] != schedule_hash or payload["arm"] != arm:
-            raise RuntimeError("Resume checkpoint does not match this arm's frozen schedule")
+        assert_resume_compatible(payload.get("run_identity", {}), identity)
+        assert_durable_counters(
+            payload["numerical_state"]["counters"],
+            last_completed_epoch=int(payload["epoch"]),
+            plan=plan,
+        )
         model.load_state_dict(payload["model_state"])
         optimizer.load_state_dict(payload["optimizer_state"])
         scheduler.load_state_dict(payload["scheduler_state"])
         controller.load_state_dict(payload["numerical_state"])
         stopping.load_state_dict(payload["early_stopping_state"])
+        restore_random_states(payload["random_states"])
         records = list(payload["epoch_records"])
         best = dict(payload["best_validation"])
-        start_epoch = int(payload["epoch"]) + 1
+        assert_restored_learning_rate(optimizer.param_groups[0]["lr"], records)
+        start_epoch = resume_start_epoch(int(payload["epoch"]), plan)
+        print(
+            f"resuming {arm} seed={seed} from durable epoch {payload['epoch']}; "
+            f"next epoch {start_epoch}/{plan.maximum_epochs}",
+            flush=True,
+        )
+    elif resume:
+        print(f"no durable state for {arm} seed={seed}; starting from epoch 1", flush=True)
 
     started = time.perf_counter()
     for epoch in range(start_epoch, plan.maximum_epochs + 1):
@@ -674,14 +714,18 @@ def train_arm(
             "scheduler_state": scheduler.state_dict(),
             "numerical_state": controller.state_dict(),
             "early_stopping_state": stopping.state_dict(),
+            "random_states": capture_random_states(),
             "epoch_records": records,
             "best_validation": best,
             "initialization_sha256": initialization,
             "schedule_sha256": schedule_hash,
+            "run_identity": identity,
         }
+        # best first, then last: if the process dies between the two writes the
+        # durable epoch only ever moves backwards, never past a missing best.
         if improved:
-            torch.save(state, best_path)
-        torch.save(state, last_path)
+            atomic_torch_save(best_path, state)
+        atomic_torch_save(last_path, state)
         atomic_write_json(report_dir / f"{arm}_epochs.json", records)
         print(
             f"{arm} seed={seed} epoch={epoch}/{plan.maximum_epochs} "
@@ -705,12 +749,9 @@ def train_arm(
         model, validation, criterion, config=config, device=device, strata=strata
     )
     result = {
-        "experiment_version": G2_3B_VERSION,
-        "arm": arm,
-        "seed": seed,
-        "initialization_sha256": initialization,
+        **identity,
+        "evaluation_split": EVALUATION_SPLIT,
         "final_model_sha256": model_state_sha256(model),
-        "schedule_sha256": schedule_hash,
         "selected_epoch": int(payload["epoch"]),
         "checkpoint_selection": settings["checkpoint_selection"],
         "optimizer_updates": int(counters["optimizer_step_executed"]),
@@ -758,11 +799,26 @@ def run_training(config: dict[str, Any], seed: int, *, resume: bool = False) -> 
     report_dir = REPO_ROOT / config["paths"]["report_directory"] / f"seed{seed}"
     checkpoint_dir = REPO_ROOT / config["paths"]["checkpoint_directory"] / f"seed{seed}"
     results = {}
+    config_hash = canonical_sha256(config)
     for arm in ARMS:
         completed = report_dir / f"{arm}.json"
         if completed.is_file():
-            print(f"reusing completed immutable arm: seed{seed}:{arm}", flush=True)
-            results[arm] = json.loads(completed.read_text(encoding="utf-8"))
+            report = json.loads(completed.read_text(encoding="utf-8"))
+            # A completed arm is immutable evidence, but only if it belongs to
+            # this exact configuration, schedule, seed, and budget.
+            assert_completed_arm_compatible(
+                report,
+                run_identity(
+                    arm=arm,
+                    seed=seed,
+                    schedule_sha256=canonical_sha256(schedule_payload(schedules[arm])),
+                    initialization_sha256=report.get("initialization_sha256", ""),
+                    config_sha256=config_hash,
+                    plan=plan,
+                ),
+            )
+            print(f"reusing verified completed immutable arm: seed{seed}:{arm}", flush=True)
+            results[arm] = report
             continue
         results[arm] = train_arm(
             config,

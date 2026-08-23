@@ -876,3 +876,145 @@ def confirmation_decision(
         else "stop_not_confirmed_g2_3b",
         "official_test_authorized_by_this_decision": False,
     }
+
+
+# --------------------------------------------------------------------------- #
+# Execution durability
+#
+# These helpers add restart safety only. They do not touch the precommitted
+# plan: schedules, seeds, composition, budget, threshold rule, and gate are
+# unchanged by anything below.
+# --------------------------------------------------------------------------- #
+
+
+def atomic_torch_save(path: Path | str, payload: Mapping[str, Any]) -> None:
+    """Write a checkpoint through a temporary file and one atomic replace.
+
+    An interruption can therefore never leave a half-written checkpoint in place
+    of a good one; the previous durable state survives intact.
+    """
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f".{destination.name}.tmp")
+    try:
+        with temporary.open("wb") as stream:
+            torch.save(dict(payload), stream)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def run_identity(
+    *,
+    arm: str,
+    seed: int,
+    schedule_sha256: str,
+    initialization_sha256: str,
+    config_sha256: str,
+    plan: BudgetPlan,
+) -> dict[str, Any]:
+    """The identity a durable G2.3B run must keep constant across restarts."""
+    if arm not in ARMS:
+        raise ValueError(f"Unknown G2.3B arm: {arm!r}")
+    return {
+        "experiment_version": G2_3B_VERSION,
+        "arm": arm,
+        "seed": int(seed),
+        "schedule_sha256": schedule_sha256,
+        "initialization_sha256": initialization_sha256,
+        "config_sha256": config_sha256,
+        "batch_size": plan.batch_size,
+        "optimizer_updates_per_epoch": plan.optimizer_updates_per_epoch,
+        "maximum_epochs": plan.maximum_epochs,
+        "total_optimizer_updates": plan.total_optimizer_updates,
+    }
+
+
+def identity_mismatches(
+    observed: Mapping[str, Any], expected: Mapping[str, Any]
+) -> list[str]:
+    return sorted(
+        name
+        for name in expected
+        if name not in observed or observed[name] != expected[name]
+    )
+
+
+def assert_resume_compatible(
+    observed: Mapping[str, Any], expected: Mapping[str, Any]
+) -> None:
+    """Refuse to resume from durable state that belongs to a different run."""
+    mismatches = identity_mismatches(observed, expected)
+    if mismatches:
+        raise RuntimeError(
+            "Durable G2.3B state is incompatible with this run; refusing to resume "
+            f"or overwrite. Mismatched fields: {mismatches}"
+        )
+
+
+def assert_completed_arm_compatible(
+    report: Mapping[str, Any], expected: Mapping[str, Any]
+) -> None:
+    """Verify a completed arm before its immutable result is reused."""
+    assert_resume_compatible(report, expected)
+    if int(report.get("optimizer_updates", -1)) != int(expected["total_optimizer_updates"]):
+        raise RuntimeError("A completed arm did not record the exact precommitted budget")
+    if int(report.get("skipped_updates", -1)) != 0:
+        raise RuntimeError("A completed arm recorded a skipped optimizer update")
+    if int(report.get("official_test_samples_loaded", -1)) != 0:
+        raise RuntimeError("A completed arm recorded forbidden held-out-split access")
+    if str(report.get("evaluation_split", EVALUATION_SPLIT)) != EVALUATION_SPLIT:
+        raise RuntimeError("A completed arm was not evaluated on development validation")
+
+
+def resume_start_epoch(last_completed_epoch: int, plan: BudgetPlan) -> int:
+    """The first epoch a restart may execute; completed epochs are never rerun."""
+    completed = int(last_completed_epoch)
+    if completed < 0 or completed > plan.maximum_epochs:
+        raise ValueError(f"Durable epoch {completed} is outside the precommitted budget")
+    return completed + 1
+
+
+def expected_updates_after_epoch(epoch: int, plan: BudgetPlan) -> int:
+    if epoch < 0 or epoch > plan.maximum_epochs:
+        raise ValueError(f"Epoch {epoch} is outside the precommitted budget")
+    return epoch * plan.optimizer_updates_per_epoch
+
+
+def assert_durable_counters(
+    counters: Mapping[str, Any], *, last_completed_epoch: int, plan: BudgetPlan
+) -> None:
+    """Durable optimizer-update counters must agree with the completed epochs."""
+    expected = expected_updates_after_epoch(last_completed_epoch, plan)
+    executed = int(counters.get("optimizer_step_executed", -1))
+    if executed != expected:
+        raise RuntimeError(
+            f"Durable state claims epoch {last_completed_epoch} but recorded {executed} "
+            f"optimizer updates instead of {expected}"
+        )
+    if int(counters.get("optimizer_step_skipped", -1)) != 0:
+        raise RuntimeError("Durable state recorded a skipped optimizer update")
+
+
+def assert_restored_learning_rate(
+    optimizer_learning_rate: float, epoch_records: Sequence[Mapping[str, Any]]
+) -> None:
+    """Confirm a resumed optimizer carries the learning rate its record claims.
+
+    ReduceLROnPlateau.load_state_dict restores plateau bookkeeping only; the rate
+    itself lives in optimizer.param_groups. Restoring scheduler state without
+    optimizer state would silently reset a resumed arm to the initial rate, so
+    the durable epoch record is used as an independent witness.
+    """
+    if not epoch_records:
+        return
+    expected = float(epoch_records[-1]["next_learning_rate"])
+    observed = float(optimizer_learning_rate)
+    if abs(observed - expected) > 1e-12:
+        raise RuntimeError(
+            f"Resumed learning rate {observed} does not match the durable epoch "
+            f"record {expected}; optimizer state was not restored correctly"
+        )
