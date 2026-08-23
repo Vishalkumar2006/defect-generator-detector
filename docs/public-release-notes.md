@@ -150,6 +150,108 @@ the originals can verify them exactly.
 - The official held-out KSDD2 split was not constructed, inspected, counted, or
   evaluated.
 - No Version 2 work was started.
-- No Git history was rewritten.
+- No experimental commit was removed, reordered, or squashed.
+- No Git history was rewritten **to remove the KSDD2-derived figures**; they
+  remain in the nine commits that introduced them (see §4). A separate,
+  message-only rewrite did occur — see §6.
 - The unrelated local artifacts listed in `V1_FINAL_STATE.md` §J were neither
   staged nor deleted.
+
+
+---
+
+## 6. History rewrite: removing AI-assistant attribution
+
+After the initial public release, the commit history was rewritten **once**, so
+that contributor attribution shows only the author's own Git identity and the
+public record carries no vendor-specific AI product names.
+
+### What the authorship audit found first
+
+| Question | Finding |
+|---|---|
+| Distinct commit **authors** | **1** — `Vishalkumar2006 <vishku2004@gmail.com>` |
+| Distinct **committers** | **1** — the same identity |
+| An AI assistant as Git author or committer | **Never — not in a single commit** |
+| AI attribution in tag objects | None |
+| How it appeared | **Only** as a `Co-Authored-By:` message trailer, one in each of 11 commits |
+| Other co-author trailers | None — no human attribution existed to preserve |
+
+Because the attribution lived only in message trailers, no change to Git author
+or committer metadata was needed or made.
+
+### What the rewrite changed
+
+A single combined `git filter-branch` pass over `bc36ed4..HEAD`:
+
+1. **Message filter** — deleted the AI co-author trailers, and replaced the
+   remaining vendor-specific prose with neutral wording (*AI assistant*, *AI
+   coding assistant*).
+2. **Tree filter** — in `G2_3B_ACTIVE_RUN_STATE.md` only, generalized the
+   assistant's binary name in the recorded process chain to
+   `ai-assistant.exe`. The operational facts are unchanged: the root of the
+   observed chain was the interactive assistant session, and it had already
+   exited, leaving the training tree with no live ancestor process.
+
+Scope and preservation:
+
+- **11 commits rewritten**, from the G2.3A diagnostic through the final release
+  commit; **25 commits untouched**, keeping their original SHAs — every commit
+  up to and including `bc36ed4`.
+- Verified preserved for all 11: **author name/email, author date, committer
+  name/email, committer date, subject line, and parent relationships.**
+- Nothing was squashed, removed, or reordered, and no experimental commit was
+  touched. Chronology is intact, so the visible fact that the G2.3B protocol was
+  committed **before** its training and results remains verifiable from the log.
+- The only file content altered anywhere was the one process-tree line above.
+  The `reports/`, `configs/`, `src/`, `tests/`, and `data/` trees are
+  **byte-identical** to their pre-rewrite state, verified by Git tree hash.
+
+### SHA reference repair
+
+The rewrite changed 11 SHAs, so 20 documentation references were updated in a
+follow-up commit — a commit cannot contain its own SHA:
+
+| File | References repaired |
+|---|---:|
+| `V1_FINAL_STATE.md` | 10 |
+| `PROJECT_STATE.md` | 3 |
+| `README.md` | 2 |
+| `G2_3B_ACTIVE_RUN_STATE.md` | 2 |
+| `public-release-notes.md` | 2 |
+| `g2-3b-results.md` | 1 |
+
+The one `git.commit` field stored in a report
+(`reports/final_real_baseline_bf16_seed42/`, recording `ed89a0f`) needed **no**
+repair, because that commit predates the rewrite range. No test asserts a Git
+commit ID.
+
+### What was NOT touched
+
+Only Git commit SHAs were substituted in documentation. Verified mechanically:
+
+- **Zero** 64-character hashes appear in any changed line.
+- All **3,460 distinct SHA-256 values** across the tracked tree are unchanged in
+  both value and occurrence count — checkpoint, config, manifest, schedule,
+  split, and report-content hashes alike.
+- Test suite: **448 passed**, unchanged.
+- Terminal decision: still `stop_not_confirmed_g2_3b`; official-test access
+  still `0`; GAN optimizer updates still `0`.
+
+### Backup
+
+The complete pre-rewrite history is preserved and was verified by cloning it
+before any rewrite began:
+
+```
+defect-generator-detector-backup-20260823/
+├── defect-generator-detector-preRewrite.bundle   all refs, verified complete
+├── sha-mapping-old-to-new.json                   machine-readable mapping
+├── sha-mapping-old-to-new.tsv                    same, tabular
+├── refs-snapshot.txt
+└── commit-log-snapshot.txt
+```
+
+Plus in-repo backup refs `refs/backup/pre-coauthor-rewrite/{main,v1.0.0}`.
+
+**Future commits do not add AI co-author trailers.**

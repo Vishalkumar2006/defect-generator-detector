@@ -99,7 +99,7 @@ Kept because they are genuine project history, not because they are current.
 |---|---|---|
 | [`PROJECT_STATE.md`](PROJECT_STATE.md) | **HISTORICAL** | The accurate handoff state *through G2.2*, preserved verbatim. Still correct for everything it covers; superseded by `V1_FINAL_STATE.md` where they overlap. Useful for pre-G2.2 detail such as the G2.1 step-200 hashes. |
 | [`G2_3B_ACTIVE_RUN_STATE.md`](G2_3B_ACTIVE_RUN_STATE.md) | **HISTORICAL** | Written mid-execution while G2.3B was still running. That run has since completed. Read it as an operations log — durability design, resume procedure, process-independence analysis — **not** as a description of a running experiment. |
-| [`public-release-notes.md`](public-release-notes.md) | **REFERENCE** | Exactly what changed when this repository was prepared for public release, and the confirmation that no V1 scientific result was altered. Packaging and documentation only. |
+| [`public-release-notes.md`](public-release-notes.md) | **REFERENCE** | Exactly what changed when this repository was prepared for public release, including the authorship audit and the history rewrite that removed AI-assistant attribution (§6), with its original→new SHA mapping, and the confirmation that no V1 scientific result was altered. Packaging, licensing, and documentation only. |
 
 ---
 
