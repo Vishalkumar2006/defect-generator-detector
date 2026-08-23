@@ -2,7 +2,7 @@
 
 This document records exactly what was changed when the repository was prepared
 for public release, so that every difference from the frozen V1 state at commit
-`7c533d6` is auditable.
+`a794625` is auditable.
 
 **Status: REFERENCE.** It describes packaging and documentation only.
 
@@ -104,7 +104,7 @@ originally introduced them (`2d5f217`, `39f3eff`, `9750826`, `5c77b9a`,
 `7872293`, `5ed2f65`, `006156e`, `bdb9085`, `1b69785`). Purging them would
 require rewriting every commit in the repository, which would invalidate the
 commit ledger in `docs/V1_FINAL_STATE.md` §B, the `git.commit` provenance fields
-recorded inside tracked report JSONs, and the frozen result commit `7c533d6`
+recorded inside tracked report JSONs, and the frozen result commit `a794625`
 itself. **The scientific record was given priority**, and history was left
 intact.
 

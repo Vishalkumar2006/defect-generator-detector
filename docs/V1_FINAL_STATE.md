@@ -6,7 +6,7 @@ handoff *through G2.2* and is still correct for everything it covers. Where the
 two overlap, they agree; where this document goes further, it is because work
 happened after `bc36ed4`.
 
-Frozen at commit `7c533d6` (`result: apply the frozen G2.3B gate --
+Frozen at commit `a794625` (`result: apply the frozen G2.3B gate --
 stop_not_confirmed_g2_3b`), 2026-08-23. The commit that adds this document is
 documentation-only. It does not supersede, reopen, or reinterpret any
 experimental decision.
@@ -68,13 +68,13 @@ Every subject below was read from Git, not from memory.
 | `1b69785` | 2026-08-22 | feat: add sustained GAN training | **G2.1** 2,000-update GAN run |
 | `a41be83` | 2026-08-22 | feat: evaluate downstream GAN utility | **G2.2** — terminal `stop_not_confirmed` |
 | `bc36ed4` | 2026-08-22 | docs: record project state through G2.2 | `docs/PROJECT_STATE.md` |
-| `e1171a1` | 2026-08-22 | diagnose: add G2.3A post-hoc validation-only diagnostic | **G2.3A** diagnostic |
-| `6e566a5` | 2026-08-22 | feat: precommit the G2.3B prevalence-controlled utility protocol | **G2.3B protocol frozen before training** |
-| `ee51b1f` | 2026-08-23 | docs: add G2.3B active-run handoff state | Active-run handoff (now completed; see §K) |
-| `b531031` | 2026-08-23 | feat: harden G2.3B execution durability without touching the protocol | Restart safety; no scientific surface changed |
-| `7c533d6` | 2026-08-23 | result: apply the frozen G2.3B gate -- stop_not_confirmed_g2_3b | **V1 terminal result** |
+| `0335667` | 2026-08-22 | diagnose: add G2.3A post-hoc validation-only diagnostic | **G2.3A** diagnostic |
+| `7a069a5` | 2026-08-22 | feat: precommit the G2.3B prevalence-controlled utility protocol | **G2.3B protocol frozen before training** |
+| `26ca74a` | 2026-08-23 | docs: add G2.3B active-run handoff state | Active-run handoff (now completed; see §K) |
+| `5574596` | 2026-08-23 | feat: harden G2.3B execution durability without touching the protocol | Restart safety; no scientific surface changed |
+| `a794625` | 2026-08-23 | result: apply the frozen G2.3B gate -- stop_not_confirmed_g2_3b | **V1 terminal result** |
 
-Branch: `main`. HEAD at freeze: `7c533d6`.
+Branch: `main`. HEAD at freeze: `a794625`.
 
 ---
 
@@ -133,7 +133,7 @@ separate, explicitly authorized, precommitted experiment.
 
 ## D. G2.3B frozen protocol
 
-Frozen before any G2.3B training at commit `6e566a5`. Authoritative sources:
+Frozen before any G2.3B training at commit `7a069a5`. Authoritative sources:
 `docs/g2-3b-utility-protocol.md`, `configs/g2_3b_utility_confirmation.json`,
 `reports/g2_3b/plan/precommitted_plan.json`.
 
@@ -685,7 +685,7 @@ These do not authorize a new experiment:
 
 ```powershell
 git log --oneline
-git show --stat 7c533d6
+git show --stat a794625
 git status --short
 Get-Content .\reports\g2_3b\confirmation_summary.json
 Get-Content .\reports\g2_2\confirmation\confirmation_summary.json
@@ -805,7 +805,7 @@ by §E of this document and by `reports/g2_3b/confirmation_summary.json`.
 
 ## L. Resume boundary
 
-**Version 1 is frozen at the final G2.3B result, commit `7c533d6`.**
+**Version 1 is frozen at the final G2.3B result, commit `a794625`.**
 
 If V1 is ever resumed:
 

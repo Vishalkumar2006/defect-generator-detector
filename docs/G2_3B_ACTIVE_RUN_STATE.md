@@ -45,8 +45,8 @@ Reread these before any substantial work. They outrank conversational memory.
 |---|---|
 | `a41be83` | G2.2 downstream detector utility, terminal `stop_not_confirmed` |
 | `bc36ed4` | `docs/PROJECT_STATE.md` |
-| `e1171a1` | G2.3A post-hoc validation-only diagnostic |
-| `6e566a5` | G2.3B precommitted protocol and scaffolding |
+| `0335667` | G2.3A post-hoc validation-only diagnostic |
+| `7a069a5` | G2.3B precommitted protocol and scaffolding |
 
 ---
 

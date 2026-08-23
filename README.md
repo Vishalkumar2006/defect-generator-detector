@@ -72,7 +72,7 @@ omit.
 | Official held-out KSDD2 test split | 🔒 **Never accessed** — never constructed, inspected, counted, or evaluated |
 | Version 2 | 📋 **Planned — not implemented.** No V2 code, config, experiment, or branch exists |
 
-Frozen at commit `7c533d6`. Test suite: **448 passed**.
+Frozen at commit `a794625`. Test suite: **448 passed**.
 
 ---
 
@@ -297,7 +297,7 @@ G2.3A found three further defects, all measured:
 mature 5,952-update budget, three fresh seeds (45/46/47 — never used by any
 earlier phase, so the experiment could not re-test its own design data),
 precommitted operating-point selection, and an added threshold-independent PR-AUC
-criterion. The full gate was frozen at commit `6e566a5`, **before any G2.3B
+criterion. The full gate was frozen at commit `7a069a5`, **before any G2.3B
 detector was trained**.
 
 ### The final gate

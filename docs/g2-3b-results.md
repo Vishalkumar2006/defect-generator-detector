@@ -9,7 +9,7 @@ stop_not_confirmed_g2_3b
 
 The protocol, gate, threshold rule, seeds, arms, and budget were frozen before
 any G2.3B detector was trained (`docs/g2-3b-utility-protocol.md`, commit
-`6e566a5`). Nothing in this document changed any of them. No gate value was
+`7a069a5`). Nothing in this document changed any of them. No gate value was
 chosen, relaxed, reordered, or reinterpreted after observing a result.
 
 G2.2 remains permanently `stop_not_confirmed`. G2.3A remains post-hoc diagnostic
