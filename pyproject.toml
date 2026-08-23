@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "defectgen"
+version = "1.0.0"
+description = "Research pipeline for GAN-based industrial surface-defect synthesis and downstream detector evaluation (KSDD2)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Vishalkumar2006" }]
+keywords = ["defect-detection", "segmentation", "gan", "data-augmentation", "ksdd2", "pytorch"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
+
+# torch/torchvision are deliberately NOT listed here. They must be installed
+# from the CUDA wheel index (see requirements-ml.txt), and declaring them as
+# dependencies would let an editable install silently pull a CPU-only build
+# over a working CUDA installation.
+dependencies = [
+    "numpy",
+    "Pillow",
+    "pandas",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/Vishalkumar2006/defect-generator-detector"
+Documentation = "https://github.com/Vishalkumar2006/defect-generator-detector/blob/main/docs/README.md"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# Note: scripts/ and tests/ insert `src` on sys.path themselves, so this package
+# metadata is a convenience for `pip install -e .` only. Installing it is not
+# required to run anything in this repository, and not installing it does not
+# change how any recorded experiment resolved its imports.
