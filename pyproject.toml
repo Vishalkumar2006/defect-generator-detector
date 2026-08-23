@@ -11,8 +11,10 @@ requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "Vishalkumar2006" }]
 keywords = ["defect-detection", "segmentation", "gan", "data-augmentation", "ksdd2", "pytorch"]
+# "Beta", not "Production/Stable": this is a frozen research artifact whose
+# central hypothesis was not confirmed, not a maintained production library.
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",

@@ -1,0 +1,89 @@
+name: tests
+
+# CPU-only test run. This workflow deliberately does NOT download KSDD2:
+# the dataset is third-party CC BY-NC-SA 4.0 material that this project does not
+# redistribute, and CI must not fetch it. It also does not use a GPU.
+#
+# 8 of the 448 tests read actual KSDD2 image files and cannot run here. They are
+# deselected by name below rather than by editing the test files, so the suite
+# stays byte-identical to the one that produced the recorded 448-pass result.
+# Expected outcome: 435 passed, 5 skipped, 8 deselected.
+#
+# To run the complete 448-test suite you need a local KSDD2 copy; see
+# docs/dataset-setup.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: pytest (CPU, no dataset)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Matches the version V1 was developed and frozen on (3.14.2).
+          python-version: '3.14'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          # CPU wheels only. requirements-ml.txt pins the CUDA 12.8 index and
+          # must not be used here.
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Show environment
+        run: |
+          python --version
+          python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
+
+      - name: Run test suite
+        run: |
+          python -m pytest -q \
+            --deselect tests/test_phase_b_splits.py::test_development_split_is_reproducible \
+            --deselect tests/test_phase_b_splits.py::test_split_counts_and_exact_disjointness \
+            --deselect tests/test_phase_b_splits.py::test_official_test_is_preserved \
+            --deselect tests/test_phase_b_splits.py::test_duplicate_copies_are_excluded_and_discovery_is_manifest_only \
+            --deselect tests/test_phase_b_splits.py::test_generated_metadata_paths_are_relative \
+            --deselect tests/test_full_image_dataset.py::test_dataset_is_manifest_only_and_split_isolated \
+            --deselect tests/test_full_image_dataset.py::test_real_dataset_item_has_complete_canvas_and_binary_masks \
+            --deselect tests/test_g2_3b_durability.py::test_schedule_identity_is_stable_across_processes
+
+      - name: Verify the frozen V1 result is unchanged
+        run: |
+          python - <<'PY'
+          import json, sys
+          s = json.load(open("reports/g2_3b/confirmation_summary.json", encoding="utf-8"))
+          checks = {
+              "decision": (s["decision"], "stop_not_confirmed_g2_3b"),
+              "confirmed": (s["confirmed"], False),
+              "official_test_access_count": (s["official_test_access_count"], 0),
+              "gan_optimizer_updates": (s["gan_optimizer_updates"], 0),
+              "g2_2_terminal_decision_unchanged": (s["g2_2_terminal_decision_unchanged"], "stop_not_confirmed"),
+          }
+          bad = {k: v for k, v in checks.items() if v[0] != v[1]}
+          for k, (got, want) in checks.items():
+              print(f"{'OK ' if k not in bad else 'BAD'} {k}: {got!r} (expected {want!r})")
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: Verify the result figure regenerates from the authoritative JSON
+        run: python scripts/plot_v1_result_summary.py --output /tmp/v1_result_summary.png

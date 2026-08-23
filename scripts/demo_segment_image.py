@@ -53,8 +53,11 @@ from defectgen.data.full_image import (  # noqa: E402
 )
 from defectgen.models.unet import UNet, count_parameters  # noqa: E402
 
-# The one-time validation Dice-optimal threshold frozen for the accepted
-# real-only BF16 reference. 0.5 is the fixed comparison threshold.
+# 0.5 is the project's fixed comparison threshold, used for every like-for-like
+# metric report. It is NOT the accepted baseline's best operating point: that
+# baseline's one-time validation Dice-optimal threshold was 0.05, where it scores
+# Dice 0.7983 versus 0.7777 at 0.5. Pass --threshold 0.05 to see that operating
+# point instead.
 DEFAULT_THRESHOLD = 0.5
 
 

@@ -1,5 +1,9 @@
 # Defect Generator & Detector
 
+[![tests](https://github.com/Vishalkumar2006/defect-generator-detector/actions/workflows/tests.yml/badge.svg)](https://github.com/Vishalkumar2006/defect-generator-detector/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Dataset: CC BY-NC-SA 4.0](https://img.shields.io/badge/Dataset-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
 A research-oriented PyTorch pipeline investigating whether GAN-generated
 industrial surface defects can improve downstream defect segmentation.
 
@@ -8,8 +12,9 @@ robust incremental detector utility from the synthetic samples.**
 
 The final scientific decision is `stop_not_confirmed_g2_3b`. Under a protocol
 frozen before any detector was trained, GAN-augmented training produced a mean
-Dice gain of **−0.0002** against a prevalence-matched real control — statistically
-indistinguishable from zero, and five of eight precommitted gate criteria failed.
+Dice gain of **−0.0002** against a prevalence-matched real control —
+approximately zero across the three precommitted seeds — and five of eight
+precommitted gate criteria failed.
 That negative result is the deliverable. It is reported here in full rather than
 buried, because the experimental machinery built to *establish* it is the
 substantive contribution.
@@ -355,8 +360,9 @@ been the sole cause of G2.2's failure.
 
 These are different claims and the distinction is the point.
 
-**Not demonstrated: that the GAN improved detector performance.** No result in
-this repository supports that claim, at any budget, under any comparison.
+**Not demonstrated: that the GAN improved detector performance.** No controlled
+multi-seed experiment in V1 established a robust detector-performance improvement
+from GAN augmentation.
 
 **Also not demonstrated: that the synthetic images are bad.** V1 measured
 *downstream detector utility*, not generator quality. All 512 materialized samples
@@ -529,7 +535,10 @@ Calling the virtual environment's Python directly (rather than activating it)
 avoids PowerShell execution-policy issues. Every command in this README uses that
 form.
 
-### Linux / macOS — untested equivalents
+### Linux with an NVIDIA GPU — untested equivalent
+
+Full capability, including training. These are direct translations of the tested
+Windows commands; they are expected to work but were not run here.
 
 ```bash
 git clone https://github.com/Vishalkumar2006/defect-generator-detector.git
@@ -542,9 +551,42 @@ python3 -m venv .venv
 ./.venv/bin/python ./scripts/verify_pytorch_environment.py
 ```
 
-These are the direct translations of the tested Windows commands. They are
-expected to work but were not run; macOS has no CUDA path at all and can only run
-the CPU-safe subset.
+`requirements-ml.txt` pins the CUDA 12.8 wheels. Your NVIDIA driver must support
+CUDA 12.8, and the GPU must support BF16 (compute capability 8.0+, i.e. Ampere or
+newer) — training refuses to run without it.
+
+### macOS, or any machine without an NVIDIA GPU — CPU-only subset
+
+**Training is not possible here.** There is no CUDA path on macOS, and the
+baseline and G2.3B protocols deliberately refuse a CPU fallback rather than
+silently producing incomparable results. Do **not** install
+`requirements-ml.txt` on these machines — it points at the CUDA wheel index.
+
+Install a CPU build of PyTorch instead:
+
+```bash
+git clone https://github.com/Vishalkumar2006/defect-generator-detector.git
+cd defect-generator-detector
+
+python3 -m venv .venv
+./.venv/bin/python -m pip install --upgrade pip
+./.venv/bin/python -m pip install -r requirements.txt
+./.venv/bin/python -m pip install torch torchvision   # default CPU wheels
+```
+
+Skip `verify_pytorch_environment.py` — it exits with an error when CUDA is
+absent, by design. What still works:
+
+| Works on CPU | Needs CUDA + BF16 |
+|---|---|
+| The full 448-test suite | `train_final_real_baseline.py` |
+| `plot_v1_result_summary.py` | `train_gan.py` |
+| Reading every report and doc | `train_g2_3b_utility.py --mode train` |
+| `demo_segment_image.py` (with a supplied checkpoint) | |
+| `train_g2_3b_utility.py --mode plan` / `--mode confirm` | |
+
+This is enough to inspect, verify, and understand every V1 result, since all of
+them are recorded in tracked JSON.
 
 ### Optional editable install
 
@@ -720,8 +762,23 @@ trained from random initialization on development-training data only.
 ```
 
 **448 tests across 25 files, all passing**, in roughly 4 minutes on CPU. This
-matches the count recorded at freeze, and the suite requires neither a GPU nor the
-dataset.
+matches the count recorded at freeze, and no test requires a GPU.
+
+### Continuous integration
+
+[`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs on every push
+and pull request, on CPU, and **never downloads KSDD2** — CI must not fetch
+third-party data this project does not redistribute.
+
+8 of the 448 tests read actual KSDD2 image files, so CI deselects them **by name
+in the workflow**, leaving the test files byte-identical to the ones that
+produced the recorded result. CI therefore reports **435 passed, 5 skipped,
+8 deselected**; run the suite locally with the dataset present to see all 448.
+
+CI additionally asserts that `reports/g2_3b/confirmation_summary.json` still
+records `stop_not_confirmed_g2_3b`, `confirmed: false`, zero official-test
+accesses, and zero GAN optimizer updates — so a regression in the frozen V1
+result would fail the build.
 
 The tests are not incidental — they encode the experimental protocol itself:
 
@@ -863,7 +920,10 @@ distinction is deliberate and binding.
 | **KSDD2-derived figures** — 48 files present in Git history only | **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)** |
 
 **The MIT licence does not cover KSDD2 or any KSDD2-derived figure**, does not
-relicense them, and grants no rights in them.
+relicense them, and grants no rights in them. [`LICENSE`](LICENSE) is the
+unmodified MIT text so that licence detection works; its scope carve-out is
+stated in [`THIRD_PARTY_NOTICES.md` §0](THIRD_PARTY_NOTICES.md), which is
+authoritative.
 
 The 48 figures — contact sheets, patch grids, blinded comparison sheets,
 prediction overlays, and fixed-validation panels — reproduce KSDD2 image or mask
