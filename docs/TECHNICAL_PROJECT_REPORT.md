@@ -54,20 +54,34 @@ with pixel-level masks (`reports/data_audit/summary.json`,
 expensive to capture on a production line, and expensive to annotate at pixel
 level.
 
-### 1.2 Motivation for synthetic defect generation
+### 1.2 Motivation, and how the question evolved
 
 The standard proposed remedy is generative augmentation: if a model can synthesize
 new defective images, the detector sees more positive examples and should
 generalize better. This is a widely published strategy and is usually evaluated by
 comparing a synthetic-augmented detector against a plain baseline.
 
-This project's premise is that such a comparison is **not sufficient**. A synthetic
-sample is defective by construction, so injecting synthetic data into a
-class-balanced batch silently raises the fraction of defective samples the detector
-sees. Any measured gain is then attributable either to the synthetic *content* or
-merely to the changed *class prevalence*, and the usual two-arm design cannot
-separate them. The project was therefore built to answer the harder, controlled
-question.
+**That is exactly how this project began.** The first downstream experiment
+(**G2.2**, §9) used the conventional two-arm design — synthetic-augmented arms
+against a real-only control — and produced a large apparent gain: a mean Dice
+improvement of `+0.084` across three seeds.
+
+**The question became harder because that result did not survive scrutiny.** The
+three-seed confirmation failed its recall criterion, and the numbers were
+internally odd: an arm that improved Dice enormously while regressing recall,
+against a control whose normal-image false-positive rate was `0.9265`. A post-hoc
+diagnostic (**G2.3A**, §10.1–10.2) was commissioned to explain this without
+training anything, and it established a structural problem: every synthetic sample
+is defective by construction, so injecting 25% synthetic data into a class-balanced
+batch had raised the arm's effective defective fraction to **0.625** while the
+control stayed at **0.500**. The two-arm comparison could not separate synthetic
+*content* from defect *class prevalence* — not because it was executed badly, but
+because the design cannot do so **even in principle**.
+
+That diagnosis is what motivated the final objective below and the
+prevalence-matched three-arm design of **G2.3B** (§10.3). The controlled question
+was not the project's starting insight; it is what the project was forced into by
+its own first result.
 
 ### 1.3 Intended users and use case
 
@@ -97,10 +111,18 @@ KSDD2 official train split (2,331 images)
   → prevalence-matched controlled evaluation → precommitted 8-criterion gate
 ```
 
-The official KSDD2 held-out test split (1,004 images) was **never constructed,
-inspected, counted, or evaluated** at any point. `official_test_access_count` is
-`0` and `official_test_samples_loaded` is `0` in every recorded report, and
+**No official-test sample was ever loaded** for model training, validation,
+checkpoint selection, threshold selection, downstream evaluation, or any reported
+V1 performance metric. `official_test_samples_loaded` is `0` and
+`official_test_access_count` is `0` in every recorded report, and
 `reports/g2_2/official_test/` does not exist.
+
+To be precise about what *is* known: the dataset audit counts the official test
+split (110 defective / 894 normal / 1,004 total), and the split manifest carries
+its 1,004 rows with filenames and content hashes. Repository **metadata**
+therefore knows the split exists and how large it is — that is unavoidable for an
+integrity audit, and it is not leakage. What never happened is loading those
+images or masks into any model, at any stage.
 
 ---
 
@@ -127,14 +149,15 @@ invented (`docs/design-decisions.md`).
 
 ### 2.2 Development split
 
-Only the official `train` split is subdivided. The official `test` split is sealed
-and never used for any development decision.
+Only the official `train` split is subdivided. The official `test` split is
+enumerated in the manifest for integrity auditing but its **images and masks are
+never loaded**, and it is never used for any development decision.
 
 | `official_split` | `development_split` | Rows | Role |
 |---|---|---:|---|
 | `train` | `train` | 1,981 | All training, template extraction, GAN sources |
 | `train` | `validation` | 350 | Every metric reported in V1 |
-| `test` | `test` | 1,004 | **Sealed — never loaded** |
+| `test` | `test` | 1,004 | **Enumerated in the manifest; images never loaded** |
 
 Split manifest: `data/metadata/ksdd2_split_seed42.csv`, SHA-256
 `024495c9673a7096c79f342cce58ad6dd5e7434951b9b61053e926ab7c8c9f07`, 616,772 bytes,
@@ -736,10 +759,43 @@ the selected smoke step-200 checkpoint is recorded in
 | `materialized_training_images` | **0** |
 | `train_monitor_source_disjoint` | **true** |
 
-Residual diagnostics: maximum directional-cap saturation fraction `0.05949`,
-maximum tanh raw-residual saturation fraction `0.05979` — both below the `0.05`
-*per-update* gate that killed the pre-G1.5a run, and now reported as run maxima
-rather than triggering a stop.
+**Residual saturation diagnostics — and what they are not.**
+
+| Diagnostic (run maximum over 2,000 updates) | Value |
+|---|---:|
+| `maximum_directional_cap_saturation_fraction` | `0.05949` |
+| `maximum_tanh_raw_residual_saturation_fraction` | `0.05979` |
+
+These are **not** the quantity that stopped the pre-G1.5a run, and they were
+**not** subject to a `0.05` gate. The distinction matters:
+
+- **The old, gated quantity** was *clamp saturation* — the fraction of support
+  pixels whose value had to be clamped back into `[-1, 1]` after an unconstrained
+  additive residual pushed it out. That is what read `0.07349` against a `0.05`
+  limit in §7.4. After the G1.5a redesign the clamp no longer exists, so the
+  trainer hardcodes `"clamp_saturation_fraction": 0.0` alongside
+  `"clamp_saturation_deprecated": true`
+  (`src/defectgen/training/gan_trainer.py`). There is nothing left to gate.
+- **The two quantities above are different measurements.**
+  `directional_cap_saturation_fraction` is the fraction of support pixels (with a
+  positive cap) where `|applied residual| ≥ 0.99 × directional_cap`, and
+  `tanh_raw_residual_saturation_fraction` is the fraction where
+  `|tanh(raw_residual)| ≥ 0.99`. Both measure how often the residual is *riding
+  its own allowed bound* — which is a legitimate, in-range state, because that
+  bound is precisely what keeps the output inside `[-1, 1]`. A pixel at 99% of its
+  directional cap has not violated anything.
+
+Accordingly, `configs/gan_training_2000.json` contains **no saturation stop at
+all**. Its configured hard stops are `absolute_logit_stop: 20.0`,
+`output_range_violation_stop_count: 0`, `mean_support_change_stop: 0.25`, and
+`detector_inside_retention_stop_ratio: 0.5`. The property that actually
+guarantees valid output is `output_range_violations = 0`, which held for all
+2,000 updates.
+
+So the honest reading is: on roughly 6% of support pixels at the worst single
+update, the generator was requesting the largest edit its formulation permits.
+That is a saturation-pressure observation worth recording, not a violation and
+not a threshold breach.
 
 ### 8.4 Discriminator behaviour
 
@@ -1368,7 +1424,8 @@ W&B), no Docker, no model serving, no ONNX/TensorRT export, no deployment.
 | Official train / test | 2,331 / 1,004 | same |
 | Development train / validation | 1,981 / 350 | `data/metadata/ksdd2_split_seed42.csv` |
 | Validation defective / normal | 37 / 313 | baseline summary |
-| Official test rows ever loaded | **0** | every report |
+| Official-test **samples** ever loaded | **0** | every report |
+| Official-test **rows** present in the manifest | 1,004 | `data/metadata/ksdd2_split_seed42.csv` |
 | Defective development-training images | 209 | `reports/gan_inputs/summary.json` |
 | Accepted defect templates | 232 (of 235 components) | same |
 | Border-touching templates | 96 (41.4%) | same |
@@ -1607,8 +1664,9 @@ a published claim.
 
 1. **A complete, deterministic, leakage-controlled research pipeline** for GAN-based
    industrial-defect synthesis and downstream detector evaluation, implemented end to
-   end and reproducible: audited extraction, a development split that never touches
-   the official held-out split, training-only template/background construction,
+   end and reproducible: audited extraction, a development split carved only from
+   the official train split so that no official-test sample is ever loaded,
+   training-only template/background construction,
    indexed placement compatibility, a mask-conditioned residual GAN with localized
    objectives, auditable update mechanics, sustained training with numbered
    checkpoints, paired synthetic materialization, and equal-budget downstream
@@ -1632,9 +1690,15 @@ a published claim.
 
 - **Whether a small true effect exists.** With three seeds and per-seed Dice gains
   spanning `−0.037` to `+0.019`, the experiment cannot distinguish a small positive
-  effect from zero. It *can* and does exclude the large positive effect the
-  precommitted gate required. **No significance test was performed**, so no claim of
-  statistical significance or equivalence is available.
+  effect from zero. What it establishes is narrower and purely decision-theoretic:
+  **the observed effect failed to meet the precommitted minimum-effect criteria** —
+  a mean Dice gain of `−0.000196` against a required `≥ +0.01`, and a mean PR-AUC
+  gain of `−0.002608` against a required `≥ +0.01`. **No significance test,
+  confidence interval, equivalence test, or power analysis was performed**, so the
+  result supports no claim of statistical significance, no claim of equivalence to
+  zero, and no formal exclusion of any effect size. A true effect smaller than the
+  gate's threshold — or, given the seed dispersion, even one near it — cannot be
+  ruled out by this evidence.
 - **How much of the outcome is seed dispersion.** Seed 47 alone reverses the sign of
   the mean on Dice, IoU, and PR-AUC.
 - **Whether a different configuration would succeed.** One synthetic ratio (25%), one
@@ -1667,8 +1731,9 @@ Two distinctions matter and must be preserved:
 - **"Utility not confirmed" is not "the generator failed technically."** V1 measured
   *downstream detector utility*, not generator quality. The generator trained cleanly
   and its outputs passed every structural audit.
-- **"Not confirmed" is not "disproven."** The experiment excludes a large effect, not
-  every effect.
+- **"Not confirmed" is not "disproven."** The experiment failed to meet its
+  precommitted minimum-effect criteria. It did not statistically exclude any effect
+  size, and it cannot rule out a smaller true effect.
 
 ### 15.4 Limitations
 
@@ -1678,7 +1743,7 @@ Two distinctions matter and must be preserved:
 2. No explicit stochastic diversity mechanism in the generator; magnitude of this
    limitation unquantified.
 3. Three seeds; no significance testing.
-4. Development-validation only; official test sealed.
+4. All reported metrics are development-validation only; no official-test sample was ever loaded into a model.
 5. Single GPU, single OS. Bitwise cross-hardware reproduction is not claimed;
    schedule hashes, composition, and budgets are hardware-independent and do
    reproduce.
@@ -1726,7 +1791,7 @@ plausible-looking gain.
 | Fixed 4 preprocessing/sampling bugs (width bias, border semantics, retries, asymmetry) | ✅ Yes | `docs/gan-input-pipeline.md`; F1.3 vs F1.4 audits | "Identified and corrected four data-pipeline defects, raising deterministic sampling success from 98.3% to 100% and eliminating 243 empty compatibility pools." |
 | Built 448-test suite encoding the experimental protocol | ✅ Yes | `tests/` (25 files); `448 passed` verified | "Wrote a 448-test suite that encodes experimental invariants — batch composition, update budgets, initialization equality, gate arithmetic, and split isolation." |
 | Implemented deterministic, resumable, atomically checkpointed training | ✅ Yes | `training/g2_3b_protocol.py`, `engine.py`; `tests/test_g2_3b_durability.py` (43 tests) | "Implemented deterministic, atomically checkpointed, resumable training with RNG-state persistence, verified by tests asserting identical parameter hashes across resume." |
-| Enforced zero data leakage; official test never accessed | ✅ Yes | `official_test_access_count: 0` in all reports; `assert_permitted_split`; no `reports/g2_2/official_test/` | "Enforced strict split isolation with hard-failing guards; the official held-out split was never loaded in any experiment." |
+| Enforced strict split isolation; no official-test sample loaded into any model | ✅ Yes | `official_test_samples_loaded: 0` and `official_test_access_count: 0` in all reports; `assert_permitted_split`; no `reports/g2_2/official_test/` | "Enforced strict split isolation with hard-failing guards; no official-test sample was loaded for training, validation, checkpoint or threshold selection, or any reported metric." |
 | Discovered a class-prevalence confound invalidating an earlier positive result | ✅ Yes | `reports/g2_3/diagnostic/diagnostic_summary.json` → `q3_composition` | "Diagnosed a class-prevalence confound (0.625 vs 0.500 effective defect fraction) that invalidated an earlier apparent +0.084 Dice gain, using a zero-training post-hoc analysis that reproduced prior metrics to 0.0 absolute delta." |
 | Designed a 3-arm prevalence-matched controlled experiment | ✅ Yes | `configs/g2_3b_utility_confirmation.json`; `reports/g2_3b/plan/precommitted_plan.json` | "Designed a three-arm, prevalence-matched, equal-budget experiment isolating synthetic content from class prevalence, with 5,952 updates per arm across 3 fresh seeds." |
 | Ran 9 detector arms (~14 h) with byte-identical reproducible schedules | ✅ Yes | `reports/g2_3b/confirmation_summary.json`; `--mode plan` re-verified byte-identical | "Executed nine detector training arms (~14 hours) under deterministic, hash-verified schedules reproducible byte-for-byte." |
@@ -1735,7 +1800,7 @@ plausible-looking gain.
 | Synthetic augmentation validated / production-ready | ❌ **NO** | `stop_not_confirmed_g2_3b`; no authorized config or release checkpoint | **Do not claim.** |
 | Achieved statistically significant results | ❌ **NO** | no significance test anywhere in the repository | **Do not claim.** Use "approximately zero across the three precommitted seeds." |
 | Deployed to production / used in a factory | ❌ **NO** | no serving, API, export, container, or deployment code | **Do not claim.** |
-| Evaluated on the official KSDD2 test benchmark | ❌ **NO** | official test never loaded, by design | **Do not claim.** Use: "All results are on a held-out development validation split; the official test split was deliberately sealed." |
+| Evaluated on the official KSDD2 test benchmark | ❌ **NO** | no official-test sample ever loaded, by design | **Do not claim.** Use: "All results are on a held-out development validation split; the official test split was deliberately reserved and never loaded into a model." |
 | Improved small-defect detection | ⚠️ **Not confirmed** | seen in G2.3A at immature budget; **reversed** in G2.3B (mean small-defect Dice `−0.0078`) | **Do not claim.** The pattern did not survive prevalence matching. |
 | Built V2 with novel geometry / latent diversity | ❌ **NO** | no V2 code, config, branch, or experiment exists | **Do not claim.** May say "identified as future work." |
 | Reported a rigorous negative result under a precommitted protocol | ✅ Yes | `reports/g2_3b/confirmation_summary.json`; `docs/g2-3b-results.md`; tag `v1.0.0` | "Delivered a rigorously controlled negative result — the precommitted gate failed 5 of 8 criteria — and documented it rather than tuning the experiment until it passed." |
