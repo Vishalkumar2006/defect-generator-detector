@@ -471,7 +471,7 @@ defect-generator-detector/
 │   └── training/               # Engine, losses, metrics, numerics, phase protocols
 ├── scripts/                    # 33 CLI entry points (audit / train / visualize / demo)
 ├── configs/                    # Frozen experiment configurations — see configs/README.md
-├── tests/                      # 448 tests across 25 files
+├── tests/                      # 453 tests across 26 files
 ├── docs/                       # Design docs and experiment records — START AT docs/README.md
 │   ├── V1_FINAL_STATE.md       #   ← AUTHORITATIVE project status
 │   ├── g2-3b-results.md        #   ← the terminal result
@@ -579,7 +579,7 @@ absent, by design. What still works:
 
 | Works on CPU | Needs CUDA + BF16 |
 |---|---|
-| The full 448-test suite | `train_final_real_baseline.py` |
+| The full 453-test suite | `train_final_real_baseline.py` |
 | `plot_v1_result_summary.py` | `train_gan.py` |
 | Reading every report and doc | `train_g2_3b_utility.py --mode train` |
 | `demo_segment_image.py` (with a supplied checkpoint) | |
@@ -761,8 +761,9 @@ trained from random initialization on development-training data only.
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-**448 tests across 25 files, all passing**, in roughly 4 minutes on CPU. This
-matches the count recorded at freeze, and no test requires a GPU.
+**453 tests across 26 files, all passing**, in roughly 4 minutes on CPU. No test
+requires a GPU. The count recorded at freeze was 448; the 5 added since cover
+CI path handling only and change no result.
 
 ### Continuous integration
 
@@ -770,10 +771,16 @@ matches the count recorded at freeze, and no test requires a GPU.
 and pull request, on CPU, and **never downloads KSDD2** — CI must not fetch
 third-party data this project does not redistribute.
 
-8 of the 448 tests read actual KSDD2 image files, so CI deselects them **by name
-in the workflow**, leaving the test files byte-identical to the ones that
-produced the recorded result. CI therefore reports **435 passed, 5 skipped,
-8 deselected**; run the suite locally with the dataset present to see all 448.
+8 of the tests read actual KSDD2 image files, so CI deselects them **by name in
+the workflow**, leaving the test files byte-identical to the ones that produced
+the recorded result; a further 8 skip themselves when they find no dataset. CI
+therefore reports **437 passed, 8 skipped, 8 deselected**; run the suite locally
+with the dataset present to see all 453.
+
+CI installs the **CPU** builds of the frozen training versions — `torch 2.11.0`
+and `torchvision 0.26.0` — so the only difference from the environment that
+produced the results is the compute backend, not the library version. CI checks
+recorded results and CPU logic; it does not reproduce training.
 
 CI additionally asserts that `reports/g2_3b/confirmation_summary.json` still
 records `stop_not_confirmed_g2_3b`, `confirmed: false`, zero official-test

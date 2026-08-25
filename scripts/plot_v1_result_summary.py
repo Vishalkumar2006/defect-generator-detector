@@ -60,6 +60,20 @@ MEAN_COLOUR = "#1f3b63"
 SEED_COLOURS = ("#7fa8d4", "#a9c4e0", "#5d86b3")
 
 
+def display_path(path: Path) -> str:
+    """Render ``path`` for humans: repository-relative when it is inside the repo.
+
+    ``--summary`` and ``--output`` may legitimately point outside the repository
+    -- CI writes the regenerated figure to a temporary directory -- so the
+    repository-relative form is a readability nicety, never a requirement.
+    """
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return resolved.as_posix()
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Plot the frozen V1 (G2.3B) utility result from its authoritative summary JSON.",
@@ -176,7 +190,7 @@ def main() -> None:
         0.5,
         0.005,
         f"Seeds {', '.join(seeds)} · 5,952 optimizer updates per arm · development validation only "
-        f"· official test never accessed · source: {arguments.summary.relative_to(REPO_ROOT).as_posix()}",
+        f"· official test never accessed · source: {display_path(arguments.summary)}",
         ha="center",
         fontsize=8,
         color="#555555",
@@ -185,7 +199,7 @@ def main() -> None:
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(arguments.output, dpi=150)
     plt.close(figure)
-    print(f"wrote {arguments.output.relative_to(REPO_ROOT).as_posix()}")
+    print(f"wrote {display_path(arguments.output)}")
 
 
 if __name__ == "__main__":

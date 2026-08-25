@@ -4,13 +4,19 @@ name: tests
 # the dataset is third-party CC BY-NC-SA 4.0 material that this project does not
 # redistribute, and CI must not fetch it. It also does not use a GPU.
 #
-# 8 of the 448 tests read actual KSDD2 image files and cannot run here. They are
+# 8 of the 453 tests read actual KSDD2 image files and cannot run here. They are
 # deselected by name below rather than by editing the test files, so the suite
-# stays byte-identical to the one that produced the recorded 448-pass result.
-# Expected outcome: 435 passed, 5 skipped, 8 deselected.
+# stays byte-identical to the one that runs locally. A further 8 skip themselves
+# when they find no dataset. Expected outcome: 437 passed, 8 skipped, 8 deselected.
 #
-# To run the complete 448-test suite you need a local KSDD2 copy; see
+# To run the complete 453-test suite you need a local KSDD2 copy; see
 # docs/dataset-setup.md.
+#
+# Environment note: V1 was trained and frozen on a CUDA 12.8 environment
+# (requirements-ml.txt: torch 2.11.0+cu128 / torchvision 0.26.0+cu128). This job
+# installs the CPU builds of those same versions, so CI and the frozen training
+# environment differ only in the compute backend, never in the library version.
+# CI verifies recorded results and CPU logic; it does not reproduce training.
 
 on:
   push:
@@ -47,8 +53,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
           # CPU wheels only. requirements-ml.txt pins the CUDA 12.8 index and
-          # must not be used here.
-          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          # must not be used here. The versions match the frozen training
+          # environment (torch 2.11.0 / torchvision 0.26.0); cp314 manylinux
+          # x86_64 CPU wheels exist for both, so the pin is valid on this runner.
+          python -m pip install torch==2.11.0+cpu torchvision==0.26.0+cpu \
+            --index-url https://download.pytorch.org/whl/cpu
 
       - name: Show environment
         run: |
